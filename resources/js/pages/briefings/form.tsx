@@ -1,7 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
+import { SectionCard, FormRow, YesNo, inputCls, textareaCls } from '@/components/form-ui';
+import { Calendar, Users, ClipboardCheck, ListChecks } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
 interface BriefingData {
@@ -24,46 +25,6 @@ interface BriefingData {
 
 interface Props {
     briefing?: BriefingData;
-}
-
-// ─── helpers ──────────────────────────────────────────────────────────────────
-
-function SectionCard({ color, title, children }: { color: string; title: string; children: React.ReactNode }) {
-    return (
-        <div className={`rounded-xl border-l-4 ${color} bg-white p-6 shadow-sm dark:bg-gray-900`}>
-            <h2 className="mb-4 text-base font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-200">
-                {title}
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">{children}</div>
-        </div>
-    );
-}
-
-function Field({ label, error, children, full }: { label: string; error?: string; children: React.ReactNode; full?: boolean }) {
-    return (
-        <div className={full ? 'sm:col-span-2' : ''}>
-            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
-            {children}
-            {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-        </div>
-    );
-}
-
-const inputCls =
-    'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white';
-
-function ToggleField({ label, name, checked, onCheckedChange }: {
-    label: string;
-    name: string;
-    checked: boolean;
-    onCheckedChange: (val: boolean) => void;
-}) {
-    return (
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 sm:col-span-2 dark:border-gray-700 dark:bg-gray-800/50">
-            <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
-            <Switch name={name} checked={checked} onCheckedChange={onCheckedChange} />
-        </div>
-    );
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
@@ -94,8 +55,7 @@ export default function BriefingForm({ briefing }: Props) {
     }
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-        const key = e.target.name as keyof BriefingData;
-        setData(key, e.target.value as any);
+        setData(e.target.name as keyof BriefingData, e.target.value as any);
     }
 
     function toggle(key: keyof BriefingData) {
@@ -110,137 +70,109 @@ export default function BriefingForm({ briefing }: Props) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={isEdit ? 'Editar Briefing' : 'Novo Briefing'} />
-            <div className="mx-auto max-w-3xl p-6">
-                <h1 className="mb-6 text-2xl font-bold">{isEdit ? 'Editar Briefing' : 'Novo Briefing'}</h1>
+            <div className="mx-auto max-w-2xl px-4 py-8">
+
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                        {isEdit ? 'Editar Briefing' : 'Novo Briefing'}
+                    </h1>
+                    <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+                        Preencha todos os campos antes de iniciar a sessão cirúrgica.
+                    </p>
+                </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                     <Tabs defaultValue="sala">
-                        <TabsList className="mb-2 flex-wrap">
-                            <TabsTrigger value="sala">Sala / Dia</TabsTrigger>
-                            <TabsTrigger value="equipa">Equipa</TabsTrigger>
-                            <TabsTrigger value="checklist">Checklist</TabsTrigger>
-                            <TabsTrigger value="plano">Plano Cirúrgico</TabsTrigger>
+                        <TabsList className="w-full">
+                            <TabsTrigger value="sala" className="flex-1">Sala / Dia</TabsTrigger>
+                            <TabsTrigger value="equipa" className="flex-1">Equipa</TabsTrigger>
+                            <TabsTrigger value="checklist" className="flex-1">Checklist</TabsTrigger>
+                            <TabsTrigger value="plano" className="flex-1">Plano</TabsTrigger>
                         </TabsList>
 
                         {/* ── SALA / DIA ── */}
                         <TabsContent value="sala">
-                            <SectionCard color="border-blue-500" title="Sala / Dia">
-                                <Field label="Data" error={errors.data}>
-                                    <input type="date" name="data" value={data.data} onChange={handleChange} className={inputCls} required />
-                                </Field>
-                                <Field label="Hora (início)" error={errors.hora}>
-                                    <input type="time" name="hora" value={data.hora} onChange={handleChange} className={inputCls} required />
-                                </Field>
-                                <Field label="Especialidade" error={errors.especialidade}>
-                                    <input type="text" name="especialidade" value={data.especialidade} onChange={handleChange} className={inputCls} required />
-                                </Field>
-                                <Field label="Sala" error={errors.sala}>
-                                    <input type="text" name="sala" value={data.sala} onChange={handleChange} className={inputCls} required />
-                                </Field>
+                            <SectionCard icon={Calendar} title="Dados da Sessão" description="Data, hora e localização">
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <FormRow label="Data" error={errors.data}>
+                                        <input type="date" name="data" value={data.data} onChange={handleChange} className={inputCls} required />
+                                    </FormRow>
+                                    <FormRow label="Hora de início" error={errors.hora}>
+                                        <input type="time" name="hora" value={data.hora} onChange={handleChange} className={inputCls} required />
+                                    </FormRow>
+                                    <FormRow label="Especialidade" error={errors.especialidade}>
+                                        <input type="text" name="especialidade" value={data.especialidade} onChange={handleChange} className={inputCls} placeholder="ex: Cirurgia Geral" required />
+                                    </FormRow>
+                                    <FormRow label="Sala" error={errors.sala}>
+                                        <input type="text" name="sala" value={data.sala} onChange={handleChange} className={inputCls} placeholder="ex: Sala 3" required />
+                                    </FormRow>
+                                </div>
                             </SectionCard>
                         </TabsContent>
 
                         {/* ── EQUIPA ── */}
                         <TabsContent value="equipa">
-                            <SectionCard color="border-green-500" title="Equipa">
-                                <ToggleField
-                                    label="Dotação segura?"
-                                    name="equipa_segura"
-                                    checked={!!data.equipa_segura}
-                                    onCheckedChange={toggle('equipa_segura')}
-                                />
-                                <ToggleField
-                                    label="Alguma alteração de equipa que afecte o plano operatório?"
-                                    name="alteracao_equipa"
-                                    checked={!!data.alteracao_equipa}
-                                    onCheckedChange={toggle('alteracao_equipa')}
-                                />
-                                <Field label="Descrição da alteração de equipa" error={errors.descricao_alteracao_equipa} full>
-                                    <textarea
-                                        name="descricao_alteracao_equipa"
-                                        value={data.descricao_alteracao_equipa}
-                                        onChange={handleChange}
-                                        rows={3}
-                                        className={inputCls}
-                                    />
-                                </Field>
+                            <SectionCard icon={Users} title="Equipa" description="Constituição e alterações de equipa">
+                                <FormRow label="Dotação segura?">
+                                    <YesNo value={!!data.equipa_segura} onChange={toggle('equipa_segura')} />
+                                </FormRow>
+                                <FormRow label="Alguma alteração de equipa que afecte o plano operatório?">
+                                    <YesNo value={!!data.alteracao_equipa} onChange={toggle('alteracao_equipa')} />
+                                </FormRow>
+                                <FormRow label="Descrição da alteração de equipa" error={errors.descricao_alteracao_equipa}>
+                                    <textarea name="descricao_alteracao_equipa" value={data.descricao_alteracao_equipa} onChange={handleChange} rows={3} className={textareaCls} placeholder="Descreva se aplicável…" />
+                                </FormRow>
                             </SectionCard>
                         </TabsContent>
 
                         {/* ── CHECKLIST SALA ── */}
                         <TabsContent value="checklist">
-                            <SectionCard color="border-yellow-500" title="Checklist Sala Operatória">
-                                <ToggleField
-                                    label="Problemas identificados na sala?"
-                                    name="problemas_sala"
-                                    checked={!!data.problemas_sala}
-                                    onCheckedChange={toggle('problemas_sala')}
-                                />
-                                <Field label="Descrição dos problemas" error={errors.descricao_problemas} full>
-                                    <textarea
-                                        name="descricao_problemas"
-                                        value={data.descricao_problemas}
-                                        onChange={handleChange}
-                                        rows={3}
-                                        className={inputCls}
-                                    />
-                                </Field>
-                                <ToggleField
-                                    label="Equipamento, instrumental e consumíveis disponíveis e funcionantes?"
-                                    name="equipamento_ok"
-                                    checked={!!data.equipamento_ok}
-                                    onCheckedChange={toggle('equipamento_ok')}
-                                />
-                                <Field label="O que não está disponível / funcionante?" error={errors.descricao_equipamento} full>
-                                    <textarea
-                                        name="descricao_equipamento"
-                                        value={data.descricao_equipamento}
-                                        onChange={handleChange}
-                                        rows={3}
-                                        className={inputCls}
-                                    />
-                                </Field>
-                                <ToggleField
-                                    label="Mesa operatória emparelhada?"
-                                    name="mesa_emparelhada"
-                                    checked={!!data.mesa_emparelhada}
-                                    onCheckedChange={toggle('mesa_emparelhada')}
-                                />
+                            <SectionCard icon={ClipboardCheck} title="Checklist da Sala" description="Verificação pré-operatória">
+                                <FormRow label="Problemas identificados na sala?">
+                                    <YesNo value={!!data.problemas_sala} onChange={toggle('problemas_sala')} />
+                                </FormRow>
+                                <FormRow label="Descrição dos problemas" error={errors.descricao_problemas}>
+                                    <textarea name="descricao_problemas" value={data.descricao_problemas} onChange={handleChange} rows={3} className={textareaCls} placeholder="Descreva se aplicável…" />
+                                </FormRow>
+                                <FormRow label="Equipamento, instrumental e consumíveis disponíveis e funcionantes?">
+                                    <YesNo value={!!data.equipamento_ok} onChange={toggle('equipamento_ok')} />
+                                </FormRow>
+                                <FormRow label="O que não está disponível / funcionante?" error={errors.descricao_equipamento}>
+                                    <textarea name="descricao_equipamento" value={data.descricao_equipamento} onChange={handleChange} rows={3} className={textareaCls} placeholder="Indique o equipamento em falta ou avariado…" />
+                                </FormRow>
+                                <FormRow label="Mesa operatória emparelhada?">
+                                    <YesNo value={!!data.mesa_emparelhada} onChange={toggle('mesa_emparelhada')} />
+                                </FormRow>
                             </SectionCard>
                         </TabsContent>
 
                         {/* ── PLANO CIRÚRGICO ── */}
                         <TabsContent value="plano">
-                            <SectionCard color="border-purple-500" title="Plano Cirúrgico">
-                                <ToggleField
-                                    label="Ordem de doentes mantida?"
-                                    name="ordem_mantida"
-                                    checked={!!data.ordem_mantida}
-                                    onCheckedChange={toggle('ordem_mantida')}
-                                />
-                                <Field label="Alterações à ordem de doentes" error={errors.descricao_ordem} full>
-                                    <textarea
-                                        name="descricao_ordem"
-                                        value={data.descricao_ordem}
-                                        onChange={handleChange}
-                                        rows={3}
-                                        className={inputCls}
-                                    />
-                                </Field>
+                            <SectionCard icon={ListChecks} title="Plano Cirúrgico" description="Ordem e disposição dos doentes">
+                                <FormRow label="Ordem de doentes mantida?">
+                                    <YesNo value={!!data.ordem_mantida} onChange={toggle('ordem_mantida')} />
+                                </FormRow>
+                                <FormRow label="Alterações à ordem de doentes" error={errors.descricao_ordem}>
+                                    <textarea name="descricao_ordem" value={data.descricao_ordem} onChange={handleChange} rows={3} className={textareaCls} placeholder="Descreva as alterações se aplicável…" />
+                                </FormRow>
                             </SectionCard>
                         </TabsContent>
                     </Tabs>
 
                     {/* ── AÇÕES ── */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-3 sm:flex-row">
                         <button
                             type="submit"
                             disabled={processing}
-                            className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                            className="flex h-12 flex-1 items-center justify-center rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-blue-700 disabled:opacity-60"
                         >
-                            {processing ? 'A guardar…' : isEdit ? 'Actualizar' : 'Criar Briefing'}
+                            {processing ? 'A guardar…' : isEdit ? 'Actualizar Briefing' : 'Criar Briefing'}
                         </button>
-                        <Link href="/briefings" className="text-sm text-gray-500 hover:underline">
+                        <Link
+                            href="/briefings"
+                            className="flex h-12 items-center justify-center rounded-xl border border-gray-200 px-6 text-sm font-medium text-gray-600 transition-all duration-150 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                        >
                             Cancelar
                         </Link>
                     </div>

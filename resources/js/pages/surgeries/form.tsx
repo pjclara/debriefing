@@ -1,6 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { SectionCard, FormRow, YesNo, inputCls, selectCls, textareaCls } from '@/components/form-ui';
+import { User, FileText, Cpu } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
 interface BriefingContext {
@@ -45,17 +47,6 @@ interface Props {
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function SectionCard({ color, title, children }: { color: string; title: string; children: React.ReactNode }) {
-    return (
-        <div className={`rounded-xl border-l-4 ${color} bg-white p-6 shadow-sm dark:bg-gray-900`}>
-            <h2 className="mb-4 text-base font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-200">
-                {title}
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">{children}</div>
-        </div>
-    );
-}
-
 function Field({ label, error, children, full }: { label: string; error?: string; children: React.ReactNode; full?: boolean }) {
     return (
         <div className={full ? 'sm:col-span-2' : ''}>
@@ -65,9 +56,6 @@ function Field({ label, error, children, full }: { label: string; error?: string
         </div>
     );
 }
-
-const inputCls =
-    'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white';
 
 function CheckField({ label, name, checked, onChange }: {
     label: string;

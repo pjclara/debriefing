@@ -46,6 +46,11 @@ interface Props {
     flash?: { success?: string };
 }
 
+function formatDate(dateStr: string) {
+    const [year, month, day] = dateStr.substring(0, 10).split('-');
+    return `${day}/${month}/${year}`;
+}
+
 function Badge({ value }: { value: boolean }) {
     return (
         <span
@@ -78,12 +83,12 @@ export default function BriefingShow({ briefing, flash }: Props) {
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Briefings', href: '/briefings' },
-        { title: `${briefing.data} – Sala ${briefing.sala}`, href: '#' },
+        { title: `${formatDate(briefing.data)} – Sala ${briefing.sala}`, href: '#' },
     ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Briefing ${briefing.data}`} />
+            <Head title={`Briefing ${formatDate(briefing.data)}`} />
             <div className="mx-auto max-w-4xl p-6">
 
                 {flash?.success && (
@@ -96,7 +101,7 @@ export default function BriefingShow({ briefing, flash }: Props) {
                 <div className="mb-6 flex items-start justify-between">
                     <div>
                         <h1 className="text-2xl font-bold">
-                            {briefing.data} &mdash; {briefing.hora}
+                            {formatDate(briefing.data)} &mdash; {briefing.hora}
                         </h1>
                         <p className="text-sm text-gray-500">
                             {briefing.especialidade} &middot; Sala {briefing.sala}

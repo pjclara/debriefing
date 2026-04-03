@@ -1,6 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { SectionCard, FormRow, YesNo, inputCls, textareaCls } from '@/components/form-ui';
+import { AlertTriangle, Wrench, Clock, MessageSquare, AlertOctagon } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
 interface BriefingContext {
