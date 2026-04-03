@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+class Briefing extends Model
+{
+    protected $fillable = [
+        'data',
+        'hora',
+        'especialidade',
+        'sala',
+
+        'equipa_segura',
+        'alteracao_equipa',
+        'descricao_alteracao_equipa',
+
+        'problemas_sala',
+        'descricao_problemas',
+
+        'equipamento_ok',
+        'descricao_equipamento',
+
+        'mesa_emparelhada',
+
+        'ordem_mantida',
+        'descricao_ordem',
+    ];
+
+    protected $casts = [
+        'data'             => 'date',
+        'equipa_segura'    => 'boolean',
+        'alteracao_equipa' => 'boolean',
+        'problemas_sala'   => 'boolean',
+        'equipamento_ok'   => 'boolean',
+        'mesa_emparelhada' => 'boolean',
+        'ordem_mantida'    => 'boolean',
+    ];
+
+    public function surgeries(): HasMany
+    {
+        return $this->hasMany(Surgery::class);
+    }
+
+    public function debriefing(): HasOne
+    {
+        return $this->hasOne(Debriefing::class);
+    }
+}
