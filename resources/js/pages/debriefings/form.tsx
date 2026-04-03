@@ -1,7 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { SectionCard, FormRow, YesNo, inputCls, textareaCls } from '@/components/form-ui';
+import { FormRow, YesNo, inputCls, textareaCls } from '@/components/form-ui';
 import { AlertTriangle, Wrench, Clock, MessageSquare, AlertOctagon } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
@@ -40,7 +40,7 @@ interface Props {
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-function SectionCard({ color, title, children }: { color: string; title: string; children: React.ReactNode }) {
+function SectionTab({ color, title, children }: { color: string; title: string; children: React.ReactNode }) {
     return (
         <div className={`rounded-xl border-l-4 ${color} bg-white p-6 shadow-sm dark:bg-gray-900`}>
             <h2 className="mb-4 text-base font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-200">
@@ -60,9 +60,6 @@ function Field({ label, error, children, full }: { label: string; error?: string
         </div>
     );
 }
-
-const inputCls =
-    'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white';
 
 function CheckField({ label, name, checked, onChange }: {
     label: string;
@@ -156,7 +153,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
 
                         {/* ── COMPLICAÇÕES ── */}
                         <TabsContent value="complicacoes">
-                            <SectionCard color="border-orange-500" title="Complicações">
+                            <SectionTab color="border-orange-500" title="Complicações">
                                 <div className="flex flex-col gap-2 sm:col-span-2">
                                     <CheckField
                                         label="Complicações intra-operatórias?"
@@ -176,12 +173,12 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                         />
                                     </Field>
                                 )}
-                            </SectionCard>
+                            </SectionTab>
                         </TabsContent>
 
                         {/* ── FALHA DO SISTEMA ── */}
                         <TabsContent value="falha">
-                            <SectionCard color="border-red-500" title="Falha do Sistema Da Vinci Xi">
+                            <SectionTab color="border-red-500" title="Falha do Sistema Da Vinci Xi">
                                 <div className="flex flex-col gap-2 sm:col-span-2">
                                     <CheckField
                                         label="Falhas no sistema Da Vinci Xi?"
@@ -228,12 +225,12 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                         )}
                                     </>
                                 )}
-                            </SectionCard>
+                            </SectionTab>
                         </TabsContent>
 
                         {/* ── LISTA OPERATÓRIA ── */}
                         <TabsContent value="lista">
-                            <SectionCard color="border-yellow-500" title="Lista Operatória">
+                            <SectionTab color="border-yellow-500" title="Lista Operatória">
                                 <div className="flex flex-col gap-3 sm:col-span-2">
                                     <CheckField
                                         label="Iniciou a horas?"
@@ -272,12 +269,12 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                         />
                                     </Field>
                                 )}
-                            </SectionCard>
+                            </SectionTab>
                         </TabsContent>
 
                         {/* ── REFLEXÃO ── */}
                         <TabsContent value="reflexao">
-                            <SectionCard color="border-green-500" title="Reflexão da Sessão">
+                            <SectionTab color="border-green-500" title="Reflexão da Sessão">
                                 <Field label="O que correu bem?" error={errors.correu_bem} full>
                                     <textarea
                                         name="correu_bem"
@@ -311,12 +308,12 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                         className={inputCls}
                                     />
                                 </Field>
-                            </SectionCard>
+                            </SectionTab>
                         </TabsContent>
 
                         {/* ── EVENTO ADVERSO ── */}
                         <TabsContent value="evento">
-                            <SectionCard color="border-pink-600" title="Evento Adverso">
+                            <SectionTab color="border-pink-600" title="Evento Adverso">
                                 <div className="flex flex-col gap-2 sm:col-span-2">
                                     <CheckField
                                         label="Incidente / evento adverso que precise de ser notificado?"
@@ -336,7 +333,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                         />
                                     </Field>
                                 )}
-                            </SectionCard>
+                            </SectionTab>
                         </TabsContent>
                     </Tabs>
 

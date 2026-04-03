@@ -162,8 +162,7 @@ export default function BriefingShow({ briefing, flash }: Props) {
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gray-50 dark:bg-gray-800">
                                 <tr>
-                                    {['Processo', 'Procedimento', 'Destino', ''].map((h) => (
-                                        <th
+                                    {['Processo', 'Procedimento', 'Destino', ''].map((h) => (                                        <th
                                             key={h}
                                             className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300"
                                         >
@@ -179,6 +178,12 @@ export default function BriefingShow({ briefing, flash }: Props) {
                                         <td className="px-4 py-3 text-sm font-medium">{s.procedimento}</td>
                                         <td className="px-4 py-3 text-sm">{s.destino}</td>
                                         <td className="px-4 py-3 text-right text-sm">
+                                            <Link
+                                                href={`/surgeries/${s.id}/consumos`}
+                                                className="mr-3 text-purple-600 hover:underline"
+                                            >
+                                                Consumos
+                                            </Link>
                                             <Link
                                                 href={`/surgeries/${s.id}/edit`}
                                                 className="mr-3 text-blue-600 hover:underline"
