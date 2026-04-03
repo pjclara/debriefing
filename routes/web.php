@@ -6,6 +6,7 @@ use App\Http\Controllers\ConsumoController;
 use App\Http\Controllers\DebriefingController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SurgeryController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -57,6 +58,7 @@ Route::put('briefings/{briefing}/debriefing', [DebriefingController::class, 'upd
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::resource('users', UserController::class)->except(['show']);
 });
 
 require __DIR__.'/settings.php';

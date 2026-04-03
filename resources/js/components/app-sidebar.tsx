@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { ClipboardList, FlaskConical, LayoutGrid, PackageOpen } from 'lucide-react';
+import { ClipboardList, FlaskConical, LayoutGrid, PackageOpen, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -35,6 +35,11 @@ const mainNavItems: NavItem[] = [
         title: 'Catálogo de Consumíveis',
         href: '/consumiveis',
         icon: FlaskConical,
+    },
+    {
+        title: 'Utilizadores',
+        href: '/users',
+        icon: Users,
     },
 ];
 
