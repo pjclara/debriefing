@@ -1,6 +1,16 @@
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 
+interface Consumo {
+    id: number;
+    designacao: string;
+    referencia?: string;
+    quantidade: number;
+    unidade: string;
+    observacoes?: string;
+    consumivel?: { designacao: string; categoria: string };
+}
+
 interface Surgery {
     id: number;
     processo: string;
@@ -32,6 +42,7 @@ interface Surgery {
     b3?: string;
     b4?: string;
     equipamento_extra?: string;
+    consumos?: Consumo[];
 }
 
 interface Debriefing {
@@ -202,9 +213,41 @@ export default function BriefingPrint({ briefing }: { briefing: Briefing }) {
                                         {s.trocares != null && <Row label="Trócares" value={s.trocares} />}
                                         {s.otica && <Row label="Ótica" value={`${s.otica}°`} />}
                                         {instruments && <Row label="Instrumental robótico" value={instruments} />}
-                                        {s.equipamento_extra && <Row label="Equipamento extra" value={s.equipamento_extra} />}
+                                                {s.equipamento_extra && <Row label="Equipamento extra" value={s.equipamento_extra} />}
                                     </tbody>
                                 </table>
+
+                                {/* Consumíveis utilizados */}
+                                {s.consumos && s.consumos.length > 0 && (
+                                    <div style={{ marginTop: 8 }}>
+                                        <div style={{ fontSize: 10, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                                            Consumíveis utilizados
+                                        </div>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
+                                            <thead>
+                                                <tr style={{ background: '#f5f3ff' }}>
+                                                    <th style={{ padding: '3px 6px', textAlign: 'left', borderBottom: '1px solid #ddd6fe', color: '#6d28d9' }}>Designação</th>
+                                                    <th style={{ padding: '3px 6px', textAlign: 'left', borderBottom: '1px solid #ddd6fe', color: '#6d28d9' }}>Ref.</th>
+                                                    <th style={{ padding: '3px 6px', textAlign: 'center', borderBottom: '1px solid #ddd6fe', color: '#6d28d9' }}>Qtd.</th>
+                                                    <th style={{ padding: '3px 6px', textAlign: 'left', borderBottom: '1px solid #ddd6fe', color: '#6d28d9' }}>Un.</th>
+                                                    <th style={{ padding: '3px 6px', textAlign: 'left', borderBottom: '1px solid #ddd6fe', color: '#6d28d9' }}>Obs.</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {s.consumos.map((c, ci) => (
+                                                    <tr key={c.id} style={{ background: ci % 2 === 0 ? '#fff' : '#faf5ff' }}>
+                                                        <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6' }}>{c.consumivel?.designacao ?? c.designacao}</td>
+                                                        <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}>{c.referencia ?? '—'}</td>
+                                                        <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6', textAlign: 'center', fontWeight: 600 }}>{c.quantidade}</td>
+                                                        <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}>{c.unidade}</td>
+                                                        <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}>{c.observacoes ?? '—'}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
                                 {/* Indicadores clínicos */}
                                 {[
                                     { flag: s.antecedentes_relevantes, label: 'Antecedentes de relevo', desc: s.descricao_antecedentes },

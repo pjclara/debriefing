@@ -1,6 +1,25 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { Pencil, Trash2, Plus, X, Check } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
+
+interface Consumivel {
+    id: number;
+    designacao: string;
+    categoria: string;
+    unidade: string;
+}
+
+interface Consumo {
+    id: number;
+    consumivel_id?: number;
+    designacao: string;
+    referencia?: string;
+    quantidade: number | string;
+    unidade: string;
+    observacoes?: string;
+}
 
 interface Surgery {
     id: number;
@@ -15,6 +34,7 @@ interface Surgery {
     descricao_variacoes?: string;
     passos_criticos: boolean;
     descricao_passos?: string;
+    consumos?: Consumo[];
 }
 
 interface Debriefing {
@@ -51,6 +71,7 @@ interface Briefing {
 
 interface Props {
     briefing: Briefing;
+    consumiveis: Consumivel[];
     flash?: { success?: string };
 }
 
@@ -92,7 +113,217 @@ function Row({
     );
 }
 
-export default function BriefingShow({ briefing, flash }: Props) {
+// ─── Constantes ───────────────────────────────────────────────────────────────
+
+const CATEGORIA_LABELS: Record<string, string> = {
+    robotico_vidas:       'Itens Robóticos com Vidas',
+    robotico_descartavel: 'Consumíveis Robóticos Descartáveis',
+    extra:                'Extras',
+};
+
+const fieldCls =
+    'w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs focus:border-blue-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
+
+// ─── Formulário inline de consumo ─────────────────────────────────────────────
+
+function ConsumoInlineForm({
+    surgeryId,
+    consumiveis,
+    editing,
+    onCancel,
+}: {
+    surgeryId: number;
+    consumiveis: Consumivel[];
+    editing?: Consumo;
+    onCancel: () => void;
+}) {
+    const isEdit = !!editing?.id;
+
+    const { data, setData, post, put, processing, errors, reset } = useForm({
+        consumivel_id: editing?.consumivel_id ? String(editing.consumivel_id) : '',
+        designacao:    editing?.designacao  ?? '',
+        referencia:    editing?.referencia  ?? '',
+        quantidade:    editing?.quantidade  ?? 1,
+        unidade:       editing?.unidade     ?? 'un',
+        observacoes:   editing?.observacoes ?? '',
+    });
+
+    const grupos = Object.entries(CATEGORIA_LABELS).map(([cat, label]) => ({
+        label,
+        items: consumiveis.filter((c) => c.categoria === cat),
+    })).filter((g) => g.items.length > 0);
+
+    function handleConsumivelChange(e: React.ChangeEvent<HTMLSelectElement>) {
+        const id = e.target.value;
+        if (id) {
+            const found = consumiveis.find((c) => String(c.id) === id);
+            if (found) {
+                setData((prev) => ({ ...prev, consumivel_id: id, designacao: found.designacao, unidade: found.unidade }));
+                return;
+            }
+        }
+        setData((prev) => ({ ...prev, consumivel_id: id }));
+    }
+
+    function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        if (isEdit) {
+            put(`/surgeries/${surgeryId}/consumos/${editing!.id}`, {
+                onSuccess: () => { reset(); onCancel(); },
+            });
+        } else {
+            post(`/surgeries/${surgeryId}/consumos`, {
+                onSuccess: () => { reset(); onCancel(); },
+            });
+        }
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+            <div className="grid gap-2">
+                {!isEdit && (
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Catálogo</label>
+                        <select value={data.consumivel_id} onChange={handleConsumivelChange} className={fieldCls}>
+                            <option value="">— Manual —</option>
+                            {grupos.map((g) => (
+                                <optgroup key={g.label} label={g.label}>
+                                    {g.items.map((c) => (
+                                        <option key={c.id} value={String(c.id)}>{c.designacao}</option>
+                                    ))}
+                                </optgroup>
+                            ))}
+                        </select>
+                    </div>
+                )}
+                <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Designação *</label>
+                    <input type="text" value={data.designacao} onChange={(e) => setData('designacao', e.target.value)} className={fieldCls} required />
+                    {errors.designacao && <p className="mt-0.5 text-xs text-red-500">{errors.designacao}</p>}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Ref.</label>
+                        <input type="text" value={data.referencia} onChange={(e) => setData('referencia', e.target.value)} className={fieldCls} />
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Qtd. *</label>
+                        <input type="number" value={data.quantidade as string} onChange={(e) => setData('quantidade', e.target.value)} className={fieldCls} min="0.01" step="0.01" required />
+                        {errors.quantidade && <p className="mt-0.5 text-xs text-red-500">{errors.quantidade}</p>}
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Un. *</label>
+                        <input type="text" value={data.unidade} onChange={(e) => setData('unidade', e.target.value)} className={fieldCls} required />
+                    </div>
+                </div>
+                <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Observações</label>
+                    <input type="text" value={data.observacoes} onChange={(e) => setData('observacoes', e.target.value)} className={fieldCls} />
+                </div>
+            </div>
+            <div className="mt-2 flex justify-end gap-2">
+                <button type="button" onClick={onCancel} className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs text-gray-500 hover:text-gray-700">
+                    <X className="h-3 w-3" /> Cancelar
+                </button>
+                <button type="submit" disabled={processing} className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+                    <Check className="h-3 w-3" /> {isEdit ? 'Guardar' : 'Adicionar'}
+                </button>
+            </div>
+        </form>
+    );
+}
+
+// ─── Painel de consumos por cirurgia ─────────────────────────────────────────
+
+function SurgeryConsumosPanel({
+    surgery,
+    consumiveis,
+}: {
+    surgery: Surgery;
+    consumiveis: Consumivel[];
+}) {
+    const [showAdd, setShowAdd] = useState(false);
+    const [editingId, setEditingId] = useState<number | null>(null);
+
+    const consumos = surgery.consumos ?? [];
+
+    function handleDelete(consumoId: number) {
+        if (confirm('Eliminar este consumo?')) {
+            router.delete(`/surgeries/${surgery.id}/consumos/${consumoId}`);
+        }
+    }
+
+    return (
+        <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-700">
+            <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Consumíveis{consumos.length > 0 ? ` (${consumos.length})` : ''}
+                </span>
+                {!showAdd && editingId === null && (
+                    <button
+                        onClick={() => setShowAdd(true)}
+                        className="flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400"
+                    >
+                        <Plus className="h-3 w-3" />
+                        Adicionar
+                    </button>
+                )}
+            </div>
+
+            {consumos.length > 0 && (
+                <div className="mb-2 flex flex-col gap-1">
+                    {consumos.map((c) =>
+                        editingId === c.id ? (
+                            <ConsumoInlineForm
+                                key={c.id}
+                                surgeryId={surgery.id}
+                                consumiveis={consumiveis}
+                                editing={c}
+                                onCancel={() => setEditingId(null)}
+                            />
+                        ) : (
+                            <div key={c.id} className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5 dark:bg-gray-800/50">
+                                <div className="min-w-0 flex-1">
+                                    <span className="text-xs font-medium text-gray-800 dark:text-gray-200">{c.designacao}</span>
+                                    <span className="ml-2 text-xs text-gray-500">{c.quantidade} {c.unidade}</span>
+                                    {c.referencia && (
+                                        <span className="ml-2 text-xs text-gray-400">Ref: {c.referencia}</span>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => { setShowAdd(false); setEditingId(c.id); }}
+                                    className="rounded p-0.5 text-gray-400 hover:text-blue-600"
+                                    title="Editar"
+                                >
+                                    <Pencil className="h-3 w-3" />
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(c.id)}
+                                    className="rounded p-0.5 text-gray-400 hover:text-red-600"
+                                    title="Eliminar"
+                                >
+                                    <Trash2 className="h-3 w-3" />
+                                </button>
+                            </div>
+                        )
+                    )}
+                </div>
+            )}
+
+            {showAdd && (
+                <ConsumoInlineForm
+                    surgeryId={surgery.id}
+                    consumiveis={consumiveis}
+                    onCancel={() => setShowAdd(false)}
+                />
+            )}
+        </div>
+    );
+}
+
+// ─── Página principal ─────────────────────────────────────────────────────────
+
+export default function BriefingShow({ briefing, consumiveis, flash }: Props) {
     function confirmDeleteSurgery(id: number) {
         if (confirm('Eliminar esta cirurgia?')) {
             router.delete(`/surgeries/${id}`);
@@ -260,6 +491,8 @@ export default function BriefingShow({ briefing, flash }: Props) {
                                             </div>
                                         )}
 
+                                        <SurgeryConsumosPanel surgery={s} consumiveis={consumiveis} />
+
                                         <div className="mt-3 flex items-center gap-3 border-t border-gray-100 pt-2 dark:border-gray-700">
                                             <Link
                                                 href={`/surgeries/${s.id}/edit`}
@@ -275,8 +508,7 @@ export default function BriefingShow({ briefing, flash }: Props) {
                                             >
                                                 Eliminar
                                             </button>
-                                        </div>
-                                    </div>
+                                        </div>                                    </div>
                                 ))}
                             </div>
                         )}

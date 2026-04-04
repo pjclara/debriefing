@@ -46,7 +46,7 @@ class ConsumoController extends Controller
 
         $this->recalcularSeNecessario($request->input('consumivel_id'));
 
-        return redirect()->route('surgeries.consumos.index', $surgery)
+        return redirect()->back()
             ->with('success', 'Consumo adicionado.');
     }
 
@@ -61,7 +61,7 @@ class ConsumoController extends Controller
             $this->recalcularSeNecessario($request->input('consumivel_id'));
         }
 
-        return redirect()->route('surgeries.consumos.index', $surgery)
+        return redirect()->back()
             ->with('success', 'Consumo actualizado.');
     }
 
@@ -72,7 +72,7 @@ class ConsumoController extends Controller
 
         $this->recalcularSeNecessario($consumivelId);
 
-        return redirect()->route('surgeries.consumos.index', $surgery)
+        return redirect()->back()
             ->with('success', 'Consumo eliminado.');
     }
 
