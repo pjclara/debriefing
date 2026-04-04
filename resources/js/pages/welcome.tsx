@@ -62,7 +62,7 @@ export default function Welcome({}: { canRegister?: boolean }) {
                                     href={dashboard()}
                                     className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-blue-700 hover:shadow-md active:scale-95"
                                 >
-                                    Dashboard <ChevronRight size={15} />
+                                    Painel de controlo<ChevronRight size={15} />
                                 </Link>
                             ) : (
                                 <Link
