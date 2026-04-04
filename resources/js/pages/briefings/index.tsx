@@ -92,12 +92,7 @@ export default function BriefingsIndex({ briefings, flash }: Props) {
                                             >
                                                 Ver
                                             </Link>
-                                            <Link
-                                                href={`/briefings/${b.id}/edit`}
-                                                className="mr-3 text-gray-600 hover:underline"
-                                            >
-                                                Editar
-                                            </Link>
+
                                             {isAdmin && (
                                             <button
                                                 onClick={() => confirmDelete(b.id)}
