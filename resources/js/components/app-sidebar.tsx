@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { ClipboardList, FlaskConical, LayoutGrid, PackageOpen, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -13,9 +13,9 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import type { Auth, NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const allNavItems: (NavItem & { adminOnly?: boolean })[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
@@ -30,20 +30,27 @@ const mainNavItems: NavItem[] = [
         title: 'Consumos',
         href: '/consumos',
         icon: PackageOpen,
+        adminOnly: true,
     },
     {
         title: 'Catálogo de Consumíveis',
         href: '/consumiveis',
         icon: FlaskConical,
+        adminOnly: true,
     },
     {
         title: 'Utilizadores',
         href: '/users',
         icon: Users,
+        adminOnly: true,
     },
 ];
 
 export function AppSidebar() {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const isAdmin = auth.user?.role === 'admin';
+    const navItems = allNavItems.filter((item) => !item.adminOnly || isAdmin);
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -59,7 +66,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={navItems} />
             </SidebarContent>
 
             <SidebarFooter>

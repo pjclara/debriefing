@@ -8,6 +8,7 @@ interface User {
     id: number;
     name: string;
     email: string;
+    role: string;
     email_verified_at: string | null;
     created_at: string;
 }
@@ -85,6 +86,13 @@ export default function UsersIndex({ users, flash }: Props) {
                                             </p>
                                             <p className="truncate text-xs text-gray-500">{u.email}</p>
                                         </div>
+                                        <span className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                            u.role === 'admin'
+                                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                                        }`}>
+                                            {u.role === 'admin' ? 'Admin' : 'User'}
+                                        </span>
                                         {u.email_verified_at ? (
                                             <span title="Email verificado" className="ml-auto shrink-0 text-green-500">
                                                 <ShieldCheck size={15} />

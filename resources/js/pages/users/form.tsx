@@ -1,13 +1,14 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { UserCog } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
-import { SectionCard, FormRow, inputCls } from '@/components/form-ui';
+import { SectionCard, FormRow, inputCls, selectCls } from '@/components/form-ui';
 import type { BreadcrumbItem } from '@/types';
 
 interface User {
     id?: number;
     name?: string;
     email?: string;
+    role?: string;
 }
 
 interface Props {
@@ -20,6 +21,7 @@ export default function UserForm({ user }: Props) {
     const { data, setData, post, put, processing, errors } = useForm({
         name:                  user?.name  ?? '',
         email:                 user?.email ?? '',
+        role:                  user?.role  ?? 'user',
         password:              '',
         password_confirmation: '',
     });
@@ -70,6 +72,18 @@ export default function UserForm({ user }: Props) {
                                 required
                                 autoComplete="off"
                             />
+                        </FormRow>
+
+                        <FormRow label="Perfil (Role)" error={errors.role}>
+                            <select
+                                value={data.role}
+                                onChange={e => setData('role', e.target.value)}
+                                className={selectCls}
+                                required
+                            >
+                                <option value="user">Utilizador</option>
+                                <option value="admin">Administrador</option>
+                            </select>
                         </FormRow>
 
                         <FormRow

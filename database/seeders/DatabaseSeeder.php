@@ -13,12 +13,28 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        User::firstOrCreate(
+            ['email' => 'admin@robot.local'],
+            [
+                'name'     => 'Administrador',
+                'password' => \Illuminate\Support\Facades\Hash::make('admin1234'),
+                'role'     => 'admin',
+                'email_verified_at' => now(),
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // user
+            User::firstOrCreate(
+                ['email' => 'user@robot.local'],
+                [
+                    'name'     => 'Utilizador',
+                    'password' => \Illuminate\Support\Facades\Hash::make('user1234'),
+                    'role'     => 'user',
+                    'email_verified_at' => now(),
+                ]
+            );
+
+
 
         $this->call(ConsumivelSeeder::class);
     }

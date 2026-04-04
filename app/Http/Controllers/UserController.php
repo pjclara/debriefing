@@ -13,7 +13,7 @@ class UserController extends Controller
 {
     public function index(): Response
     {
-        $users = User::orderBy('name')->get(['id', 'name', 'email', 'created_at', 'email_verified_at']);
+        $users = User::orderBy('name')->get(['id', 'name', 'email', 'role', 'created_at', 'email_verified_at']);
 
         return Inertia::render('users/index', [
             'users' => $users,
@@ -40,7 +40,7 @@ class UserController extends Controller
     public function edit(User $user): Response
     {
         return Inertia::render('users/form', [
-            'user' => $user->only('id', 'name', 'email'),
+            'user' => $user->only('id', 'name', 'email', 'role'),
         ]);
     }
 

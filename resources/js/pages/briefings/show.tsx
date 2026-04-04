@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Pencil, Trash2, Plus, X, Check } from 'lucide-react';
-import type { BreadcrumbItem } from '@/types';
+import type { Auth, BreadcrumbItem } from '@/types';
 
 interface Consumivel {
     id: number;
@@ -324,6 +324,9 @@ function SurgeryConsumosPanel({
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function BriefingShow({ briefing, consumiveis, flash }: Props) {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const isAdmin = auth.user?.role === 'admin';
+
     function confirmDeleteSurgery(id: number) {
         if (confirm('Eliminar esta cirurgia?')) {
             router.delete(`/surgeries/${id}`);
@@ -500,6 +503,7 @@ export default function BriefingShow({ briefing, consumiveis, flash }: Props) {
                                             >
                                                 Editar
                                             </Link>
+                                            {isAdmin && (
                                             <button
                                                 onClick={() =>
                                                     confirmDeleteSurgery(s.id)
@@ -508,6 +512,7 @@ export default function BriefingShow({ briefing, consumiveis, flash }: Props) {
                                             >
                                                 Eliminar
                                             </button>
+                                            )}
                                         </div>                                    </div>
                                 ))}
                             </div>

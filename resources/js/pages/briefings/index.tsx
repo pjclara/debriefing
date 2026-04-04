@@ -1,6 +1,6 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
+import type { Auth, BreadcrumbItem } from '@/types';
 
 interface Briefing {
     id: number;
@@ -21,6 +21,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function BriefingsIndex({ briefings, flash }: Props) {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const isAdmin = auth.user?.role === 'admin';
+
     function confirmDelete(id: number) {
         if (confirm('Eliminar este briefing e todas as cirurgias associadas?')) {
             router.delete(`/briefings/${id}`);
@@ -95,12 +98,14 @@ export default function BriefingsIndex({ briefings, flash }: Props) {
                                             >
                                                 Editar
                                             </Link>
+                                            {isAdmin && (
                                             <button
                                                 onClick={() => confirmDelete(b.id)}
                                                 className="text-red-500 hover:underline"
                                             >
                                                 Eliminar
                                             </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

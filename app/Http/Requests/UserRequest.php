@@ -20,6 +20,7 @@ class UserRequest extends FormRequest
         return [
             'name'                  => ['required', 'string', 'max:255'],
             'email'                 => ['required', 'email', 'max:255', "unique:users,email,{$userId}"],
+            'role'                  => ['required', 'in:admin,user'],
             'password'              => $isUpdate
                 ? ['nullable', 'string', Password::defaults(), 'confirmed']
                 : ['required', 'string', Password::defaults(), 'confirmed'],
