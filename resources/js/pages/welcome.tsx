@@ -1,6 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { dashboard, login, register } from '@/routes';
-import { Shield, ClipboardList, PackageOpen, Activity, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Shield, ClipboardList, PackageOpen, Activity, ChevronRight, CheckCircle2, ArrowDown } from 'lucide-react';
 
 const features = [
     {
@@ -50,11 +50,11 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                             </div>
                             <span className="font-semibold tracking-tight text-gray-900">Bloco Operatório</span>
                         </div>
-                        <nav className="flex items-center gap-3">
+                        <nav className="flex items-center gap-2">
                             {auth.user ? (
                                 <Link
                                     href={dashboard()}
-                                    className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-700"
+                                    className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-blue-700 hover:shadow-md active:scale-95"
                                 >
                                     Dashboard <ChevronRight size={15} />
                                 </Link>
@@ -62,16 +62,16 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                 <>
                                     <Link
                                         href={login()}
-                                        className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                        className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-all duration-150 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95"
                                     >
                                         Entrar
                                     </Link>
                                     {canRegister && (
                                         <Link
                                             href={register()}
-                                            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-700"
+                                            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-blue-700 hover:shadow-md active:scale-95"
                                         >
-                                            Registar
+                                            Criar conta
                                         </Link>
                                     )}
                                 </>
@@ -103,17 +103,30 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                         {auth.user ? (
                             <Link
                                 href={dashboard()}
-                                className="flex items-center gap-2 rounded-xl bg-blue-600 px-7 py-3.5 text-base font-semibold hover:bg-blue-700"
+                                className="group flex items-center gap-2 rounded-xl bg-blue-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-600/20 transition-all duration-200 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/40 hover:ring-blue-600/30 active:scale-95"
                             >
-                                Ir para o Dashboard <ChevronRight size={18} />
+                                Ir para o Dashboard
+                                <ChevronRight size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
                             </Link>
                         ) : (
-                            <Link
-                                href={login()}
-                                className="flex items-center gap-2 rounded-xl bg-blue-600 px-7 py-3.5 text-base font-semibold hover:bg-blue-700"
-                            >
-                                Aceder ao Sistema <ChevronRight size={18} />
-                            </Link>
+                            <>
+                                <Link
+                                    href={login()}
+                                    className="group flex items-center gap-2 rounded-xl bg-blue-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-500/30 ring-2 ring-blue-600/20 transition-all duration-200 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/40 hover:ring-blue-600/30 active:scale-95"
+                                >
+                                    Aceder ao Sistema
+                                    <ChevronRight size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+                                </Link>
+                                {canRegister && (
+                                    <a
+                                        href="#features"
+                                        className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3.5 text-base font-semibold text-gray-600 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md active:scale-95"
+                                    >
+                                        Saber mais
+                                        <ArrowDown size={16} className="animate-bounce" />
+                                    </a>
+                                )}
+                            </>
                         )}
                     </div>
 
@@ -132,7 +145,7 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                 </div>
 
                 {/* FEATURES */}
-                <section className="px-6 py-20">
+                <section id="features" className="px-6 py-20">
                     <div className="mx-auto max-w-6xl">
                         <h2 className="mb-12 text-center text-2xl font-bold text-gray-900">
                             Funcionalidades principais

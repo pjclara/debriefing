@@ -40,6 +40,13 @@ class BriefingController extends Controller
         return Inertia::render('briefings/show', ['briefing' => $briefing]);
     }
 
+    public function print(Briefing $briefing): Response
+    {
+        $briefing->load('surgeries', 'debriefing');
+
+        return Inertia::render('briefings/print', ['briefing' => $briefing]);
+    }
+
     public function edit(Briefing $briefing): Response
     {
         return Inertia::render('briefings/form', ['briefing' => $briefing]);

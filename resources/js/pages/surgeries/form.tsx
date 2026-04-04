@@ -20,6 +20,12 @@ interface Surgery {
     destino?: string;
     antecedentes_relevantes?: boolean;
     descricao_antecedentes?: string;
+    comorbidades?: boolean;
+    descricao_comorbidades?: string;
+    variacoes_tecnicas?: boolean;
+    descricao_variacoes?: string;
+    passos_criticos?: boolean;
+    descricao_passos?: string;
     consentimento?: boolean;
     lateralidade?: string;
     medicacao_suspensa?: boolean;
@@ -89,6 +95,12 @@ export default function SurgeryForm({ briefing, surgery }: Props) {
 
         antecedentes_relevantes: surgery?.antecedentes_relevantes ?? false,
         descricao_antecedentes: surgery?.descricao_antecedentes ?? '',
+        comorbidades: surgery?.comorbidades ?? false,
+        descricao_comorbidades: surgery?.descricao_comorbidades ?? '',
+        variacoes_tecnicas: surgery?.variacoes_tecnicas ?? false,
+        descricao_variacoes: surgery?.descricao_variacoes ?? '',
+        passos_criticos: surgery?.passos_criticos ?? false,
+        descricao_passos: surgery?.descricao_passos ?? '',
 
         consentimento: surgery?.consentimento ?? false,
         lateralidade: surgery?.lateralidade ?? 'N/A',
@@ -165,25 +177,48 @@ export default function SurgeryForm({ briefing, surgery }: Props) {
                                 <Field label="Destino" error={errors.destino}>
                                     <input type="text" name="destino" value={data.destino} onChange={handleChange} className={inputCls} required />
                                 </Field>
-                                <div className="flex flex-col gap-3 sm:col-span-2">
-                                    <CheckField
-                                        label="Antecedentes de relevo / comorbidades / variações técnicas / passos críticos identificados?"
-                                        name="antecedentes_relevantes"
-                                        checked={!!data.antecedentes_relevantes}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                {data.antecedentes_relevantes && (
-                                    <Field label="Descrição" error={errors.descricao_antecedentes} full>
-                                        <textarea
-                                            name="descricao_antecedentes"
-                                            value={data.descricao_antecedentes}
-                                            onChange={handleChange}
-                                            rows={3}
-                                            className={inputCls}
-                                        />
-                                    </Field>
-                                )}
+
+                                {/* ── 4 campos clínicos ── */}
+                                {(
+                                    [
+                                        { flag: 'antecedentes_relevantes', desc: 'descricao_antecedentes',  label: 'Antecedentes de relevo' },
+                                        { flag: 'comorbidades',            desc: 'descricao_comorbidades', label: 'Comorbidades' },
+                                        { flag: 'variacoes_tecnicas',      desc: 'descricao_variacoes',    label: 'Variações técnicas' },
+                                        { flag: 'passos_criticos',         desc: 'descricao_passos',       label: 'Passos críticos identificados' },
+                                    ] as const
+                                ).map(({ flag, desc, label }) => (
+                                    <div key={flag} className="flex flex-col gap-2 sm:col-span-2 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+                                        <div className="flex items-center justify-between gap-4">
+                                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</span>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setData(flag, true)}
+                                                    className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${data[flag] ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:hover:bg-green-900/30'}`}
+                                                >
+                                                    Sim
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setData(flag, false)}
+                                                    className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${!data[flag] ? 'bg-gray-500 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300 dark:bg-gray-700'}`}
+                                                >
+                                                    Não
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {data[flag] && (
+                                            <textarea
+                                                name={desc}
+                                                value={data[desc] as string}
+                                                onChange={handleChange}
+                                                rows={2}
+                                                placeholder="Descreva..."
+                                                className={inputCls}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
                             </SectionCard>
                         </TabsContent>
 

@@ -18,8 +18,14 @@ class SurgeryRequest extends FormRequest
             'procedimento'           => ['required', 'string', 'max:255'],
             'destino'                => ['required', 'string', 'max:255'],
 
-            'antecedentes_relevantes' => ['boolean'],
-            'descricao_antecedentes'  => ['nullable', 'string'],
+            'antecedentes_relevantes'  => ['boolean'],
+            'descricao_antecedentes'   => ['nullable', 'string'],
+            'comorbidades'             => ['boolean'],
+            'descricao_comorbidades'   => ['nullable', 'string'],
+            'variacoes_tecnicas'       => ['boolean'],
+            'descricao_variacoes'      => ['nullable', 'string'],
+            'passos_criticos'          => ['boolean'],
+            'descricao_passos'         => ['nullable', 'string'],
 
             'consentimento'          => ['boolean'],
             'lateralidade'           => ['required', 'in:N/A,Direito,Esquerdo'],
@@ -46,7 +52,8 @@ class SurgeryRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $booleans = [
-            'antecedentes_relevantes', 'consentimento', 'medicacao_suspensa', 'profilaxia', 'reserva_ativa',
+            'antecedentes_relevantes', 'comorbidades', 'variacoes_tecnicas', 'passos_criticos',
+            'consentimento', 'medicacao_suspensa', 'profilaxia', 'reserva_ativa',
         ];
 
         $this->merge(array_map(

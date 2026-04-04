@@ -17,6 +17,12 @@ class Surgery extends Model
 
         'antecedentes_relevantes',
         'descricao_antecedentes',
+        'comorbidades',
+        'descricao_comorbidades',
+        'variacoes_tecnicas',
+        'descricao_variacoes',
+        'passos_criticos',
+        'descricao_passos',
 
         'consentimento',
         'lateralidade',
@@ -41,6 +47,9 @@ class Surgery extends Model
 
     protected $casts = [
         'antecedentes_relevantes' => 'boolean',
+        'comorbidades'            => 'boolean',
+        'variacoes_tecnicas'      => 'boolean',
+        'passos_criticos'         => 'boolean',
         'consentimento'           => 'boolean',
         'medicacao_suspensa'      => 'boolean',
         'profilaxia'              => 'boolean',

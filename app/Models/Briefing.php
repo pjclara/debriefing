@@ -31,7 +31,7 @@ class Briefing extends Model
     ];
 
     protected $casts = [
-        'data'             => 'date',
+        'data'             => 'date:Y-m-d',
         'equipa_segura'    => 'boolean',
         'alteracao_equipa' => 'boolean',
         'problemas_sala'   => 'boolean',

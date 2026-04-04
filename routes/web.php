@@ -15,6 +15,8 @@ Route::inertia('/', 'welcome', [
 ])->name('home');
 
 Route::resource('briefings', BriefingController::class);
+Route::get('briefings/{briefing}/print', [BriefingController::class, 'print'])
+    ->name('briefings.print');
 
 // Catálogo de consumíveis
 Route::resource('consumiveis', ConsumivelController::class)->except(['show']);
