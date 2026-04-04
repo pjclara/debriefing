@@ -1,6 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { dashboard, login, register } from '@/routes';
-import { Shield, ClipboardList, PackageOpen, Activity, ChevronRight, CheckCircle2, ArrowDown } from 'lucide-react';
+import { dashboard, login } from '@/routes';
+import { Shield, ClipboardList, PackageOpen, Activity, ChevronRight, CheckCircle2, ArrowDown, BookOpen } from 'lucide-react';
 
 const features = [
     {
@@ -33,7 +33,7 @@ const checkItems = [
     'Registo de complicações e eventos adversos',
 ];
 
-export default function Welcome({ canRegister = true }: { canRegister?: boolean }) {
+export default function Welcome({}: { canRegister?: boolean }) {
     const { auth } = usePage().props;
 
     return (
@@ -51,6 +51,12 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                             <span className="font-semibold tracking-tight text-gray-900">Bloco Operatório</span>
                         </div>
                         <nav className="flex items-center gap-2">
+                            <Link
+                                href="/guide"
+                                className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-all duration-150 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                                <BookOpen size={14} /> Guia
+                            </Link>
                             {auth.user ? (
                                 <Link
                                     href={dashboard()}
@@ -59,22 +65,12 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                     Dashboard <ChevronRight size={15} />
                                 </Link>
                             ) : (
-                                <>
-                                    <Link
-                                        href={login()}
-                                        className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-all duration-150 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95"
-                                    >
-                                        Entrar
-                                    </Link>
-                                    {canRegister && (
-                                        <Link
-                                            href={register()}
-                                            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-blue-700 hover:shadow-md active:scale-95"
-                                        >
-                                            Criar conta
-                                        </Link>
-                                    )}
-                                </>
+                                <Link
+                                    href={login()}
+                                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-all duration-150 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95"
+                                >
+                                    Entrar
+                                </Link>
                             )}
                         </nav>
                     </div>
@@ -117,15 +113,13 @@ export default function Welcome({ canRegister = true }: { canRegister?: boolean 
                                     Aceder ao Sistema
                                     <ChevronRight size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
                                 </Link>
-                                {canRegister && (
-                                    <a
-                                        href="#features"
-                                        className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3.5 text-base font-semibold text-gray-600 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md active:scale-95"
-                                    >
-                                        Saber mais
-                                        <ArrowDown size={16} className="animate-bounce" />
-                                    </a>
-                                )}
+                                <a
+                                    href="#features"
+                                    className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3.5 text-base font-semibold text-gray-600 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md active:scale-95"
+                                >
+                                    Saber mais
+                                    <ArrowDown size={16} className="animate-bounce" />
+                                </a>
                             </>
                         )}
                     </div>
