@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { Pencil, Trash2, Plus, X, Check } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Check, Search } from 'lucide-react';
 import type { Auth, BreadcrumbItem } from '@/types';
 
 interface Consumivel {
@@ -124,6 +124,119 @@ const CATEGORIA_LABELS: Record<string, string> = {
 const fieldCls =
     'w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs focus:border-blue-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
 
+// ─── Combobox pesquisável para catálogo ───────────────────────────────────────
+
+function CatalogCombobox({
+    consumiveis,
+    value,
+    onChange,
+}: {
+    consumiveis: Consumivel[];
+    value: string;
+    onChange: (id: string, item?: Consumivel) => void;
+}) {
+    const [query, setQuery] = useState('');
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const selected = value ? consumiveis.find((c) => String(c.id) === value) : null;
+    const displayQuery = open ? query : (selected?.designacao ?? '');
+
+    const filtered = query.trim() === ''
+        ? consumiveis
+        : consumiveis.filter((c) =>
+            c.designacao.toLowerCase().includes(query.toLowerCase()) ||
+            c.categoria.toLowerCase().includes(query.toLowerCase())
+          );
+
+    // Agrupar por categoria
+    const grupos = Object.entries(CATEGORIA_LABELS)
+        .map(([cat, label]) => ({ label, items: filtered.filter((c) => c.categoria === cat) }))
+        .filter((g) => g.items.length > 0);
+
+    // Fechar ao clicar fora
+    useEffect(() => {
+        function handleClick(e: MouseEvent) {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+                setQuery('');
+            }
+        }
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, []);
+
+    function handleSelect(item: Consumivel) {
+        onChange(String(item.id), item);
+        setQuery('');
+        setOpen(false);
+    }
+
+    function handleClear() {
+        onChange('');
+        setQuery('');
+        setOpen(false);
+    }
+
+    return (
+        <div ref={ref} className="relative">
+            <div className="flex items-center rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                <Search className="ml-2 h-3 w-3 shrink-0 text-gray-400" />
+                <input
+                    type="text"
+                    className="flex-1 bg-transparent px-2 py-1.5 text-xs focus:outline-none dark:text-gray-100"
+                    placeholder={selected ? selected.designacao : 'Pesquisar catálogo…'}
+                    value={open ? query : (selected ? selected.designacao : '')}
+                    onFocus={() => { setOpen(true); setQuery(''); }}
+                    onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+                />
+                {selected && !open && (
+                    <button type="button" onClick={handleClear} className="mr-1.5 rounded p-0.5 text-gray-400 hover:text-gray-600">
+                        <X className="h-3 w-3" />
+                    </button>
+                )}
+            </div>
+            {selected && !open && (
+                <p className="mt-0.5 text-xs text-blue-600 dark:text-blue-400">
+                    Catálogo: <span className="font-medium">{CATEGORIA_LABELS[selected.categoria] ?? selected.categoria}</span>
+                </p>
+            )}
+            {open && (
+                <div className="absolute z-50 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                    <div
+                        className="cursor-pointer px-3 py-2 text-xs text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                        onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
+                    >
+                        — Manual (sem catálogo) —
+                    </div>
+                    {grupos.length === 0 && (
+                        <div className="px-3 py-2 text-xs text-gray-400">Sem resultados</div>
+                    )}
+                    {grupos.map((g) => (
+                        <div key={g.label}>
+                            <div className="bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
+                                {g.label}
+                            </div>
+                            {g.items.map((item) => (
+                                <div
+                                    key={item.id}
+                                    onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
+                                    className={`cursor-pointer px-3 py-2 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 ${
+                                        String(item.id) === value ? 'bg-blue-50 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'
+                                    }`}
+                                >
+                                    {item.designacao}
+                                    <span className="ml-2 text-gray-400">{item.unidade}</span>
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Formulário inline de consumo ─────────────────────────────────────────────
 
 function ConsumoInlineForm({
@@ -148,21 +261,12 @@ function ConsumoInlineForm({
         observacoes:   editing?.observacoes ?? '',
     });
 
-    const grupos = Object.entries(CATEGORIA_LABELS).map(([cat, label]) => ({
-        label,
-        items: consumiveis.filter((c) => c.categoria === cat),
-    })).filter((g) => g.items.length > 0);
-
-    function handleConsumivelChange(e: React.ChangeEvent<HTMLSelectElement>) {
-        const id = e.target.value;
-        if (id) {
-            const found = consumiveis.find((c) => String(c.id) === id);
-            if (found) {
-                setData((prev) => ({ ...prev, consumivel_id: id, designacao: found.designacao, unidade: found.unidade }));
-                return;
-            }
+    function handleConsumivelChange(id: string, found?: Consumivel) {
+        if (id && found) {
+            setData((prev) => ({ ...prev, consumivel_id: id, designacao: found.designacao, unidade: found.unidade }));
+        } else {
+            setData((prev) => ({ ...prev, consumivel_id: '' }));
         }
-        setData((prev) => ({ ...prev, consumivel_id: id }));
     }
 
     function handleSubmit(e: React.FormEvent) {
@@ -184,16 +288,11 @@ function ConsumoInlineForm({
                 {!isEdit && (
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Catálogo</label>
-                        <select value={data.consumivel_id} onChange={handleConsumivelChange} className={fieldCls}>
-                            <option value="">— Manual —</option>
-                            {grupos.map((g) => (
-                                <optgroup key={g.label} label={g.label}>
-                                    {g.items.map((c) => (
-                                        <option key={c.id} value={String(c.id)}>{c.designacao}</option>
-                                    ))}
-                                </optgroup>
-                            ))}
-                        </select>
+                        <CatalogCombobox
+                            consumiveis={consumiveis}
+                            value={data.consumivel_id}
+                            onChange={handleConsumivelChange}
+                        />
                     </div>
                 )}
                 <div>
