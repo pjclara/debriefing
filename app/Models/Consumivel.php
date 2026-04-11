@@ -11,8 +11,11 @@ class Consumivel extends Model
 
     protected $fillable = [
         'designacao',
+        'referencia',
+        'codigo',
         'categoria',
-        'unidade',
+        'vidas',
+        'tem_stock',
         'ativo',
         'stock_atual',
         'stock_minimo',
@@ -20,8 +23,10 @@ class Consumivel extends Model
 
     protected $casts = [
         'ativo'        => 'boolean',
+        'tem_stock'    => 'boolean',
         'stock_atual'  => 'float',
         'stock_minimo' => 'float',
+        'vidas'        => 'integer',
     ];
 
     // Labels legíveis para as categorias

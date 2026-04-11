@@ -15,8 +15,12 @@ class ConsumivelRequest extends FormRequest
     {
         return [
             'designacao' => ['required', 'string', 'max:255'],
+            'referencia' => ['nullable', 'string', 'max:100', 'unique:consumiveis,referencia,' . ($this->consumivel->id ?? 'NULL')],
+            'codigo'     => ['nullable', 'string', 'max:100', 'unique:consumiveis,codigo,' . ($this->consumivel->id ?? 'NULL')],
             'categoria'  => ['required', 'in:robotico_vidas,robotico_descartavel,extra'],
-            'unidade'    => ['required', 'string', 'max:50'],
+            'vidas'      => $this->input('categoria') === 'robotico_vidas' 
+                ? ['required', 'integer', 'min:1'] 
+                : ['nullable'],
             'ativo'      => ['boolean'],
         ];
     }

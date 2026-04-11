@@ -7,8 +7,10 @@ import type { BreadcrumbItem } from '@/types';
 interface Consumivel {
     id?: number;
     designacao?: string;
+    referencia?: string;
+    codigo?: string;
     categoria?: string;
-    unidade?: string;
+    vidas?: number | string;
     ativo?: boolean;
 }
 
@@ -17,15 +19,17 @@ interface Props {
     categorias: Record<string, string>;
 }
 
-const UNIDADES = ['un', 'cx', 'par', 'rolo', 'fr', 'amp', 'ml', 'g'];
+
 
 export default function ConsumivelForm({ consumivel, categorias }: Props) {
     const isEdit = !!consumivel?.id;
 
     const { data, setData, post, put, processing, errors } = useForm({
         designacao: consumivel?.designacao ?? '',
+        referencia: consumivel?.referencia ?? '',
+        codigo:     consumivel?.codigo     ?? '',
         categoria:  consumivel?.categoria  ?? 'robotico_vidas',
-        unidade:    consumivel?.unidade    ?? 'un',
+        vidas:      consumivel?.vidas      ?? '',
         ativo:      consumivel?.ativo      ?? true,
     });
 
@@ -65,6 +69,26 @@ export default function ConsumivelForm({ consumivel, categorias }: Props) {
                             />
                         </FormRow>
 
+                        <FormRow label="Referência" error={errors.referencia}>
+                            <input
+                                type="text"
+                                value={data.referencia}
+                                onChange={e => setData('referencia', e.target.value)}
+                                className={inputCls}
+                                placeholder="Ex: PROGRASP-001"
+                            />
+                        </FormRow>
+
+                        <FormRow label="Código" error={errors.codigo}>
+                            <input
+                                type="text"
+                                value={data.codigo}
+                                onChange={e => setData('codigo', e.target.value)}
+                                className={inputCls}
+                                placeholder="Ex: 408414"
+                            />
+                        </FormRow>
+
                         <FormRow label="Categoria" error={errors.categoria}>
                             <select
                                 value={data.categoria}
@@ -77,17 +101,21 @@ export default function ConsumivelForm({ consumivel, categorias }: Props) {
                             </select>
                         </FormRow>
 
-                        <FormRow label="Unidade" error={errors.unidade}>
-                            <select
-                                value={data.unidade}
-                                onChange={e => setData('unidade', e.target.value)}
-                                className={selectCls}
-                            >
-                                {UNIDADES.map(u => (
-                                    <option key={u} value={u}>{u}</option>
-                                ))}
-                            </select>
-                        </FormRow>
+                        {data.categoria === 'robotico_vidas' && (
+                            <FormRow label="Vidas" error={errors.vidas}>
+                                <input
+                                    type="number"
+                                    value={data.vidas}
+                                    onChange={e => setData('vidas', e.target.value ? parseInt(e.target.value) : '')}
+                                    className={inputCls}
+                                    placeholder="Ex: 10"
+                                    min="1"
+                                    required={data.categoria === 'robotico_vidas'}
+                                />
+                            </FormRow>
+                        )}
+
+
 
                         <FormRow label="Estado">
                             <div className="flex gap-3">

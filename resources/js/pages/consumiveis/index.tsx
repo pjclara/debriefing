@@ -7,11 +7,15 @@ import type { BreadcrumbItem } from '@/types';
 interface Consumivel {
     id: number;
     designacao: string;
+    referencia?: string;
+    codigo?: string;
     categoria: string;
+    vidas?: number;
+    tem_stock: boolean;
     unidade: string;
     ativo: boolean;
-    stock_atual: number;
-    stock_minimo: number;
+    stock_atual?: number;
+    stock_minimo?: number;
 }
 
 interface Props {
@@ -93,24 +97,41 @@ export default function ConsumiveisIndex({ consumiveis, categorias, flash }: Pro
                                                 )}
                                             </div>
                                             <div className="flex shrink-0 items-center gap-1">
-                                                {/* Badge de stock */}
-                                                {c.stock_atual <= c.stock_minimo ? (
-                                                    <span className="mr-1 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/30 dark:text-red-400" title="Stock abaixo do mínimo">
-                                                        <AlertTriangle size={11} />
-                                                        {c.stock_atual} {c.unidade}
-                                                    </span>
+                                                {/* Mostrar Stock (apenas para robotico_vidas) ou Referência/Código (para outros) */}
+                                                {c.tem_stock ? (
+                                                    <>
+                                                        {(c.stock_atual ?? 0) <= (c.stock_minimo ?? 0) ? (
+                                                            <span className="mr-1 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/30 dark:text-red-400" title="Stock abaixo do mínimo">
+                                                                <AlertTriangle size={11} />
+                                                                {c.stock_atual} {c.unidade}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="mr-1 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                                                {c.stock_atual} {c.unidade}
+                                                            </span>
+                                                        )}
+                                                        <Link
+                                                            href={`/consumiveis/${c.id}/stock`}
+                                                            className="rounded-lg p-1.5 text-gray-400 hover:bg-white hover:text-emerald-600 dark:hover:bg-gray-700"
+                                                            title="Gerir Stock"
+                                                        >
+                                                            <BarChart2 size={15} />
+                                                        </Link>
+                                                    </>
                                                 ) : (
-                                                    <span className="mr-1 inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                                        {c.stock_atual} {c.unidade}
-                                                    </span>
+                                                    <>
+                                                        {c.referencia && (
+                                                            <span className="mr-1 inline-flex rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300" title="Referência">
+                                                                {c.referencia}
+                                                            </span>
+                                                        )}
+                                                        {c.codigo && (
+                                                            <span className="mr-1 inline-flex rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300" title="Código">
+                                                                {c.codigo}
+                                                            </span>
+                                                        )}
+                                                    </>
                                                 )}
-                                                <Link
-                                                    href={`/consumiveis/${c.id}/stock`}
-                                                    className="rounded-lg p-1.5 text-gray-400 hover:bg-white hover:text-emerald-600 dark:hover:bg-gray-700"
-                                                    title="Gerir Stock"
-                                                >
-                                                    <BarChart2 size={15} />
-                                                </Link>
                                                 <Link
                                                     href={`/consumiveis/${c.id}/edit`}
                                                     className="rounded-lg p-1.5 text-gray-400 hover:bg-white hover:text-blue-600 dark:hover:bg-gray-700"

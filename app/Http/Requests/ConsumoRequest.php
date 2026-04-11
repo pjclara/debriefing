@@ -14,7 +14,6 @@ class ConsumoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'consumivel_id' => ['nullable', 'integer', 'exists:consumiveis,id'],
             'designacao'    => ['required', 'string', 'max:255'],
             'referencia'    => ['nullable', 'string', 'max:255'],
             'quantidade'    => ['required', 'numeric', 'min:0.01'],

@@ -34,10 +34,9 @@ class DatabaseSeeder extends Seeder
                 ]
             );
 
-
-
         $this->call(ServiceSeeder::class);
         $this->call(ProcedureSeeder::class);
-        $this->call(ConsumivelSeeder::class);
+        $this->call(ConsumivelTipoSeeder::class);
+        $this->call(StockMovimentoSeeder::class);
     }
 }

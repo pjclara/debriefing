@@ -5,11 +5,13 @@ import { SectionCard, FormRow, inputCls, selectCls } from '@/components/form-ui'
 import { PackageOpen, Pencil, Trash2, Plus, X, Check } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
-interface Consumivel {
+interface Consumo {
     id: number;
     designacao: string;
-    categoria: string;
+    referencia?: string;
+    quantidade: number | string;
     unidade: string;
+    observacoes?: string;
 }
 
 interface Briefing {
@@ -27,20 +29,9 @@ interface SurgeryContext {
     briefing: Briefing;
 }
 
-interface Consumo {
-    id: number;
-    consumivel_id?: number;
-    designacao: string;
-    referencia?: string;
-    quantidade: number | string;
-    unidade: string;
-    observacoes?: string;
-}
-
 interface Props {
     surgery: SurgeryContext;
     consumos: Consumo[];
-    consumiveis: Consumivel[];
     flash?: { success?: string };
 }
 
@@ -49,54 +40,26 @@ function formatDate(dateStr: string) {
     return `${day}/${month}/${year}`;
 }
 
-const CATEGORIA_LABELS: Record<string, string> = {
-    robotico_vidas:       'Itens Robóticos com Vidas',
-    robotico_descartavel: 'Consumíveis Robóticos Descartáveis',
-    extra:                'Extras',
-};
-
 // ─── Inline add / edit form ───────────────────────────────────────────────────
 
 function ConsumoForm({
     surgeryId,
-    consumiveis,
     initial,
     onCancel,
 }: {
     surgeryId: number;
-    consumiveis: Consumivel[];
     initial?: Consumo;
     onCancel: () => void;
 }) {
     const isEdit = !!initial?.id;
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
-        consumivel_id: initial?.consumivel_id ? String(initial.consumivel_id) : '',
         designacao:  initial?.designacao  ?? '',
         referencia:  initial?.referencia  ?? '',
         quantidade:  initial?.quantidade  ?? 1,
         unidade:     initial?.unidade     ?? 'un',
         observacoes: initial?.observacoes ?? '',
     });
-
-    // Grupos para o <optgroup>
-    const grupos = Object.entries(CATEGORIA_LABELS).map(([cat, label]) => ({
-        label,
-        items: consumiveis.filter(c => c.categoria === cat),
-    })).filter(g => g.items.length > 0);
-
-    function handleConsumivelChange(e: React.ChangeEvent<HTMLSelectElement>) {
-        const id = e.target.value;
-        setData('consumivel_id', id);
-        if (id) {
-            const found = consumiveis.find(c => String(c.id) === id);
-            if (found) {
-                setData(prev => ({ ...prev, consumivel_id: id, designacao: found.designacao, unidade: found.unidade }));
-            }
-        } else {
-            setData(prev => ({ ...prev, consumivel_id: '', designacao: '', unidade: 'un' }));
-        }
-    }
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -114,29 +77,7 @@ function ConsumoForm({
     return (
         <form onSubmit={handleSubmit} className="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {/* Select do catálogo */}
-                {!isEdit && (
-                    <div className="sm:col-span-2">
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Consumível do catálogo</label>
-                        <select
-                            value={data.consumivel_id}
-                            onChange={handleConsumivelChange}
-                            className={selectCls}
-                            autoFocus
-                        >
-                            <option value="">— Seleccionar —</option>
-                            {grupos.map(g => (
-                                <optgroup key={g.label} label={g.label}>
-                                    {g.items.map(c => (
-                                        <option key={c.id} value={String(c.id)}>{c.designacao}</option>
-                                    ))}
-                                </optgroup>
-                            ))}
-                        </select>
-                    </div>
-                )}
-
-                {/* Designação (preenchida automaticamente ou manual) */}
+                {/* Designação */}
                 <div className="sm:col-span-2">
                     <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Designação *</label>
                     <input
@@ -144,8 +85,9 @@ function ConsumoForm({
                         value={data.designacao}
                         onChange={e => setData('designacao', e.target.value)}
                         className={inputCls}
-                        placeholder="Ex: Clip Hem-o-lok L"
+                        placeholder="Ex: PROGRASP FORCEPS"
                         required
+                        autoFocus
                     />
                     {errors.designacao && <p className="mt-1 text-xs text-red-500">{errors.designacao}</p>}
                 </div>
@@ -157,7 +99,7 @@ function ConsumoForm({
                         value={data.referencia}
                         onChange={e => setData('referencia', e.target.value)}
                         className={inputCls}
-                        placeholder="Ref. catálogo"
+                        placeholder="Ex: PROGRASP-001"
                     />
                 </div>
 
@@ -223,7 +165,7 @@ function ConsumoForm({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function ConsumosIndex({ surgery, consumos, consumiveis, flash }: Props) {
+export default function ConsumosIndex({ surgery, consumos, flash }: Props) {
     const [adding, setAdding] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -278,7 +220,6 @@ export default function ConsumosIndex({ surgery, consumos, consumiveis, flash }:
                     {adding && (
                         <ConsumoForm
                             surgeryId={surgery.id}
-                            consumiveis={consumiveis}
                             onCancel={() => setAdding(false)}
                         />
                     )}
@@ -295,7 +236,6 @@ export default function ConsumosIndex({ surgery, consumos, consumiveis, flash }:
                                     {editingId === c.id ? (
                                         <ConsumoForm
                                             surgeryId={surgery.id}
-                                            consumiveis={consumiveis}
                                             initial={c}
                                             onCancel={() => setEditingId(null)}
                                         />

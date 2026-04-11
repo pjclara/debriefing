@@ -9,7 +9,6 @@ class Consumo extends Model
 {
     protected $fillable = [
         'surgery_id',
-        'consumivel_id',
         'designacao',
         'referencia',
         'quantidade',
@@ -24,10 +23,5 @@ class Consumo extends Model
     public function surgery(): BelongsTo
     {
         return $this->belongsTo(Surgery::class);
-    }
-
-    public function consumivel(): BelongsTo
-    {
-        return $this->belongsTo(Consumivel::class);
     }
 }

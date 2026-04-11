@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\BriefingController;
 use App\Http\Controllers\ConsumivelController;
+use App\Http\Controllers\ConsumivelTipoController;
 use App\Http\Controllers\ConsumoController;
 use App\Http\Controllers\DebriefingController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ProcedureController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\StockMovimentoController;
 use App\Http\Controllers\SurgeryController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -60,7 +62,13 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('surgeries/{surgery}', [SurgeryController::class, 'destroy'])
             ->name('surgeries.destroy');
 
-        // Catálogo de consumíveis
+        // Tipos de consumíveis
+        Route::resource('consumivel_tipos', ConsumivelTipoController::class)->except(['show']);
+
+        // Movimentos de stock
+        Route::resource('stock_movimentos', StockMovimentoController::class)->except(['show']);
+
+        // Catálogo de consumíveis (legado)
         Route::resource('consumiveis', ConsumivelController::class)->except(['show']);
 
         // Departamentos
