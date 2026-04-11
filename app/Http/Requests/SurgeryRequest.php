@@ -16,7 +16,7 @@ class SurgeryRequest extends FormRequest
         return [
             'processo'               => ['required', 'string', 'max:255'],
             'procedimento'           => ['required', 'string', 'max:255'],
-            'destino'                => ['required', 'string', 'max:255'],
+            'destino'                => ['required', 'in:UCPA,Enfermaria,SMI,Outro'],
 
             'hora_prep_inicio'       => ['nullable', 'integer', 'min:0', 'max:23'],
             'min_prep_inicio'        => ['nullable', 'integer', 'min:0', 'max:59'],

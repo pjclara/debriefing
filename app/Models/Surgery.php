@@ -15,15 +15,11 @@ class Surgery extends Model
         'procedimento',
         'destino',
 
-        'hora_prep_inicio',
-        'min_prep_inicio',
-        'hora_prep_fim',
-        'min_prep_fim',
+        'prep_inicio',
+        'prep_fim',
         'docking',
-        'hora_consola_inicio',
-        'min_consola_inicio',
-        'hora_consola_fim',
-        'min_consola_fim',
+        'consola_inicio',
+        'consola_fim',
 
         'antecedentes_relevantes',
         'descricao_antecedentes',
@@ -45,9 +41,12 @@ class Surgery extends Model
 
         'trocares',
         'otica',
-        'monopolar_coag',
-        'monopolar_cut',
-        'bipolar_coag',
+        'monopolar_coag_watts',
+        'monopolar_coag_tipo',
+        'monopolar_cut_watts',
+        'monopolar_cut_tipo',
+        'bipolar_coag_watts',
+        'bipolar_coag_tipo',
         'b1',
         'b2',
         'b3',
@@ -56,6 +55,10 @@ class Surgery extends Model
     ];
 
     protected $casts = [
+        'prep_inicio'             => 'datetime',
+        'prep_fim'                => 'datetime',
+        'consola_inicio'          => 'datetime',
+        'consola_fim'             => 'datetime',
         'antecedentes_relevantes' => 'boolean',
         'comorbidades'            => 'boolean',
         'variacoes_tecnicas'      => 'boolean',

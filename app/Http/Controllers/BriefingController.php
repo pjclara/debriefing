@@ -40,20 +40,14 @@ class BriefingController extends Controller
 
     public function show(Briefing $briefing): Response
     {
-        $briefing->load(['surgeries.consumos.consumivel', 'debriefing']);
+        $briefing->load(['surgeries.consumos', 'debriefing']);
 
-        return Inertia::render('briefings/show', [
-            'briefing'    => $briefing,
-            'consumiveis' => \App\Models\Consumivel::where('ativo', true)
-                ->orderBy('categoria')
-                ->orderBy('designacao')
-                ->get(['id', 'designacao', 'categoria', 'unidade']),
-        ]);
+        return Inertia::render('briefings/show', ['briefing' => $briefing]);
     }
 
     public function print(Briefing $briefing): Response
     {
-        $briefing->load(['surgeries.consumos.consumivel', 'debriefing']);
+        $briefing->load(['surgeries.consumos', 'debriefing']);
 
         return Inertia::render('briefings/print', ['briefing' => $briefing]);
     }

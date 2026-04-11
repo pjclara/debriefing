@@ -1,14 +1,12 @@
 <?php
 
 use App\Http\Controllers\BriefingController;
-use App\Http\Controllers\ConsumivelController;
 use App\Http\Controllers\ConsumivelTipoController;
 use App\Http\Controllers\ConsumoController;
 use App\Http\Controllers\DebriefingController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ProcedureController;
 use App\Http\Controllers\ServiceController;
-use App\Http\Controllers\StockController;
 use App\Http\Controllers\StockMovimentoController;
 use App\Http\Controllers\SurgeryController;
 use App\Http\Controllers\UserController;
@@ -68,9 +66,6 @@ Route::middleware(['auth'])->group(function () {
         // Movimentos de stock
         Route::resource('stock_movimentos', StockMovimentoController::class)->except(['show']);
 
-        // Catálogo de consumíveis (legado)
-        Route::resource('consumiveis', ConsumivelController::class)->except(['show']);
-
         // Departamentos
         Route::resource('departments', DepartmentController::class)->except(['destroy', 'show']);
 
@@ -79,14 +74,6 @@ Route::middleware(['auth'])->group(function () {
 
         // Procedimentos
         Route::resource('procedures', ProcedureController::class)->except(['show']);
-
-        // Stock por consumível
-        Route::get('consumiveis/{consumivel}/stock', [StockController::class, 'index'])
-            ->name('consumiveis.stock.index');
-        Route::post('consumiveis/{consumivel}/stock', [StockController::class, 'store'])
-            ->name('consumiveis.stock.store');
-        Route::delete('consumiveis/{consumivel}/stock/{movimento}', [StockController::class, 'destroy'])
-            ->name('consumiveis.stock.destroy');
 
         // Utilizadores
         Route::resource('users', UserController::class)->except(['show']);

@@ -13,8 +13,8 @@ class ServiceSeeder extends Seeder
         // Primeiro criar os serviços
         $services = [
             ['nome' => 'Cirurgia Geral', 'descricao' => 'Cirurgias de carácter geral', 'codigo' => 'CIRURGIA_GERAL'],
-            ['nome' => 'Traumatologia', 'descricao' => 'Especialidade em traumatismos e fracturas', 'codigo' => 'TRAUMATOLOGIA'],
-            ['nome' => 'Cardiologia', 'descricao' => 'Especialidade do coração e sistema circulatório', 'codigo' => 'CARDIOLOGIA'],
+            ['nome' => 'Urologia', 'descricao' => 'Especialidade em urologia', 'codigo' => 'UROLOGIA'],
+            ['nome' => 'Ginecologia', 'descricao' => 'Especialidade em ginecologia', 'codigo' => 'GINECOLOGIA'],
         ];
 
         $createdServices = [];
@@ -30,41 +30,42 @@ class ServiceSeeder extends Seeder
         // Depois criar os departamentos para cada serviço
         $departments = [
             [
-                'nome' => 'Cirurgia de Apendicite',
-                'descricao' => 'Remoção de apêndice inflamado',
-                'codigo' => 'CIR_APENDICITE',
-                'service' => 0,
-            ],
-            [
-                'nome' => 'Cirurgia de Hérnia',
-                'descricao' => 'Correção de hérnia abdominal',
-                'codigo' => 'CIR_HERNIA',
-                'service' => 0,
-            ],
-            [
-                'nome' => 'Reparação de Fractura',
-                'descricao' => 'Cirurgia para reparação de fracturas ósseas',
-                'codigo' => 'TRAUMA_FRATURA',
+                'nome' => 'Colo-Retal',
+                'descricao' => 'Unidade de cirurgia colo-retal',
+                'codigo' => 'CIR_COLO_RETAL',
                 'service' => 1,
             ],
             [
-                'nome' => 'Artroscopia',
-                'descricao' => 'Procedimento minimamente invasivo para articulações',
-                'codigo' => 'TRAUMA_ARTROSCOPIA',
+                'nome' => 'HepatoBilioPancreática',
+                'descricao' => 'Unidade de cirurgia hepato-bilio-pancreática',
+                'codigo' => 'CIR_HEPATO_BILIO_PANCREATICA',
                 'service' => 1,
             ],
             [
-                'nome' => 'Angioplastia',
-                'descricao' => 'Desobstrução de artérias',
-                'codigo' => 'CARDIO_ANGIOPLASTIA',
+                'nome' => 'Parede Abdominal',
+                'descricao' => 'Unidade de cirurgia de parede abdominal',
+                'codigo' => 'CIR_PAREDE_ABDOMINAL',
+                'service' => 1,
+            ],
+            [
+                'nome' => 'Esofago-Gástrica',
+                'descricao' => 'Unidade de cirurgia esofago-gástrica',
+                'codigo' => 'CIR_ESOFAGO_GASTRICA',
+                'service' => 1,
+            ],
+            [
+                'nome' => 'Urologia Geral',
+                'descricao' => 'Unidade de urologia geral',
+                'codigo' => 'UROLOGIA_GERAL',
                 'service' => 2,
             ],
             [
-                'nome' => 'Bypass Coronário',
-                'descricao' => 'Cirurgia de bypass para doença coronária',
-                'codigo' => 'CARDIO_BYPASS',
-                'service' => 2,
+                'nome' => 'Ginecologia Geral',
+                'descricao' => 'Unidade de ginecologia geral',
+                'codigo' => 'GINECOLOGIA_GERAL',
+                'service' => 3,
             ],
+
         ];
 
         foreach ($departments as $dept) {
@@ -72,7 +73,7 @@ class ServiceSeeder extends Seeder
                 'nome' => $dept['nome'],
                 'descricao' => $dept['descricao'],
                 'codigo' => $dept['codigo'],
-                'service_id' => $createdServices[$dept['service']]->id,
+                'service_id' => $createdServices[$dept['service'] - 1]->id,
                 'ativo' => true,
             ]);
         }
