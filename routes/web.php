@@ -88,10 +88,6 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('consumiveis/{consumivel}/stock/{movimento}', [StockController::class, 'destroy'])
             ->name('consumiveis.stock.destroy');
 
-        // Consumos — listagem global
-        Route::get('consumos', [ConsumoController::class, 'indexAll'])
-            ->name('consumos.index');
-
         // Utilizadores
         Route::resource('users', UserController::class)->except(['show']);
     });

@@ -11,25 +11,6 @@ use Illuminate\Http\RedirectResponse;
 
 class ConsumoController extends Controller
 {
-    public function indexAll(): Response
-    {
-        $consumos = Consumo::with(['surgery.briefing'])
-            ->orderByDesc('created_at')
-            ->get()
-            ->groupBy('surgery_id');
-
-        return Inertia::render('consumos/all', [
-            'groups' => $consumos->map(function ($items, $surgeryId) {
-                $surgery = $items->first()->surgery;
-                return [
-                    'surgery'  => $surgery->only('id', 'processo', 'procedimento'),
-                    'briefing' => $surgery->briefing->only('id', 'data', 'sala', 'especialidade'),
-                    'consumos' => $items->values(),
-                ];
-            })->values(),
-        ]);
-    }
-
     public function index(Surgery $surgery): Response
     {
         return Inertia::render('consumos/index', [
