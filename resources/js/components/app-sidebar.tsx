@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ClipboardList, FlaskConical, LayoutGrid, PackageOpen, Users } from 'lucide-react';
+import { ClipboardList, FlaskConical, LayoutGrid, PackageOpen, Users, Building2, Wrench, Syringe } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -36,6 +36,24 @@ const allNavItems: (NavItem & { adminOnly?: boolean })[] = [
         title: 'Catálogo de Consumíveis',
         href: '/consumiveis',
         icon: FlaskConical,
+        adminOnly: true,
+    },
+    {
+        title: 'Departamentos',
+        href: '/departments',
+        icon: Building2,
+        adminOnly: true,
+    },
+    {
+        title: 'Serviços',
+        href: '/services',
+        icon: Wrench,
+        adminOnly: true,
+    },
+    {
+        title: 'Procedimentos',
+        href: '/procedures',
+        icon: Syringe,
         adminOnly: true,
     },
     {

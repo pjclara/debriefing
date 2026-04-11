@@ -4,6 +4,9 @@ use App\Http\Controllers\BriefingController;
 use App\Http\Controllers\ConsumivelController;
 use App\Http\Controllers\ConsumoController;
 use App\Http\Controllers\DebriefingController;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\ProcedureController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SurgeryController;
 use App\Http\Controllers\UserController;
@@ -59,6 +62,15 @@ Route::middleware(['auth'])->group(function () {
 
         // Catálogo de consumíveis
         Route::resource('consumiveis', ConsumivelController::class)->except(['show']);
+
+        // Departamentos
+        Route::resource('departments', DepartmentController::class)->except(['destroy', 'show']);
+
+        // Serviços
+        Route::resource('services', ServiceController::class);
+
+        // Procedimentos
+        Route::resource('procedures', ProcedureController::class)->except(['show']);
 
         // Stock por consumível
         Route::get('consumiveis/{consumivel}/stock', [StockController::class, 'index'])
