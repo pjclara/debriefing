@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SurgeryRequest;
 use App\Models\Briefing;
+use App\Models\Department;
+use App\Models\Procedure;
 use App\Models\Surgery;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,8 +15,17 @@ class SurgeryController extends Controller
 {
     public function create(Briefing $briefing): Response
     {
+        $department = Department::where('nome', $briefing->especialidade)->first();
+        $procedures = $department
+            ? Procedure::where('department_id', $department->id)
+                ->where('ativo', true)
+                ->orderBy('nome')
+                ->get(['id', 'nome'])
+            : [];
+
         return Inertia::render('surgeries/form', [
             'briefing' => $briefing->only('id', 'data', 'hora', 'sala', 'especialidade'),
+            'procedures' => $procedures,
         ]);
     }
 
@@ -28,9 +39,19 @@ class SurgeryController extends Controller
 
     public function edit(Surgery $surgery): Response
     {
+        $briefing = $surgery->briefing;
+        $department = Department::where('nome', $briefing->especialidade)->first();
+        $procedures = $department
+            ? Procedure::where('department_id', $department->id)
+                ->where('ativo', true)
+                ->orderBy('nome')
+                ->get(['id', 'nome'])
+            : [];
+
         return Inertia::render('surgeries/form', [
             'surgery' => $surgery,
-            'briefing' => $surgery->briefing->only('id', 'data', 'hora', 'sala', 'especialidade'),
+            'briefing' => $briefing->only('id', 'data', 'hora', 'sala', 'especialidade'),
+            'procedures' => $procedures,
         ]);
     }
 

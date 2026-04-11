@@ -13,6 +13,11 @@ interface BriefingContext {
     especialidade: string;
 }
 
+interface Procedure {
+    id: number;
+    nome: string;
+}
+
 interface Surgery {
     id?: number;
     processo?: string;
@@ -49,6 +54,7 @@ interface Surgery {
 interface Props {
     briefing: BriefingContext;
     surgery?: Surgery;
+    procedures: Procedure[];
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -85,7 +91,7 @@ function CheckField({ label, name, checked, onChange }: {
 
 // ─── component ────────────────────────────────────────────────────────────────
 
-export default function SurgeryForm({ briefing, surgery }: Props) {
+export default function SurgeryForm({ briefing, surgery, procedures }: Props) {
     const isEdit = !!surgery?.id;
 
     const { data, setData, post, put, processing, errors } = useForm<Surgery>({
@@ -172,7 +178,14 @@ export default function SurgeryForm({ briefing, surgery }: Props) {
                                     <input type="text" name="processo" value={data.processo} onChange={handleChange} className={inputCls} required />
                                 </Field>
                                 <Field label="Procedimento" error={errors.procedimento}>
-                                    <input type="text" name="procedimento" value={data.procedimento} onChange={handleChange} className={inputCls} required />
+                                    <select name="procedimento" value={data.procedimento} onChange={handleChange} className={selectCls} required>
+                                        <option value="">Selecione um procedimento…</option>
+                                        {procedures.map((proc) => (
+                                            <option key={proc.id} value={proc.nome}>
+                                                {proc.nome}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </Field>
                                 <Field label="Destino" error={errors.destino}>
                                     <input type="text" name="destino" value={data.destino} onChange={handleChange} className={inputCls} required />

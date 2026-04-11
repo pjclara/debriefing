@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BriefingRequest;
 use App\Models\Briefing;
+use App\Models\Department;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
@@ -22,7 +23,11 @@ class BriefingController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('briefings/form');
+        $departments = Department::where('ativo', true)
+            ->orderBy('nome')
+            ->get(['id', 'nome']);
+
+        return Inertia::render('briefings/form', ['departments' => $departments]);
     }
 
     public function store(BriefingRequest $request): RedirectResponse
@@ -55,7 +60,14 @@ class BriefingController extends Controller
 
     public function edit(Briefing $briefing): Response
     {
-        return Inertia::render('briefings/form', ['briefing' => $briefing]);
+        $departments = Department::where('ativo', true)
+            ->orderBy('nome')
+            ->get(['id', 'nome']);
+
+        return Inertia::render('briefings/form', [
+            'briefing' => $briefing,
+            'departments' => $departments,
+        ]);
     }
 
     public function update(BriefingRequest $request, Briefing $briefing): RedirectResponse

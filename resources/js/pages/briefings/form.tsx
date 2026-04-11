@@ -23,13 +23,19 @@ interface BriefingData {
     descricao_ordem?: string;
 }
 
+interface Department {
+    id: number;
+    nome: string;
+}
+
 interface Props {
     briefing?: BriefingData;
+    departments: Department[];
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
 
-export default function BriefingForm({ briefing }: Props) {
+export default function BriefingForm({ briefing, departments }: Props) {
     const isEdit = !!briefing?.id;
 
     const { data, setData, post, put, processing, errors } = useForm<BriefingData>({
@@ -102,7 +108,14 @@ export default function BriefingForm({ briefing }: Props) {
                                         <input type="time" name="hora" value={data.hora} onChange={handleChange} className={inputCls} required />
                                     </FormRow>
                                     <FormRow label="Especialidade" error={errors.especialidade}>
-                                        <input type="text" name="especialidade" value={data.especialidade} onChange={handleChange} className={inputCls} placeholder="ex: Cirurgia Geral" required />
+                                        <select name="especialidade" value={data.especialidade} onChange={handleChange} className={inputCls} required>
+                                            <option value="">Selecione um departamento…</option>
+                                            {departments.map((dept) => (
+                                                <option key={dept.id} value={dept.nome}>
+                                                    {dept.nome}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </FormRow>
                                     <FormRow label="Sala" error={errors.sala}>
                                         <input type="text" name="sala" value={data.sala} onChange={handleChange} className={inputCls} placeholder="ex: Sala 3" required />
