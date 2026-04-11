@@ -18,6 +18,16 @@ class SurgeryRequest extends FormRequest
             'procedimento'           => ['required', 'string', 'max:255'],
             'destino'                => ['required', 'string', 'max:255'],
 
+            'hora_prep_inicio'       => ['nullable', 'integer', 'min:0', 'max:23'],
+            'min_prep_inicio'        => ['nullable', 'integer', 'min:0', 'max:59'],
+            'hora_prep_fim'          => ['nullable', 'integer', 'min:0', 'max:23'],
+            'min_prep_fim'           => ['nullable', 'integer', 'min:0', 'max:59'],
+            'docking'                => ['nullable', 'integer', 'min:0'],
+            'hora_consola_inicio'    => ['nullable', 'integer', 'min:0', 'max:23'],
+            'min_consola_inicio'     => ['nullable', 'integer', 'min:0', 'max:59'],
+            'hora_consola_fim'       => ['nullable', 'integer', 'min:0', 'max:23'],
+            'min_consola_fim'        => ['nullable', 'integer', 'min:0', 'max:59'],
+
             'antecedentes_relevantes'  => ['boolean'],
             'descricao_antecedentes'   => ['nullable', 'string'],
             'comorbidades'             => ['boolean'],

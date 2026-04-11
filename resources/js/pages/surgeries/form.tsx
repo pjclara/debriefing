@@ -23,6 +23,15 @@ interface Surgery {
     processo?: string;
     procedimento?: string;
     destino?: string;
+    hora_prep_inicio?: number | string;
+    min_prep_inicio?: number | string;
+    hora_prep_fim?: number | string;
+    min_prep_fim?: number | string;
+    docking?: number | string;
+    hora_consola_inicio?: number | string;
+    min_consola_inicio?: number | string;
+    hora_consola_fim?: number | string;
+    min_consola_fim?: number | string;
     antecedentes_relevantes?: boolean;
     descricao_antecedentes?: string;
     comorbidades?: boolean;
@@ -99,6 +108,16 @@ export default function SurgeryForm({ briefing, surgery, procedures }: Props) {
         procedimento: surgery?.procedimento ?? '',
         destino: surgery?.destino ?? '',
 
+        hora_prep_inicio: surgery?.hora_prep_inicio ?? '',
+        min_prep_inicio: surgery?.min_prep_inicio ?? '',
+        hora_prep_fim: surgery?.hora_prep_fim ?? '',
+        min_prep_fim: surgery?.min_prep_fim ?? '',
+        docking: surgery?.docking ?? '',
+        hora_consola_inicio: surgery?.hora_consola_inicio ?? '',
+        min_consola_inicio: surgery?.min_consola_inicio ?? '',
+        hora_consola_fim: surgery?.hora_consola_fim ?? '',
+        min_consola_fim: surgery?.min_consola_fim ?? '',
+
         antecedentes_relevantes: surgery?.antecedentes_relevantes ?? false,
         descricao_antecedentes: surgery?.descricao_antecedentes ?? '',
         comorbidades: surgery?.comorbidades ?? false,
@@ -167,6 +186,7 @@ export default function SurgeryForm({ briefing, surgery, procedures }: Props) {
                     <Tabs defaultValue="identificacao">
                         <TabsList className="mb-2 flex-wrap">
                             <TabsTrigger value="identificacao">Identificação</TabsTrigger>
+                            <TabsTrigger value="tempos">Tempos</TabsTrigger>
                             <TabsTrigger value="planeamento">Planeamento</TabsTrigger>
                             <TabsTrigger value="robotico">Robótico</TabsTrigger>
                         </TabsList>
@@ -232,6 +252,74 @@ export default function SurgeryForm({ briefing, surgery, procedures }: Props) {
                                         )}
                                     </div>
                                 ))}
+                            </SectionCard>
+                        </TabsContent>
+
+                        {/* ── TEMPOS ── */}
+                        <TabsContent value="tempos">
+                            <SectionCard color="border-green-500" title="Tempos Cirúrgicos">
+                                <div className="mb-4 flex items-center gap-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-200">
+                                    <span className="font-semibold">Preenchimento de Horários em horas e minutos</span>
+                                </div>
+
+                                {/* Início de preparação */}
+                                <div className="mb-6 rounded-lg border border-orange-100 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-900/10">
+                                    <label className="mb-3 block text-sm font-semibold text-orange-900 dark:text-orange-200">Início de Preparação</label>
+                                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                        <Field label="Hora (0-23)" error={errors.hora_prep_inicio}>
+                                            <input type="number" name="hora_prep_inicio" value={data.hora_prep_inicio as string} onChange={handleChange} min={0} max={23} className={inputCls} />
+                                        </Field>
+                                        <Field label="Minuto (0-59)" error={errors.min_prep_inicio}>
+                                            <input type="number" name="min_prep_inicio" value={data.min_prep_inicio as string} onChange={handleChange} min={0} max={59} className={inputCls} />
+                                        </Field>
+                                    </div>
+                                </div>
+
+                                {/* Fim de preparação */}
+                                <div className="mb-6 rounded-lg border border-orange-100 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-900/10">
+                                    <label className="mb-3 block text-sm font-semibold text-orange-900 dark:text-orange-200">Fim de Preparação</label>
+                                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                        <Field label="Hora (0-23)" error={errors.hora_prep_fim}>
+                                            <input type="number" name="hora_prep_fim" value={data.hora_prep_fim as string} onChange={handleChange} min={0} max={23} className={inputCls} />
+                                        </Field>
+                                        <Field label="Minuto (0-59)" error={errors.min_prep_fim}>
+                                            <input type="number" name="min_prep_fim" value={data.min_prep_fim as string} onChange={handleChange} min={0} max={59} className={inputCls} />
+                                        </Field>
+                                    </div>
+                                </div>
+
+                                {/* Docking */}
+                                <div className="mb-6 rounded-lg border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-900/10">
+                                    <Field label="Docking (Minutos)" error={errors.docking} full>
+                                        <input type="number" name="docking" value={data.docking as string} onChange={handleChange} min={0} className={inputCls} placeholder="Tempo de preparação em minutos" />
+                                    </Field>
+                                </div>
+
+                                {/* Início da consola */}
+                                <div className="mb-6 rounded-lg border border-purple-100 bg-purple-50/50 p-4 dark:border-purple-900 dark:bg-purple-900/10">
+                                    <label className="mb-3 block text-sm font-semibold text-purple-900 dark:text-purple-200">Início da Consola</label>
+                                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                        <Field label="Hora (0-23)" error={errors.hora_consola_inicio}>
+                                            <input type="number" name="hora_consola_inicio" value={data.hora_consola_inicio as string} onChange={handleChange} min={0} max={23} className={inputCls} />
+                                        </Field>
+                                        <Field label="Minuto (0-59)" error={errors.min_consola_inicio}>
+                                            <input type="number" name="min_consola_inicio" value={data.min_consola_inicio as string} onChange={handleChange} min={0} max={59} className={inputCls} />
+                                        </Field>
+                                    </div>
+                                </div>
+
+                                {/* Fim da consola */}
+                                <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-4 dark:border-purple-900 dark:bg-purple-900/10">
+                                    <label className="mb-3 block text-sm font-semibold text-purple-900 dark:text-purple-200">Fim da Consola</label>
+                                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                        <Field label="Hora (0-23)" error={errors.hora_consola_fim}>
+                                            <input type="number" name="hora_consola_fim" value={data.hora_consola_fim as string} onChange={handleChange} min={0} max={23} className={inputCls} />
+                                        </Field>
+                                        <Field label="Minuto (0-59)" error={errors.min_consola_fim}>
+                                            <input type="number" name="min_consola_fim" value={data.min_consola_fim as string} onChange={handleChange} min={0} max={59} className={inputCls} />
+                                        </Field>
+                                    </div>
+                                </div>
                             </SectionCard>
                         </TabsContent>
 

@@ -15,6 +15,16 @@ class Surgery extends Model
         'procedimento',
         'destino',
 
+        'hora_prep_inicio',
+        'min_prep_inicio',
+        'hora_prep_fim',
+        'min_prep_fim',
+        'docking',
+        'hora_consola_inicio',
+        'min_consola_inicio',
+        'hora_consola_fim',
+        'min_consola_fim',
+
         'antecedentes_relevantes',
         'descricao_antecedentes',
         'comorbidades',
