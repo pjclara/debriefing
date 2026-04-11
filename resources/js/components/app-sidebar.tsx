@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ClipboardList, FlaskConical, LayoutGrid, PackageOpen, Users, Building2, Wrench, Syringe, Boxes, TrendingDown } from 'lucide-react';
+import { ClipboardList, LayoutGrid, PackageOpen, Users, Building2, Wrench, Syringe, Boxes, TrendingDown } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -13,67 +13,86 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { Auth, NavItem } from '@/types';
+import type { Auth, NavGroup } from '@/types';
 
-const allNavItems: (NavItem & { adminOnly?: boolean })[] = [
+const allNavGroups: NavGroup[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
+        label: 'Cirurgias',
+        items: [
+            {
+                title: 'Dashboard',
+                href: dashboard(),
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Briefings Cirúrgicos',
+                href: '/briefings',
+                icon: ClipboardList,
+            },
+        ],
     },
     {
-        title: 'Briefings Cirúrgicos',
-        href: '/briefings',
-        icon: ClipboardList,
+        label: 'Consumíveis & Stock',
+        items: [
+            {
+                title: 'Consumos',
+                href: '/consumos',
+                icon: PackageOpen,
+                adminOnly: true,
+            },
+            {
+                title: 'Tipos de Consumíveis',
+                href: '/consumivel_tipos',
+                icon: Boxes,
+                adminOnly: true,
+            },
+            {
+                title: 'Movimentos de Stock',
+                href: '/stock_movimentos',
+                icon: TrendingDown,
+                adminOnly: true,
+            },
+        ],
     },
     {
-        title: 'Consumos',
-        href: '/consumos',
-        icon: PackageOpen,
-        adminOnly: true,
-    },
-    {
-        title: 'Tipos de Consumíveis',
-        href: '/consumivel_tipos',
-        icon: Boxes,
-        adminOnly: true,
-    },
-    {
-        title: 'Movimentos de Stock',
-        href: '/stock_movimentos',
-        icon: TrendingDown,
-        adminOnly: true,
-    },
-    {
-        title: 'Departamentos',
-        href: '/departments',
-        icon: Building2,
-        adminOnly: true,
-    },
-    {
-        title: 'Serviços',
-        href: '/services',
-        icon: Wrench,
-        adminOnly: true,
-    },
-    {
-        title: 'Procedimentos',
-        href: '/procedures',
-        icon: Syringe,
-        adminOnly: true,
-    },
-    {
-        title: 'Utilizadores',
-        href: '/users',
-        icon: Users,
-        adminOnly: true,
+        label: 'Administração',
+        items: [
+            {
+                title: 'Departamentos',
+                href: '/departments',
+                icon: Building2,
+                adminOnly: true,
+            },
+            {
+                title: 'Serviços',
+                href: '/services',
+                icon: Wrench,
+                adminOnly: true,
+            },
+            {
+                title: 'Procedimentos',
+                href: '/procedures',
+                icon: Syringe,
+                adminOnly: true,
+            },
+            {
+                title: 'Utilizadores',
+                href: '/users',
+                icon: Users,
+                adminOnly: true,
+            },
+        ],
     },
 ];
 
 export function AppSidebar() {
     const { auth } = usePage<{ auth: Auth }>().props;
     const isAdmin = auth.user?.role === 'admin';
-    const navItems = allNavItems.filter((item) => !item.adminOnly || isAdmin);
+    
+    const filteredGroups = allNavGroups.map(group => ({
+        ...group,
+        items: group.items.filter(item => !item.adminOnly || isAdmin),
+    })).filter(group => group.items.length > 0);
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -90,7 +109,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={navItems} />
+                <NavMain groups={filteredGroups} />
             </SidebarContent>
 
             <SidebarFooter>
