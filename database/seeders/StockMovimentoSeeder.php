@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\ConsumivelTipo;
+use App\Models\Consumivel;
 use App\Models\StockMovimento;
 use Illuminate\Database\Seeder;
 
@@ -14,75 +14,96 @@ class StockMovimentoSeeder extends Seeder
         $movimentos = [
             // Itens Robóticos com Vidas
             [
-                'nome_tipo'   => 'PROGRASP FORCEPS (PINÇA PROGRASP)',
+                'designacao_consumivel'   => 'PROGRASP FORCEPS (PINÇA PROGRASP)',
                 'tipo_mov'    => 'entrada',
                 'referencia'  => 'PROGRASP-001',
                 'codigo'      => '408414',
-                'vidas'       => 10,
+                'vidas_inicial' => 10,
+                'vidas_atual' => 10,
                 'data_entrada' => now()->subDays(30),
+                'data_saida' => null,
+                'motivo' => null,
                 'observacoes' => 'Receção de encomenda fornecedor',
             ],
             [
-                'nome_tipo'   => 'TIP-UP FENESTRATED GRASPER (PINÇA TIP-UP)',
+                'designacao_consumivel'   => 'TIP-UP FENESTRATED GRASPER (PINÇA TIP-UP)',
                 'tipo_mov'    => 'entrada',
                 'referencia'  => 'TIPUP-001',
                 'codigo'      => '408412',
-                'vidas'       => 5,
+                'vidas_inicial' => 5,
+                'vidas_atual' => 5,
                 'data_entrada' => now()->subDays(20),
+                'data_saida' => null,
+                'motivo' => null,
                 'observacoes' => 'Receção de encomenda',
             ],
             [
-                'nome_tipo'   => 'PROGRASP FORCEPS (PINÇA PROGRASP)',
+                'designacao_consumivel'   => 'PROGRASP FORCEPS (PINÇA PROGRASP)',
                 'tipo_mov'    => 'saida',
                 'referencia'  => 'PROGRASP-001',
                 'codigo'      => '408414',
-                'vidas'       => 10,
+                'vidas_inicial' => 10,
+                'vidas_atual' => 8,
                 'data_entrada' => now()->subDays(15),
+                'data_saida' => now()->subDays(15),
+                'motivo' => 'consumo_cirurgia',
                 'observacoes' => 'Consumo em cirurgia',
             ],
             // Descartáveis
             [
-                'nome_tipo'   => 'PANO CIRÚRGICO DO BRAÇO DE INSTRUMENTOS',
+                'designacao_consumivel'   => 'PANO CIRÚRGICO DO BRAÇO DE INSTRUMENTOS',
                 'tipo_mov'    => 'entrada',
                 'referencia'  => 'PANO-BRACO-001',
                 'codigo'      => 'Z11451',
-                'vidas'       => null,
+                'vidas_inicial' => null,
+                'vidas_atual' => null,
                 'data_entrada' => now()->subDays(10),
+                'data_saida' => null,
+                'motivo' => null,
                 'observacoes' => 'Entrada de stock',
             ],
             [
-                'nome_tipo'   => 'PANO CIRÚRGICO DO BRAÇO DE INSTRUMENTOS',
+                'designacao_consumivel'   => 'PANO CIRÚRGICO DO BRAÇO DE INSTRUMENTOS',
                 'tipo_mov'    => 'saida',
                 'referencia'  => 'PANO-BRACO-001',
                 'codigo'      => 'Z11451',
-                'vidas'       => null,
+                'vidas_inicial' => null,
+                'vidas_atual' => null,
                 'data_entrada' => now()->subDays(5),
+                'data_saida' => now()->subDays(5),
+                'motivo' => 'consumo',
                 'observacoes' => 'Consumo',
             ],
             // Extras
             [
-                'nome_tipo'   => 'ASPIRADOR/IRRIGADOR "ELEPHANT"',
+                'designacao_consumivel'   => 'ASPIRADOR/IRRIGADOR "ELEPHANT"',
                 'tipo_mov'    => 'entrada',
                 'referencia'  => 'ELEPHANT-001',
                 'codigo'      => 'E001',
-                'vidas'       => null,
+                'vidas_inicial' => null,
+                'vidas_atual' => null,
                 'data_entrada' => now()->subDays(45),
+                'data_saida' => null,
+                'motivo' => null,
                 'observacoes' => 'Aquisição',
             ],
         ];
 
         foreach ($movimentos as $mov) {
-            $tipo = ConsumivelTipo::where('nome', $mov['nome_tipo'])->first();
+            $consumivel = Consumivel::where('designacao', $mov['designacao_consumivel'])->first();
             
-            if ($tipo) {
+            if ($consumivel) {
                 StockMovimento::create([
-                    'consumivel_tipo_id' => $tipo->id,
-                    'tipo_mov'           => $mov['tipo_mov'],
-                    'referencia'         => $mov['referencia'],
-                    'codigo'             => $mov['codigo'],
-                    'vidas'              => $mov['vidas'],
-                    'data_entrada'       => $mov['data_entrada'],
-                    'observacoes'        => $mov['observacoes'],
+                    'consumivel_id' => $consumivel->id,
+                    'tipo_mov'      => $mov['tipo_mov'],
+                    'referencia'    => $mov['referencia'],
+                    'codigo'        => $mov['codigo'],
+                    'vidas_inicial' => $mov['vidas_inicial'],
+                    'vidas_atual'   => $mov['vidas_atual'],
+                    'data_entrada'  => $mov['data_entrada'],
+                    'data_saida'    => $mov['data_saida'],
+                    'motivo'        => $mov['motivo'],
+                    'observacoes'   => $mov['observacoes'],
                 ]);
             }
         }

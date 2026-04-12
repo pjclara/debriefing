@@ -22,7 +22,6 @@ export default function CreateProcedure({ departments }: Props) {
     const { data, setData, post, errors, processing } = useForm({
         nome: '',
         descricao: '',
-        codigo: '',
         department_id: '',
         ativo: true,
     });
@@ -73,17 +72,6 @@ export default function CreateProcedure({ departments }: Props) {
                                 placeholder="Ex: Apendicectomia"
                                 required
                                 autoFocus
-                            />
-                        </FormRow>
-
-                        <FormRow label="Código" error={errors.codigo}>
-                            <input
-                                type="text"
-                                value={data.codigo}
-                                onChange={(e) => setData('codigo', e.target.value)}
-                                className={inputCls}
-                                placeholder="Ex: PROC_APENDICECTOMIA"
-                                required
                             />
                         </FormRow>
 

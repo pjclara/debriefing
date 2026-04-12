@@ -37,7 +37,6 @@ class ProcedureController extends Controller
         $validated = $request->validate([
             'nome' => 'required|string|max:255|unique:procedures',
             'descricao' => 'nullable|string',
-            'codigo' => 'required|string|max:255|unique:procedures',
             'department_id' => 'required|integer|exists:departments,id',
             'ativo' => 'boolean',
         ]);
@@ -63,7 +62,6 @@ class ProcedureController extends Controller
         $validated = $request->validate([
             'nome' => 'required|string|max:255|unique:procedures,nome,' . $procedure->id,
             'descricao' => 'nullable|string',
-            'codigo' => 'required|string|max:255|unique:procedures,codigo,' . $procedure->id,
             'department_id' => 'required|integer|exists:departments,id',
             'ativo' => 'boolean',
         ]);

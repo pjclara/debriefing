@@ -10,7 +10,6 @@ class Procedure extends Model
     protected $fillable = [
         'nome',
         'descricao',
-        'codigo',
         'department_id',
         'ativo',
     ];

@@ -139,12 +139,15 @@ function CatalogCombobox({
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
-    const selected = value ? consumiveis.find((c) => String(c.id) === value) : null;
+    // Garantir que consumiveis é sempre um array
+    const safeConsumiveis = consumiveis || [];
+
+    const selected = value ? safeConsumiveis.find((c) => String(c.id) === value) : null;
     const displayQuery = open ? query : (selected?.designacao ?? '');
 
     const filtered = query.trim() === ''
-        ? consumiveis
-        : consumiveis.filter((c) =>
+        ? safeConsumiveis
+        : safeConsumiveis.filter((c) =>
             c.designacao.toLowerCase().includes(query.toLowerCase()) ||
             c.categoria.toLowerCase().includes(query.toLowerCase())
           );

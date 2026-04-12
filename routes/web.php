@@ -10,6 +10,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StockMovimentoController;
 use App\Http\Controllers\SurgeryController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Settings\DarkModeController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -21,6 +22,10 @@ Route::inertia('/guide', 'guide')->name('guide');
 
 Route::middleware(['auth'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
+
+    // ── Dark Mode ───────────────────────────────────────────────────────────
+    Route::post('api/user/dark-mode', [DarkModeController::class, 'update'])
+        ->name('user.dark-mode.update');
 
     // ── Briefings (sem destroy — apenas admin pode eliminar) ────────────────
     Route::resource('briefings', BriefingController::class)->except(['destroy']);

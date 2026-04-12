@@ -16,10 +16,16 @@ class StockController extends Controller
         return Inertia::render('stock/index', [
             'consumivel'  => $consumivel,
             'movimentos'  => $consumivel->stockMovimentos()
-                                ->orderByDesc('data_movimento')
+                                ->orderByDesc('data_entrada')
                                 ->orderByDesc('id')
                                 ->get(),
-            'tiposLabel'  => StockMovimento::$tiposLabel,
+            'tiposMovLabel'  => [
+                'entrada' => 'Entrada',
+                'saida' => 'Saída',
+                'ajuste' => 'Ajuste',
+                'encomenda' => 'Encomenda',
+                'devolucao' => 'Devolução',
+            ],
         ]);
     }
 

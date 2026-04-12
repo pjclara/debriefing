@@ -14,12 +14,16 @@ class StockMovimentoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tipo'           => ['required', 'in:entrada,saida,ajuste,encomenda,devolucao'],
-            'quantidade'     => ['required', 'numeric', 'min:0.01'],
-            'data_movimento' => ['required', 'date'],
-            'referencia_doc' => ['nullable', 'string', 'max:255'],
-            'fornecedor'     => ['nullable', 'string', 'max:255'],
-            'observacoes'    => ['nullable', 'string'],
+            'consumivel_id'   => ['required', 'integer', 'exists:consumiveis,id'],
+            'tipo_mov'        => ['required', 'in:entrada,saida,ajuste,encomenda,devolucao'],
+            'referencia'      => ['nullable', 'string', 'max:100'],
+            'codigo'          => ['nullable', 'string', 'max:100'],
+            'vidas_inicial'   => ['nullable', 'integer', 'min:1'],
+            'vidas_atual'     => ['nullable', 'integer', 'min:0'],
+            'data_entrada'    => ['required', 'date'],
+            'data_saida'      => ['nullable', 'date', 'after_or_equal:data_entrada'],
+            'motivo'          => ['nullable', 'string', 'max:255'],
+            'observacoes'     => ['nullable', 'string'],
         ];
     }
 }

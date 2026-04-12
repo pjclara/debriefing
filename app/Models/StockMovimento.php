@@ -10,18 +10,23 @@ class StockMovimento extends Model
     protected $table = 'stock_movimentos';
 
     protected $fillable = [
-        'consumivel_tipo_id',
+        'consumivel_id',
         'tipo_mov',
         'referencia',
         'codigo',
-        'vidas',
+        'vidas_inicial',
+        'vidas_atual',
         'data_entrada',
+        'data_saida',
+        'motivo',
         'observacoes',
     ];
 
     protected $casts = [
         'data_entrada' => 'date',
-        'vidas'        => 'integer',
+        'data_saida'   => 'date',
+        'vidas_inicial' => 'integer',
+        'vidas_atual'   => 'integer',
     ];
 
     public static array $tiposMovLabel = [
@@ -32,11 +37,14 @@ class StockMovimento extends Model
         'devolucao' => 'Devolução ao fornecedor',
     ];
 
+    public const TIPOS_ENTRADA = ['entrada', 'ajuste'];
+    public const TIPOS_SAIDA = ['saida', 'devolucao'];
+
     /**
-     * Tipo de consumível associado
+     * Consumível associado
      */
-    public function tipo(): BelongsTo
+    public function consumivel(): BelongsTo
     {
-        return $this->belongsTo(ConsumivelTipo::class, 'consumivel_tipo_id');
+        return $this->belongsTo(Consumivel::class, 'consumivel_id');
     }
 }

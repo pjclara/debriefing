@@ -3,22 +3,25 @@ import AppLayout from '@/layouts/app-layout';
 import { Plus, Pencil, Trash2, TrendingUp } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
-interface ConsumivelTipo {
+interface Consumivel {
     id: number;
-    nome: string;
+    designacao: string;
     categoria: string;
 }
 
 interface StockMovimento {
     id: number;
-    consumivel_tipo_id: number;
+    consumivel_id: number;
     tipo_mov: string;
     referencia: string | null;
     codigo: string | null;
-    vidas: number | null;
+    vidas_inicial: number | null;
+    vidas_atual: number | null;
     data_entrada: string;
+    data_saida: string | null;
+    motivo: string | null;
     observacoes: string | null;
-    tipo: ConsumivelTipo;
+    consumivel: Consumivel;
 }
 
 interface Paginated {
@@ -99,10 +102,10 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel }: Prop
                                                 {tiposMovLabel[mov.tipo_mov]}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900">{mov.tipo.nome}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-900">{mov.consumivel.designacao}</td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{mov.referencia || '—'}</td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{mov.codigo || '—'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{mov.vidas ? `${mov.vidas}x` : '—'}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-600">{mov.vidas_atual !== null ? `${mov.vidas_atual}/${mov.vidas_inicial}x` : '—'}</td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{formatData(mov.data_entrada)}</td>
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex items-center justify-end gap-2">

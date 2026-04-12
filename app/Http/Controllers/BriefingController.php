@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BriefingRequest;
 use App\Models\Briefing;
+use App\Models\Consumivel;
 use App\Models\Department;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,7 +43,16 @@ class BriefingController extends Controller
     {
         $briefing->load(['surgeries.consumos', 'debriefing']);
 
-        return Inertia::render('briefings/show', ['briefing' => $briefing]);
+        // Consumiveis ativos para seleção
+        $consumiveis = Consumivel::where('ativo', true)
+            ->orderBy('categoria')
+            ->orderBy('designacao')
+            ->get(['id', 'designacao', 'categoria', 'unidade']);
+
+        return Inertia::render('briefings/show', [
+            'briefing' => $briefing,
+            'consumiveis' => $consumiveis,
+        ]);
     }
 
     public function print(Briefing $briefing): Response

@@ -14,11 +14,13 @@ class ConsumoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'designacao'    => ['required', 'string', 'max:255'],
-            'referencia'    => ['nullable', 'string', 'max:255'],
-            'quantidade'    => ['required', 'numeric', 'min:0.01'],
-            'unidade'       => ['required', 'string', 'max:50'],
-            'observacoes'   => ['nullable', 'string'],
+            'consumivel_id'       => ['nullable', 'integer', 'exists:consumiveis,id'],
+            'stock_movimento_id'  => ['nullable', 'integer', 'exists:stock_movimentos,id'],
+            'designacao'          => ['required', 'string', 'max:255'],
+            'referencia'          => ['nullable', 'string', 'max:255'],
+            'quantidade'          => ['required', 'numeric', 'min:0.01'],
+            'unidade'             => ['required', 'string', 'max:50'],
+            'observacoes'         => ['nullable', 'string'],
         ];
     }
 }

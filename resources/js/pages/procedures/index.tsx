@@ -7,7 +7,6 @@ interface Procedure {
     id: number;
     nome: string;
     descricao: string | null;
-    codigo: string;
     ativo: boolean;
     department_id: number;
     department: Department;
@@ -91,7 +90,6 @@ export default function ProceduresIndex({ procedures, departments, flash }: Prop
                                         <thead className="border-t border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
                                             <tr>
                                                 <th className="px-6 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Nome</th>
-                                                <th className="px-6 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Código</th>
                                                 <th className="px-6 py-3 text-center font-semibold text-gray-600 dark:text-gray-300">Status</th>
                                                 <th className="px-6 py-3 text-right font-semibold text-gray-600 dark:text-gray-300">Ações</th>
                                             </tr>
@@ -117,9 +115,6 @@ export default function ProceduresIndex({ procedures, departments, flash }: Prop
                                                                 </p>
                                                             )}
                                                         </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
-                                                        {procedure.codigo}
                                                     </td>
                                                     <td className="px-6 py-4 text-center">
                                                         <span

@@ -46,9 +46,9 @@ class Consumivel extends Model
     {
         $total = 0.0;
         foreach ($this->stockMovimentos()->orderBy('id')->get() as $m) {
-            if (in_array($m->tipo, StockMovimento::TIPOS_ENTRADA)) {
+            if (in_array($m->tipo_mov, StockMovimento::TIPOS_ENTRADA)) {
                 $total += $m->quantidade;
-            } elseif (in_array($m->tipo, StockMovimento::TIPOS_SAIDA)) {
+            } elseif (in_array($m->tipo_mov, StockMovimento::TIPOS_SAIDA)) {
                 $total -= $m->quantidade;
             }
             // 'encomenda' não afecta stock

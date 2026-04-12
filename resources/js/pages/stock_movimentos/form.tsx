@@ -4,49 +4,55 @@ import { SectionCard, FormRow, inputCls, selectCls } from '@/components/form-ui'
 import { TrendingUp } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
-interface ConsumivelTipo {
+interface Consumivel {
     id: number;
-    nome: string;
+    designacao: string;
     categoria: string;
 }
 
 interface StockMovimento {
     id?: number;
-    consumivel_tipo_id?: number;
+    consumivel_id?: number;
     tipo_mov?: string;
     referencia?: string;
     codigo?: string;
-    vidas?: number | string;
+    vidas_inicial?: number | string;
+    vidas_atual?: number | string;
     data_entrada?: string;
+    data_saida?: string;
+    motivo?: string;
     observacoes?: string;
-    tipo?: ConsumivelTipo;
+    consumivel?: Consumivel;
 }
 
 interface Props {
     movimento?: StockMovimento;
-    tipos: ConsumivelTipo[];
+    consumiveis: Consumivel[];
     tiposMovLabel: Record<string, string>;
 }
 
-export default function StockMovimentoForm({ movimento, tipos, tiposMovLabel }: Props) {
+export default function StockMovimentoForm({ movimento, consumiveis, tiposMovLabel }: Props) {
     const isEdit = !!movimento?.id;
     
     // Definir data padrão como hoje
     const hoje = new Date().toISOString().split('T')[0];
 
     const { data, setData, post, put, processing, errors } = useForm({
-        consumivel_tipo_id: movimento?.consumivel_tipo_id ?? '',
+        consumivel_id: movimento?.consumivel_id ?? '',
         tipo_mov: movimento?.tipo_mov ?? 'entrada',
         referencia: movimento?.referencia ?? '',
         codigo: movimento?.codigo ?? '',
-        vidas: movimento?.vidas ?? '',
+        vidas_inicial: movimento?.vidas_inicial ?? '',
+        vidas_atual: movimento?.vidas_atual ?? movimento?.vidas_inicial ?? '',
         data_entrada: movimento?.data_entrada ?? hoje,
+        data_saida: movimento?.data_saida ?? '',
+        motivo: movimento?.motivo ?? '',
         observacoes: movimento?.observacoes ?? '',
     });
 
-    // Obter categoria do tipo selecionado
-    const tipoSelecionado = tipos.find((t) => t.id === Number(data.consumivel_tipo_id));
-    const isRoboticoVidas = tipoSelecionado?.categoria === 'robotico_vidas';
+    // Obter categoria do consumível selecionado
+    const consumivelSelecionado = consumiveis.find((c) => c.id === Number(data.consumivel_id));
+    const isRoboticoVidas = consumivelSelecionado?.categoria === 'robotico_vidas';
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Catálogo', href: '#' },
@@ -56,10 +62,20 @@ export default function StockMovimentoForm({ movimento, tipos, tiposMovLabel }: 
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        
+        // No create, garantir que tipo_mov=entrada, data_saida e motivo são null, vidas_atual=vidas_inicial
+        const submitData = { ...data };
+        if (!isEdit) {
+            submitData.tipo_mov = 'entrada';
+            submitData.data_saida = '';
+            submitData.motivo = '';
+            submitData.vidas_atual = submitData.vidas_inicial;
+        }
+        
         if (isEdit) {
-            put(`/stock_movimentos/${movimento!.id}`);
+            put(`/stock_movimentos/${movimento!.id}`, { data: submitData });
         } else {
-            post('/stock_movimentos');
+            post('/stock_movimentos', { data: submitData });
         }
     }
 
@@ -73,31 +89,33 @@ export default function StockMovimentoForm({ movimento, tipos, tiposMovLabel }: 
 
                 <form onSubmit={handleSubmit}>
                     <SectionCard icon={TrendingUp} title="Dados do Movimento">
-                        <FormRow label="Tipo de Consumível" error={errors.consumivel_tipo_id}>
+                        <FormRow label="Consumível" error={errors.consumivel_id}>
                             <select
-                                value={data.consumivel_tipo_id}
-                                onChange={(e) => setData('consumivel_tipo_id', e.target.value ? Number(e.target.value) : '')}
+                                value={data.consumivel_id}
+                                onChange={(e) => setData('consumivel_id', e.target.value ? Number(e.target.value) : '')}
                                 className={selectCls}
                                 required
                             >
-                                <option value="">Seleccionar tipo...</option>
-                                {tipos.map((tipo) => (
-                                    <option key={tipo.id} value={tipo.id}>
-                                        {tipo.nome}
+                                <option value="">Seleccionar consumível...</option>
+                                {consumiveis.map((consumivel) => (
+                                    <option key={consumivel.id} value={consumivel.id}>
+                                        {consumivel.designacao}
                                     </option>
                                 ))}
                             </select>
                         </FormRow>
 
-                        <FormRow label="Tipo de Movimento" error={errors.tipo_mov}>
-                            <select value={data.tipo_mov} onChange={(e) => setData('tipo_mov', e.target.value)} className={selectCls} required>
-                                {Object.entries(tiposMovLabel).map(([key, label]) => (
-                                    <option key={key} value={key}>
-                                        {label}
-                                    </option>
-                                ))}
-                            </select>
-                        </FormRow>
+                        {isEdit && (
+                            <FormRow label="Tipo de Movimento" error={errors.tipo_mov}>
+                                <select value={data.tipo_mov} onChange={(e) => setData('tipo_mov', e.target.value)} className={selectCls} required>
+                                    {Object.entries(tiposMovLabel).map(([key, label]) => (
+                                        <option key={key} value={key}>
+                                            {label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </FormRow>
+                        )}
 
                         <FormRow label="Referência" error={errors.referencia}>
                             <input
@@ -120,14 +138,28 @@ export default function StockMovimentoForm({ movimento, tipos, tiposMovLabel }: 
                         </FormRow>
 
                         {isRoboticoVidas && (
-                            <FormRow label="Vidas" error={errors.vidas}>
+                            <FormRow label="Vidas Iniciais" error={errors.vidas_inicial}>
                                 <input
                                     type="number"
-                                    value={data.vidas}
-                                    onChange={(e) => setData('vidas', e.target.value ? Number(e.target.value) : '')}
+                                    value={data.vidas_inicial}
+                                    onChange={(e) => setData('vidas_inicial', e.target.value ? Number(e.target.value) : '')}
                                     className={inputCls}
                                     placeholder="Ex: 10"
                                     min="1"
+                                    required={isRoboticoVidas}
+                                />
+                            </FormRow>
+                        )}
+
+                        {isEdit && isRoboticoVidas && (
+                            <FormRow label="Vidas Actuais" error={errors.vidas_atual}>
+                                <input
+                                    type="number"
+                                    value={data.vidas_atual}
+                                    onChange={(e) => setData('vidas_atual', e.target.value ? Number(e.target.value) : '')}
+                                    className={inputCls}
+                                    placeholder="Vidas após consumo"
+                                    min="0"
                                 />
                             </FormRow>
                         )}
@@ -141,6 +173,29 @@ export default function StockMovimentoForm({ movimento, tipos, tiposMovLabel }: 
                                 required
                             />
                         </FormRow>
+
+                        {isEdit && (
+                            <>
+                                <FormRow label="Data de Saída" error={errors.data_saida}>
+                                    <input
+                                        type="date"
+                                        value={data.data_saida}
+                                        onChange={(e) => setData('data_saida', e.target.value)}
+                                        className={inputCls}
+                                    />
+                                </FormRow>
+
+                                <FormRow label="Motivo da Saída" error={errors.motivo}>
+                                    <input
+                                        type="text"
+                                        value={data.motivo}
+                                        onChange={(e) => setData('motivo', e.target.value)}
+                                        className={inputCls}
+                                        placeholder="Ex: Consumo em cirurgia, Devolução ao fornecedor"
+                                    />
+                                </FormRow>
+                            </>
+                        )}
 
                         <FormRow label="Observações" error={errors.observacoes}>
                             <textarea

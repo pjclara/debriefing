@@ -29,9 +29,19 @@ interface SurgeryContext {
     briefing: Briefing;
 }
 
+interface Consumivel {
+    id: number;
+    designacao: string;
+    referencia: string;
+    categoria: string;
+    stock_atual: number;
+    stock_minimo: number;
+}
+
 interface Props {
     surgery: SurgeryContext;
     consumos: Consumo[];
+    consumiveis: Consumivel[];
     flash?: { success?: string };
 }
 
@@ -46,12 +56,17 @@ function ConsumoForm({
     surgeryId,
     initial,
     onCancel,
+    consumiveis,
 }: {
     surgeryId: number;
     initial?: Consumo;
     onCancel: () => void;
+    consumiveis: Consumivel[];
 }) {
     const isEdit = !!initial?.id;
+    const [selectedConsumivel, setSelectedConsumivel] = useState<Consumivel | null>(null);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         designacao:  initial?.designacao  ?? '',
@@ -60,6 +75,24 @@ function ConsumoForm({
         unidade:     initial?.unidade     ?? 'un',
         observacoes: initial?.observacoes ?? '',
     });
+
+    // Filtrar consumiveis baseado em search
+    const filteredConsumives = consumiveis.filter(c => 
+        c.designacao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.referencia.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    function handleConsumvelSelect(consumivel: Consumivel) {
+        setSelectedConsumivel(consumivel);
+        setData({
+            ...data,
+            designacao: consumivel.designacao,
+            referencia: consumivel.referencia,
+            unidade: 'un', // Default unit
+        });
+        setSearchTerm('');
+        setSearchOpen(false);
+    }
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -77,6 +110,66 @@ function ConsumoForm({
     return (
         <form onSubmit={handleSubmit} className="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {/* Selector de Consumível */}
+                {!isEdit && (
+                    <div className="sm:col-span-2 relative">
+                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Selecionar consumível</label>
+                        <button
+                            type="button"
+                            onClick={() => setSearchOpen(!searchOpen)}
+                            className={inputCls + " text-left w-full"}
+                        >
+                            {selectedConsumivel 
+                                ? `${selectedConsumivel.designacao} (Ref: ${selectedConsumivel.referencia})`
+                                : 'Procurar consumível...'}
+                        </button>
+                        
+                        {searchOpen && (
+                            <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
+                                <input
+                                    type="text"
+                                    placeholder="Procurar..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    autoFocus
+                                    className="w-full px-3 py-2 border-b border-gray-200 dark:border-gray-700 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                />
+                                <div className="max-h-64 overflow-y-auto">
+                                    {filteredConsumives.length > 0 ? (
+                                        filteredConsumives.map(c => (
+                                            <button
+                                                key={c.id}
+                                                type="button"
+                                                onClick={() => handleConsumvelSelect(c)}
+                                                className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors"
+                                            >
+                                                <div className="font-medium text-gray-900 dark:text-white">{c.designacao}</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                    Ref: {c.referencia} • Stock: {c.stock_atual} {c.categoria}
+                                                </div>
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                                            Nenhum consumível encontrado
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Stock Info */}
+                {selectedConsumivel && !isEdit && (
+                    <div className="sm:col-span-2 rounded-lg bg-blue-100 dark:bg-blue-900/40 px-3 py-2 text-xs text-blue-800 dark:text-blue-200">
+                        <strong>Stock disponível:</strong> {selectedConsumivel.stock_atual} ({selectedConsumivel.categoria})
+                        {selectedConsumivel.stock_atual <= selectedConsumivel.stock_minimo && (
+                            <span className="ml-2 text-orange-700 dark:text-orange-300">⚠️ Abaixo do mínimo</span>
+                        )}
+                    </div>
+                )}
+
                 {/* Designação */}
                 <div className="sm:col-span-2">
                     <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Designação *</label>
@@ -87,7 +180,7 @@ function ConsumoForm({
                         className={inputCls}
                         placeholder="Ex: PROGRASP FORCEPS"
                         required
-                        autoFocus
+                        readOnly={!isEdit && selectedConsumivel !== null}
                     />
                     {errors.designacao && <p className="mt-1 text-xs text-red-500">{errors.designacao}</p>}
                 </div>
@@ -100,6 +193,7 @@ function ConsumoForm({
                         onChange={e => setData('referencia', e.target.value)}
                         className={inputCls}
                         placeholder="Ex: PROGRASP-001"
+                        readOnly={!isEdit && selectedConsumivel !== null}
                     />
                 </div>
 
@@ -165,7 +259,7 @@ function ConsumoForm({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function ConsumosIndex({ surgery, consumos, flash }: Props) {
+export default function ConsumosIndex({ surgery, consumos, consumiveis, flash }: Props) {
     const [adding, setAdding] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -221,6 +315,7 @@ export default function ConsumosIndex({ surgery, consumos, flash }: Props) {
                         <ConsumoForm
                             surgeryId={surgery.id}
                             onCancel={() => setAdding(false)}
+                            consumiveis={consumiveis}
                         />
                     )}
 
@@ -238,6 +333,7 @@ export default function ConsumosIndex({ surgery, consumos, flash }: Props) {
                                             surgeryId={surgery.id}
                                             initial={c}
                                             onCancel={() => setEditingId(null)}
+                                            consumiveis={consumiveis}
                                         />
                                     ) : (
                                         <div className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800">

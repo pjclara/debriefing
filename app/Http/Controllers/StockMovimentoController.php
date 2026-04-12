@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ConsumivelTipo;
+use App\Http\Requests\StockMovimentoRequest;
+use App\Models\Consumivel;
 use App\Models\StockMovimento;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
+use Illuminate\Http\RedirectResponse;
 
 class StockMovimentoController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
-        $movimentos = StockMovimento::with('tipo')
+        $movimentos = StockMovimento::with('consumivel')
             ->orderByDesc('data_entrada')
             ->paginate(50);
 
@@ -21,62 +23,48 @@ class StockMovimentoController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): Response
     {
-        $tipos = ConsumivelTipo::where('ativo', true)->orderBy('nome')->get();
+        $consumiveis = Consumivel::where('ativo', true)
+            ->orderBy('categoria')
+            ->orderBy('designacao')
+            ->get(['id', 'designacao', 'categoria']);
 
         return Inertia::render('stock_movimentos/form', [
-            'tipos' => $tipos,
+            'consumiveis' => $consumiveis,
             'tiposMovLabel' => StockMovimento::$tiposMovLabel,
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StockMovimentoRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'consumivel_tipo_id' => ['required', 'exists:consumivel_tipos,id'],
-            'tipo_mov' => ['required', 'in:entrada,saida,ajuste,encomenda,devolucao'],
-            'referencia' => ['nullable', 'string', 'max:100'],
-            'codigo' => ['nullable', 'string', 'max:100'],
-            'vidas' => ['nullable', 'integer', 'min:1'],
-            'data_entrada' => ['required', 'date'],
-            'observacoes' => ['nullable', 'string'],
-        ]);
-
-        StockMovimento::create($validated);
+        StockMovimento::create($request->validated());
 
         return redirect('/stock_movimentos')->with('success', 'Movimento de stock registado com sucesso!');
     }
 
-    public function edit(StockMovimento $stock_movimento)
+    public function edit(StockMovimento $stock_movimento): Response
     {
-        $tipos = ConsumivelTipo::where('ativo', true)->orderBy('nome')->get();
+        $consumiveis = Consumivel::where('ativo', true)
+            ->orderBy('categoria')
+            ->orderBy('designacao')
+            ->get(['id', 'designacao', 'categoria']);
 
         return Inertia::render('stock_movimentos/form', [
-            'movimento' => $stock_movimento->load('tipo'),
-            'tipos' => $tipos,
+            'movimento' => $stock_movimento->load('consumivel'),
+            'consumiveis' => $consumiveis,
             'tiposMovLabel' => StockMovimento::$tiposMovLabel,
         ]);
     }
 
-    public function update(Request $request, StockMovimento $stock_movimento)
+    public function update(StockMovimentoRequest $request, StockMovimento $stock_movimento): RedirectResponse
     {
-        $validated = $request->validate([
-            'consumivel_tipo_id' => ['required', 'exists:consumivel_tipos,id'],
-            'tipo_mov' => ['required', 'in:entrada,saida,ajuste,encomenda,devolucao'],
-            'referencia' => ['nullable', 'string', 'max:100'],
-            'codigo' => ['nullable', 'string', 'max:100'],
-            'vidas' => ['nullable', 'integer', 'min:1'],
-            'data_entrada' => ['required', 'date'],
-            'observacoes' => ['nullable', 'string'],
-        ]);
-
-        $stock_movimento->update($validated);
+        $stock_movimento->update($request->validated());
 
         return redirect('/stock_movimentos')->with('success', 'Movimento de stock atualizado com sucesso!');
     }
 
-    public function destroy(StockMovimento $stock_movimento)
+    public function destroy(StockMovimento $stock_movimento): RedirectResponse
     {
         $stock_movimento->delete();
 

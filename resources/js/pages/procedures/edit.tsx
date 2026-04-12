@@ -14,7 +14,6 @@ interface Procedure {
     id: number;
     nome: string;
     descricao: string | null;
-    codigo: string;
     department_id: number;
     ativo: boolean;
 }
@@ -33,7 +32,6 @@ export default function EditProcedure({ procedure, departments }: Props) {
     const { data, setData, put, errors, processing } = useForm({
         nome: procedure.nome,
         descricao: procedure.descricao || '',
-        codigo: procedure.codigo,
         department_id: procedure.department_id,
         ativo: procedure.ativo,
     });
@@ -90,17 +88,6 @@ export default function EditProcedure({ procedure, departments }: Props) {
                                 placeholder="Ex: Apendicectomia"
                                 required
                                 autoFocus
-                            />
-                        </FormRow>
-
-                        <FormRow label="Código" error={errors.codigo}>
-                            <input
-                                type="text"
-                                value={data.codigo}
-                                onChange={(e) => setData('codigo', e.target.value)}
-                                className={inputCls}
-                                placeholder="Ex: PROC_APENDICECTOMIA"
-                                required
                             />
                         </FormRow>
 
