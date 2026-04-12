@@ -3,6 +3,7 @@ import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { SectionCard, FormRow, inputCls, selectCls, textareaCls } from '@/components/form-ui';
 import { User, Clock, FileText, Cpu, Check, AlertCircle } from 'lucide-react';
+import SearchableMultiSelect from '@/components/SearchableMultiSelect';
 import type { BreadcrumbItem } from '@/types';
 
 interface BriefingContext {
@@ -52,10 +53,10 @@ interface Surgery {
     monopolar_cut_tipo?: string;
     bipolar_coag_watts?: number | string;
     bipolar_coag_tipo?: string;
-    b1?: string;
-    b2?: string;
-    b3?: string;
-    b4?: string;
+    b1?: number[];
+    b2?: number[];
+    b3?: number[];
+    b4?: number[];
     equipamento_extra?: string;
 }
 
@@ -63,6 +64,12 @@ interface Props {
     briefing: BriefingContext;
     surgery?: Surgery;
     procedures: Procedure[];
+    consumivel_tipos: ConsumivelTipo[];
+}
+
+interface ConsumivelTipo {
+    id: number;
+    nome: string;
 }
 
 type StepName = 'identificacao' | 'clinicos' | 'tempos' | 'planeamento' | 'robotico' | 'review';
@@ -96,7 +103,7 @@ function CheckField({label, name, checked, onChange}: {label: string; name: stri
 
 // ─── component ────────────────────────────────────────────────────────────────
 
-export default function SurgeryForm({ briefing, surgery, procedures }: Props) {
+export default function SurgeryForm({ briefing, surgery, procedures, consumivel_tipos }: Props) {
     const isEdit = !!surgery?.id;
     const [currentStep, setCurrentStep] = useState<number>(0);
 
@@ -146,10 +153,10 @@ export default function SurgeryForm({ briefing, surgery, procedures }: Props) {
         monopolar_cut_tipo: surgery?.monopolar_cut_tipo ?? '',
         bipolar_coag_watts: surgery?.bipolar_coag_watts ?? '',
         bipolar_coag_tipo: surgery?.bipolar_coag_tipo ?? '',
-        b1: surgery?.b1 ?? '',
-        b2: surgery?.b2 ?? '',
-        b3: surgery?.b3 ?? '',
-        b4: surgery?.b4 ?? '',
+        b1: Array.isArray(surgery?.b1) ? surgery.b1 : [],
+        b2: Array.isArray(surgery?.b2) ? surgery.b2 : [],
+        b3: Array.isArray(surgery?.b3) ? surgery.b3 : [],
+        b4: Array.isArray(surgery?.b4) ? surgery.b4 : [],
         equipamento_extra: surgery?.equipamento_extra ?? '',
     });
 
@@ -197,10 +204,21 @@ export default function SurgeryForm({ briefing, surgery, procedures }: Props) {
         const key = target.name as keyof Surgery;
         let value: any = target.value;
 
-        // Converter datetime-local para formato MySQL datetime (YYYY-MM-DD HH:mm:ss)
+        // Converter datetime-local para formato MySQL datetime (YYYY-MM-DD HH:mm)
         if (target.type === 'datetime-local' && value) {
             const dt = new Date(value + ':00'); // Adiciona :00 para segundos
-            value = dt.toISOString().replace('T', ' ').substring(0, 19);
+            // Retorna em formato YYYY-MM-DD HH:mm (16 caracteres)
+            value = dt.toISOString().replace('T', ' ').substring(0, 16);
+        }
+
+        // Converter strings vazias em null para campos numéricos
+        if (target.type === 'number' && value === '') {
+            value = null;
+        }
+
+        // Converter strings vazias em null para campos de watts/tipo (se necessário)
+        if ((key.toString().includes('_watts') || key.toString().includes('_tipo')) && value === '') {
+            value = null;
         }
 
         setData(key, (target.type === 'checkbox' ? target.checked : value) as any);
@@ -489,17 +507,37 @@ export default function SurgeryForm({ briefing, surgery, procedures }: Props) {
                                 </Field>
                             </div>
 
-                            <Field label="B1" error={errors.b1}>
-                                <input type="text" name="b1" value={data.b1} onChange={handleChange} className={inputCls} />
+                            <Field label="B1 - Pinças" error={errors.b1}>
+                                <SearchableMultiSelect
+                                    options={consumivel_tipos}
+                                    selectedIds={(data.b1 as number[]) ?? []}
+                                    onSelectionChange={(selectedIds) => setData('b1', selectedIds)}
+                                    placeholder="Procurar pinças B1..."
+                                />
                             </Field>
-                            <Field label="B2" error={errors.b2}>
-                                <input type="text" name="b2" value={data.b2} onChange={handleChange} className={inputCls} />
+                            <Field label="B2 - Pinças" error={errors.b2}>
+                                <SearchableMultiSelect
+                                    options={consumivel_tipos}
+                                    selectedIds={(data.b2 as number[]) ?? []}
+                                    onSelectionChange={(selectedIds) => setData('b2', selectedIds)}
+                                    placeholder="Procurar pinças B2..."
+                                />
                             </Field>
-                            <Field label="B3" error={errors.b3}>
-                                <input type="text" name="b3" value={data.b3} onChange={handleChange} className={inputCls} />
+                            <Field label="B3 - Pinças" error={errors.b3}>
+                                <SearchableMultiSelect
+                                    options={consumivel_tipos}
+                                    selectedIds={(data.b3 as number[]) ?? []}
+                                    onSelectionChange={(selectedIds) => setData('b3', selectedIds)}
+                                    placeholder="Procurar pinças B3..."
+                                />
                             </Field>
-                            <Field label="B4" error={errors.b4}>
-                                <input type="text" name="b4" value={data.b4} onChange={handleChange} className={inputCls} />
+                            <Field label="B4 - Pinças" error={errors.b4}>
+                                <SearchableMultiSelect
+                                    options={consumivel_tipos}
+                                    selectedIds={(data.b4 as number[]) ?? []}
+                                    onSelectionChange={(selectedIds) => setData('b4', selectedIds)}
+                                    placeholder="Procurar pinças B4..."
+                                />
                             </Field>
                             <Field label="Equipamento extra" error={errors.equipamento_extra} full>
                                 <textarea name="equipamento_extra" value={data.equipamento_extra} onChange={handleChange} rows={3} className={inputCls} />
@@ -568,7 +606,10 @@ export default function SurgeryForm({ briefing, surgery, procedures }: Props) {
                                         <p><span className="font-medium">Monopolar Coag:</span> {data.monopolar_coag_watts ? `${data.monopolar_coag_watts}W ${data.monopolar_coag_tipo || '—'}` : '—'}</p>
                                         <p><span className="font-medium">Monopolar Cut:</span> {data.monopolar_cut_watts ? `${data.monopolar_cut_watts}W ${data.monopolar_cut_tipo || '—'}` : '—'}</p>
                                         <p><span className="font-medium">Bipolar Coag:</span> {data.bipolar_coag_watts ? `${data.bipolar_coag_watts}W ${data.bipolar_coag_tipo || '—'}` : '—'}</p>
-                                        <p><span className="font-medium">B1-B4:</span> {[data.b1, data.b2, data.b3, data.b4].filter(Boolean).join(', ') || '—'}</p>
+                                        <p><span className="font-medium">B1:</span> {Array.isArray(data.b1) && data.b1.length > 0 ? consumivel_tipos.filter(p => data.b1?.includes(p.id)).map(p => p.nome).join(', ') : '—'}</p>
+                                        <p><span className="font-medium">B2:</span> {Array.isArray(data.b2) && data.b2.length > 0 ? consumivel_tipos.filter(p => data.b2?.includes(p.id)).map(p => p.nome).join(', ') : '—'}</p>
+                                        <p><span className="font-medium">B3:</span> {Array.isArray(data.b3) && data.b3.length > 0 ? consumivel_tipos.filter(p => data.b3?.includes(p.id)).map(p => p.nome).join(', ') : '—'}</p>
+                                        <p><span className="font-medium">B4:</span> {Array.isArray(data.b4) && data.b4.length > 0 ? consumivel_tipos.filter(p => data.b4?.includes(p.id)).map(p => p.nome).join(', ') : '—'}</p>
                                     </div>
                                 </div>
                             </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SurgeryRequest;
 use App\Models\Briefing;
+use App\Models\ConsumivelTipo;
 use App\Models\Department;
 use App\Models\Procedure;
 use App\Models\Surgery;
@@ -23,9 +24,12 @@ class SurgeryController extends Controller
                 ->get(['id', 'nome'])
             : [];
 
+        $consumivel_tipos = ConsumivelTipo::orderBy('nome')->get(['id', 'nome']);
+
         return Inertia::render('surgeries/form', [
             'briefing' => $briefing->only('id', 'data', 'hora', 'sala', 'especialidade'),
             'procedures' => $procedures,
+            'consumivel_tipos' => $consumivel_tipos,
         ]);
     }
 
@@ -48,10 +52,13 @@ class SurgeryController extends Controller
                 ->get(['id', 'nome'])
             : [];
 
+        $consumivel_tipos = ConsumivelTipo::orderBy('nome')->get(['id', 'nome']);
+
         return Inertia::render('surgeries/form', [
             'surgery' => $surgery,
             'briefing' => $briefing->only('id', 'data', 'hora', 'sala', 'especialidade'),
             'procedures' => $procedures,
+            'consumivel_tipos' => $consumivel_tipos,
         ]);
     }
 

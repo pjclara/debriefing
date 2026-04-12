@@ -16,6 +16,11 @@ interface Surgery {
     processo: string;
     procedimento: string;
     destino: string;
+    prep_inicio?: string;
+    prep_fim?: string;
+    docking?: number;
+    consola_inicio?: string;
+    consola_fim?: string;
     antecedentes_relevantes: boolean;
     descricao_antecedentes?: string;
     comorbidades: boolean;
@@ -34,13 +39,16 @@ interface Surgery {
     reserva_unidades?: number;
     trocares?: number;
     otica?: string;
-    monopolar_coag?: string;
-    monopolar_cut?: string;
-    bipolar_coag?: string;
-    b1?: string;
-    b2?: string;
-    b3?: string;
-    b4?: string;
+    monopolar_coag_watts?: number;
+    monopolar_coag_tipo?: string;
+    monopolar_cut_watts?: number;
+    monopolar_cut_tipo?: string;
+    bipolar_coag_watts?: number;
+    bipolar_coag_tipo?: string;
+    b1?: number[];
+    b2?: number[];
+    b3?: number[];
+    b4?: number[];
     equipamento_extra?: string;
     consumos?: Consumo[];
 }
@@ -118,12 +126,38 @@ export default function BriefingPrint({ briefing }: { briefing: Briefing }) {
         return () => clearTimeout(timer);
     }, []);
 
-    const instruments = [
-        briefing.surgeries[0]?.monopolar_coag && `Mono Coag: ${briefing.surgeries[0].monopolar_coag}`,
-        briefing.surgeries[0]?.monopolar_cut && `Mono Cut: ${briefing.surgeries[0].monopolar_cut}`,
-        briefing.surgeries[0]?.bipolar_coag && `Bipolar: ${briefing.surgeries[0].bipolar_coag}`,
-        ...[briefing.surgeries[0]?.b1, briefing.surgeries[0]?.b2, briefing.surgeries[0]?.b3, briefing.surgeries[0]?.b4].filter(Boolean).map((b, i) => `B${i + 1}: ${b}`),
-    ].filter(Boolean).join(' · ');
+    const formatDateTime = (dt: string | undefined) => {
+        if (!dt) return '—';
+        const date = new Date(dt);
+        return date.toLocaleString('pt-PT', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    };
+
+    const formatInstruments = (s: Surgery) => {
+        const parts = [];
+        
+        if (s.monopolar_coag_watts !== null && s.monopolar_coag_watts !== undefined) {
+            parts.push(`Mono Coag: ${s.monopolar_coag_watts}W ${s.monopolar_coag_tipo || ''}`);
+        }
+        if (s.monopolar_cut_watts !== null && s.monopolar_cut_watts !== undefined) {
+            parts.push(`Mono Cut: ${s.monopolar_cut_watts}W ${s.monopolar_cut_tipo || ''}`);
+        }
+        if (s.bipolar_coag_watts !== null && s.bipolar_coag_watts !== undefined) {
+            parts.push(`Bipolar: ${s.bipolar_coag_watts}W ${s.bipolar_coag_tipo || ''}`);
+        }
+        
+        return parts.length > 0 ? parts.join(' · ') : '—';
+    };
+
+    const formatPincas = (arr: number[] | undefined) => {
+        if (!arr || arr.length === 0) return '—';
+        return arr.join(', ');
+    };
 
     return (
         <>
@@ -212,8 +246,17 @@ export default function BriefingPrint({ briefing }: { briefing: Briefing }) {
                                         {s.reserva_unidades != null && <Row label="Reserva (unidades)" value={s.reserva_unidades} />}
                                         {s.trocares != null && <Row label="Trócares" value={s.trocares} />}
                                         {s.otica && <Row label="Ótica" value={`${s.otica}°`} />}
-                                        {instruments && <Row label="Instrumental robótico" value={instruments} />}
-                                                {s.equipamento_extra && <Row label="Equipamento extra" value={s.equipamento_extra} />}
+                                        {s.prep_inicio && <Row label="Prep. Início" value={formatDateTime(s.prep_inicio)} />}
+                                        {s.prep_fim && <Row label="Prep. Fim" value={formatDateTime(s.prep_fim)} />}
+                                        {s.docking != null && <Row label="Docking (min)" value={s.docking} />}
+                                        {s.consola_inicio && <Row label="Consola Início" value={formatDateTime(s.consola_inicio)} />}
+                                        {s.consola_fim && <Row label="Consola Fim" value={formatDateTime(s.consola_fim)} />}
+                                        <Row label="Instrumental robótico" value={formatInstruments(s)} />
+                                        {s.b1 && s.b1.length > 0 && <Row label="B1 - Pinças" value={formatPincas(s.b1)} />}
+                                        {s.b2 && s.b2.length > 0 && <Row label="B2 - Pinças" value={formatPincas(s.b2)} />}
+                                        {s.b3 && s.b3.length > 0 && <Row label="B3 - Pinças" value={formatPincas(s.b3)} />}
+                                        {s.b4 && s.b4.length > 0 && <Row label="B4 - Pinças" value={formatPincas(s.b4)} />}
+                                        {s.equipamento_extra && <Row label="Equipamento extra" value={s.equipamento_extra} />}
                                     </tbody>
                                 </table>
 

@@ -18,15 +18,11 @@ class SurgeryRequest extends FormRequest
             'procedimento'           => ['required', 'string', 'max:255'],
             'destino'                => ['required', 'in:UCPA,Enfermaria,SMI,Outro'],
 
-            'hora_prep_inicio'       => ['nullable', 'integer', 'min:0', 'max:23'],
-            'min_prep_inicio'        => ['nullable', 'integer', 'min:0', 'max:59'],
-            'hora_prep_fim'          => ['nullable', 'integer', 'min:0', 'max:23'],
-            'min_prep_fim'           => ['nullable', 'integer', 'min:0', 'max:59'],
+            'prep_inicio'            => ['nullable', 'date_format:Y-m-d H:i:s,Y-m-d H:i'],
+            'prep_fim'               => ['nullable', 'date_format:Y-m-d H:i:s,Y-m-d H:i'],
             'docking'                => ['nullable', 'integer', 'min:0'],
-            'hora_consola_inicio'    => ['nullable', 'integer', 'min:0', 'max:23'],
-            'min_consola_inicio'     => ['nullable', 'integer', 'min:0', 'max:59'],
-            'hora_consola_fim'       => ['nullable', 'integer', 'min:0', 'max:23'],
-            'min_consola_fim'        => ['nullable', 'integer', 'min:0', 'max:59'],
+            'consola_inicio'         => ['nullable', 'date_format:Y-m-d H:i:s,Y-m-d H:i'],
+            'consola_fim'            => ['nullable', 'date_format:Y-m-d H:i:s,Y-m-d H:i'],
 
             'antecedentes_relevantes'  => ['boolean'],
             'descricao_antecedentes'   => ['nullable', 'string'],
@@ -48,13 +44,20 @@ class SurgeryRequest extends FormRequest
 
             'trocares'               => ['nullable', 'integer', 'min:0'],
             'otica'                  => ['required', 'in:0,30'],
-            'monopolar_coag'         => ['nullable', 'string', 'max:255'],
-            'monopolar_cut'          => ['nullable', 'string', 'max:255'],
-            'bipolar_coag'           => ['nullable', 'string', 'max:255'],
-            'b1'                     => ['nullable', 'string', 'max:255'],
-            'b2'                     => ['nullable', 'string', 'max:255'],
-            'b3'                     => ['nullable', 'string', 'max:255'],
-            'b4'                     => ['nullable', 'string', 'max:255'],
+            'monopolar_coag_watts'   => ['nullable', 'integer', 'min:0'],
+            'monopolar_coag_tipo'    => ['nullable', 'in:pure,flugurate,soft'],
+            'monopolar_cut_watts'    => ['nullable', 'integer', 'min:0'],
+            'monopolar_cut_tipo'     => ['nullable', 'in:pure,flugurate,soft'],
+            'bipolar_coag_watts'     => ['nullable', 'integer', 'min:0'],
+            'bipolar_coag_tipo'      => ['nullable', 'in:pure,flugurate,soft'],
+            'b1'                     => ['nullable', 'array'],
+            'b1.*'                   => ['integer'],
+            'b2'                     => ['nullable', 'array'],
+            'b2.*'                   => ['integer'],
+            'b3'                     => ['nullable', 'array'],
+            'b3.*'                   => ['integer'],
+            'b4'                     => ['nullable', 'array'],
+            'b4.*'                   => ['integer'],
             'equipamento_extra'      => ['nullable', 'string'],
         ];
     }
@@ -70,6 +73,35 @@ class SurgeryRequest extends FormRequest
             fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
             array_intersect_key($this->all(), array_flip($booleans))
         ));
+
+        // Converter campos numéricos vazios em null e strings vazias em null para watts/tipo
+        $numericFields = [
+            'docking', 'perdas_estimadas', 'reserva_unidades', 'trocares',
+            'monopolar_coag_watts', 'monopolar_cut_watts', 'bipolar_coag_watts',
+        ];
+
+        $nullableFields = [
+            'monopolar_coag_tipo', 'monopolar_cut_tipo', 'bipolar_coag_tipo',
+        ];
+
+        foreach ($numericFields as $field) {
+            if ($this->has($field) && ($this->input($field) === '' || $this->input($field) === null)) {
+                $this->merge([$field => null]);
+            }
+        }
+
+        foreach ($nullableFields as $field) {
+            if ($this->has($field) && $this->input($field) === '') {
+                $this->merge([$field => null]);
+            }
+        }
+
+        // Converter arrays vazios em null para B1-B4
+        foreach (['b1', 'b2', 'b3', 'b4'] as $field) {
+            if ($this->has($field) && (empty($this->input($field)) || !is_array($this->input($field)))) {
+                $this->merge([$field => []]);
+            }
+        }
     }
 }
 
