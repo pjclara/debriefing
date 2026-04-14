@@ -11,14 +11,19 @@ interface Consumivel {
     unidade: string;
 }
 
-interface Consumo {
+interface StockMovimento {
     id: number;
-    consumivel_id?: number;
-    designacao: string;
+    consumivel_id: number;
+    tipo_mov: string;
     referencia?: string;
-    quantidade: number | string;
-    unidade: string;
+    codigo?: string;
+    vidas_inicial?: number;
+    vidas_atual?: number;
+    data_entrada: string;
+    data_saida?: string;
+    motivo?: string;
     observacoes?: string;
+    consumivel?: Consumivel;
 }
 
 interface Surgery {
@@ -34,7 +39,7 @@ interface Surgery {
     descricao_variacoes?: string;
     passos_criticos: boolean;
     descricao_passos?: string;
-    consumos?: Consumo[];
+    stock_movimentos?: StockMovimento[];
 }
 
 interface Debriefing {
@@ -240,9 +245,9 @@ function CatalogCombobox({
     );
 }
 
-// ─── Formulário inline de consumo ─────────────────────────────────────────────
+// ─── Formulário inline de movimento de stock ────────────────────────────────────
 
-function ConsumoInlineForm({
+function StockMovimentoInlineForm({
     surgeryId,
     consumiveis,
     editing,
@@ -250,23 +255,27 @@ function ConsumoInlineForm({
 }: {
     surgeryId: number;
     consumiveis: Consumivel[];
-    editing?: Consumo;
+    editing?: StockMovimento;
     onCancel: () => void;
 }) {
     const isEdit = !!editing?.id;
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         consumivel_id: editing?.consumivel_id ? String(editing.consumivel_id) : '',
-        designacao:    editing?.designacao  ?? '',
-        referencia:    editing?.referencia  ?? '',
-        quantidade:    editing?.quantidade  ?? 1,
-        unidade:       editing?.unidade     ?? 'un',
+        tipo_mov:      editing?.tipo_mov ?? 'entrada',
+        referencia:    editing?.referencia ?? '',
+        codigo:        editing?.codigo ?? '',
+        vidas_inicial: editing?.vidas_inicial ?? 1,
+        vidas_atual:   editing?.vidas_atual ?? editing?.vidas_inicial ?? 1,
+        data_entrada:  editing?.data_entrada ?? new Date().toISOString().split('T')[0],
+        data_saida:    editing?.data_saida ?? '',
+        motivo:        editing?.motivo ?? '',
         observacoes:   editing?.observacoes ?? '',
     });
 
     function handleConsumivelChange(id: string, found?: Consumivel) {
         if (id && found) {
-            setData((prev) => ({ ...prev, consumivel_id: id, designacao: found.designacao, unidade: found.unidade }));
+            setData((prev) => ({ ...prev, consumivel_id: id }));
         } else {
             setData((prev) => ({ ...prev, consumivel_id: '' }));
         }
@@ -275,11 +284,11 @@ function ConsumoInlineForm({
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (isEdit) {
-            put(`/surgeries/${surgeryId}/consumos/${editing!.id}`, {
+            put(`/stock_movimentos/${editing!.id}`, {
                 onSuccess: () => { reset(); onCancel(); },
             });
         } else {
-            post(`/surgeries/${surgeryId}/consumos`, {
+            post(`/surgeries/${surgeryId}/stock_movimentos`, {
                 onSuccess: () => { reset(); onCancel(); },
             });
         }
@@ -290,37 +299,74 @@ function ConsumoInlineForm({
             <div className="grid gap-2">
                 {!isEdit && (
                     <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Catálogo</label>
+                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Consumível *</label>
                         <CatalogCombobox
                             consumiveis={consumiveis}
                             value={data.consumivel_id}
                             onChange={handleConsumivelChange}
                         />
+                        {errors.consumivel_id && <p className="mt-0.5 text-xs text-red-500">{errors.consumivel_id}</p>}
                     </div>
                 )}
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Designação *</label>
-                    <input type="text" value={data.designacao} onChange={(e) => setData('designacao', e.target.value)} className={fieldCls} required />
-                    {errors.designacao && <p className="mt-0.5 text-xs text-red-500">{errors.designacao}</p>}
-                </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Ref.</label>
                         <input type="text" value={data.referencia} onChange={(e) => setData('referencia', e.target.value)} className={fieldCls} />
+                        {errors.referencia && <p className="mt-0.5 text-xs text-red-500">{errors.referencia}</p>}
                     </div>
                     <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Qtd. *</label>
-                        <input type="number" value={data.quantidade as string} onChange={(e) => setData('quantidade', e.target.value)} className={fieldCls} min="0.01" step="0.01" required />
-                        {errors.quantidade && <p className="mt-0.5 text-xs text-red-500">{errors.quantidade}</p>}
-                    </div>
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Un. *</label>
-                        <input type="text" value={data.unidade} onChange={(e) => setData('unidade', e.target.value)} className={fieldCls} required />
+                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Código</label>
+                        <input type="text" value={data.codigo} onChange={(e) => setData('codigo', e.target.value)} className={fieldCls} />
+                        {errors.codigo && <p className="mt-0.5 text-xs text-red-500">{errors.codigo}</p>}
                     </div>
                 </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Vidas Iniciais *</label>
+                        <input type="number" value={data.vidas_inicial as number} onChange={(e) => { const val = parseInt(e.target.value) || 1; setData('vidas_inicial', val); if (!isEdit) setData('vidas_atual', val); }} className={fieldCls} min="1" step="1" required />
+                        {errors.vidas_inicial && <p className="mt-0.5 text-xs text-red-500">{errors.vidas_inicial}</p>}
+                    </div>
+                    {isEdit && (
+                        <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Vidas Actuais</label>
+                            <input type="number" value={data.vidas_atual as number} onChange={(e) => setData('vidas_atual', parseInt(e.target.value) || 0)} className={fieldCls} min="0" step="1" />
+                            {errors.vidas_atual && <p className="mt-0.5 text-xs text-red-500">{errors.vidas_atual}</p>}
+                        </div>
+                    )}
+                </div>
+                <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Data Entrada *</label>
+                    <input type="date" value={data.data_entrada} onChange={(e) => setData('data_entrada', e.target.value)} className={fieldCls} required />
+                    {errors.data_entrada && <p className="mt-0.5 text-xs text-red-500">{errors.data_entrada}</p>}
+                </div>
+                {isEdit && (
+                    <>
+                        <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Tipo Momento</label>
+                            <select value={data.tipo_mov} onChange={(e) => setData('tipo_mov', e.target.value)} className={fieldCls}>
+                                <option value="entrada">Entrada</option>
+                                <option value="ajuste">Ajuste</option>
+                                <option value="saida">Saída</option>
+                                <option value="devolucao">Devolução</option>
+                            </select>
+                            {errors.tipo_mov && <p className="mt-0.5 text-xs text-red-500">{errors.tipo_mov}</p>}
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Data Saída</label>
+                            <input type="date" value={data.data_saida} onChange={(e) => setData('data_saida', e.target.value)} className={fieldCls} />
+                            {errors.data_saida && <p className="mt-0.5 text-xs text-red-500">{errors.data_saida}</p>}
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Motivo Saída</label>
+                            <input type="text" value={data.motivo} onChange={(e) => setData('motivo', e.target.value)} className={fieldCls} />
+                            {errors.motivo && <p className="mt-0.5 text-xs text-red-500">{errors.motivo}</p>}
+                        </div>
+                    </>
+                )}
                 <div>
                     <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Observações</label>
                     <input type="text" value={data.observacoes} onChange={(e) => setData('observacoes', e.target.value)} className={fieldCls} />
+                    {errors.observacoes && <p className="mt-0.5 text-xs text-red-500">{errors.observacoes}</p>}
                 </div>
             </div>
             <div className="mt-2 flex justify-end gap-2">
@@ -335,9 +381,9 @@ function ConsumoInlineForm({
     );
 }
 
-// ─── Painel de consumos por cirurgia ─────────────────────────────────────────
+// ─── Painel de movimentos de stock por cirurgia ──────────────────────────────────
 
-function SurgeryConsumosPanel({
+function SurgeryStockPanel({
     surgery,
     consumiveis,
 }: {
@@ -347,19 +393,22 @@ function SurgeryConsumosPanel({
     const [showAdd, setShowAdd] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
 
-    const consumos = surgery.consumos ?? [];
+    const stockMovimentos = surgery.stock_movimentos ?? [];
 
-    function handleDelete(consumoId: number) {
-        if (confirm('Eliminar este consumo?')) {
-            router.delete(`/surgeries/${surgery.id}/consumos/${consumoId}`);
+    function handleDelete(movimentoId: number) {
+        if (confirm('Eliminar este movimento de stock?')) {
+            router.delete(`/stock_movimentos/${movimentoId}`);
         }
     }
+
+    // Criar um mapa para lookup rápido de consumível
+    const consumivelMap = new Map(consumiveis.map((c) => [c.id, c]));
 
     return (
         <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-700">
             <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Consumíveis{consumos.length > 0 ? ` (${consumos.length})` : ''}
+                    Movimentos de Stock{stockMovimentos.length > 0 ? ` (${stockMovimentos.length})` : ''}
                 </span>
                 {!showAdd && editingId === null && (
                     <button
@@ -372,48 +421,56 @@ function SurgeryConsumosPanel({
                 )}
             </div>
 
-            {consumos.length > 0 && (
+            {stockMovimentos.length > 0 && (
                 <div className="mb-2 flex flex-col gap-1">
-                    {consumos.map((c) =>
-                        editingId === c.id ? (
-                            <ConsumoInlineForm
-                                key={c.id}
+                    {stockMovimentos.map((m) => {
+                        const consumivel = m.consumivel || consumivelMap.get(m.consumivel_id);
+                        return editingId === m.id ? (
+                            <StockMovimentoInlineForm
+                                key={m.id}
                                 surgeryId={surgery.id}
                                 consumiveis={consumiveis}
-                                editing={c}
+                                editing={m}
                                 onCancel={() => setEditingId(null)}
                             />
                         ) : (
-                            <div key={c.id} className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5 dark:bg-gray-800/50">
+                            <div key={m.id} className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5 dark:bg-gray-800/50">
                                 <div className="min-w-0 flex-1">
-                                    <span className="text-xs font-medium text-gray-800 dark:text-gray-200">{c.designacao}</span>
-                                    <span className="ml-2 text-xs text-gray-500">{c.quantidade} {c.unidade}</span>
-                                    {c.referencia && (
-                                        <span className="ml-2 text-xs text-gray-400">Ref: {c.referencia}</span>
+                                    <span className="text-xs font-medium text-gray-800 dark:text-gray-200">
+                                        {consumivel?.designacao || `Consumível #${m.consumivel_id}`}
+                                    </span>
+                                    <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-gray-500">
+                                        <span>Vidas: {m.vidas_inicial} → {m.vidas_atual}</span>
+                                        {m.referencia && <span>Ref: {m.referencia}</span>}
+                                        {m.codigo && <span>Código: {m.codigo}</span>}
+                                        <span>{new Date(m.data_entrada).toLocaleDateString('pt-PT')}</span>
+                                    </div>
+                                    {m.observacoes && (
+                                        <p className="mt-0.5 text-xs text-gray-400">{m.observacoes}</p>
                                     )}
                                 </div>
                                 <button
-                                    onClick={() => { setShowAdd(false); setEditingId(c.id); }}
+                                    onClick={() => { setShowAdd(false); setEditingId(m.id); }}
                                     className="rounded p-0.5 text-gray-400 hover:text-blue-600"
                                     title="Editar"
                                 >
                                     <Pencil className="h-3 w-3" />
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(c.id)}
+                                    onClick={() => handleDelete(m.id)}
                                     className="rounded p-0.5 text-gray-400 hover:text-red-600"
                                     title="Eliminar"
                                 >
                                     <Trash2 className="h-3 w-3" />
                                 </button>
                             </div>
-                        )
-                    )}
+                        );
+                    })}
                 </div>
             )}
 
             {showAdd && (
-                <ConsumoInlineForm
+                <StockMovimentoInlineForm
                     surgeryId={surgery.id}
                     consumiveis={consumiveis}
                     onCancel={() => setShowAdd(false)}
@@ -596,7 +653,7 @@ export default function BriefingShow({ briefing, consumiveis, flash }: Props) {
                                             </div>
                                         )}
 
-                                        <SurgeryConsumosPanel surgery={s} consumiveis={consumiveis} />
+                                        <SurgeryStockPanel surgery={s} consumiveis={consumiveis} />
 
                                         <div className="mt-3 flex items-center gap-3 border-t border-gray-100 pt-2 dark:border-gray-700">
                                             <Link

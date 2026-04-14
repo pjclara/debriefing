@@ -22,6 +22,23 @@ class Consumo extends Model
         'quantidade' => 'float',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Consumo $consumo) {
+            // Recalcular stock do consumível quando um consumo é registado
+            if ($consumo->consumivel) {
+                $consumo->consumivel->recalcularStock();
+            }
+        });
+
+        static::deleted(function (Consumo $consumo) {
+            // Recalcular stock do consumível quando um consumo é eliminado
+            if ($consumo->consumivel) {
+                $consumo->consumivel->recalcularStock();
+            }
+        });
+    }
+
     public function surgery(): BelongsTo
     {
         return $this->belongsTo(Surgery::class);

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StockMovimentoRequest;
 use App\Models\Consumivel;
+use App\Models\Consumo;
 use App\Models\StockMovimento;
+use App\Models\Surgery;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
@@ -41,6 +43,32 @@ class StockMovimentoController extends Controller
         StockMovimento::create($request->validated());
 
         return redirect('/stock_movimentos')->with('success', 'Movimento de stock registado com sucesso!');
+    }
+
+    /**
+     * Criar movimento de stock e associar à cirurgia
+     */
+    public function storeForSurgery(StockMovimentoRequest $request, Surgery $surgery): RedirectResponse
+    {
+        $validated = $request->validated();
+        
+        // Crear o movimento de stock
+        $movimento = StockMovimento::create($validated);
+        
+        // Refresh relação para ter consumível carregado
+        $movimento->load('consumivel');
+        
+        // Criar o consumo vinculando a cirurgia ao movimento de stock
+        Consumo::create([
+            'surgery_id' => $surgery->id,
+            'stock_movimento_id' => $movimento->id,
+            'consumivel_id' => $validated['consumivel_id'],
+            'designacao' => $movimento->consumivel?->designacao ?? '',
+            'unidade' => $movimento->consumivel?->unidade ?? 'un',
+            'quantidade' => $validated['vidas_inicial'] ?? 0, // Quantidade = vidas
+        ]);
+
+        return redirect()->back()->with('success', 'Movimento de stock adicionado à cirurgia!');
     }
 
     public function edit(StockMovimento $stock_movimento): Response

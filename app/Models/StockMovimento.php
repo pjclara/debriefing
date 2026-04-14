@@ -40,6 +40,21 @@ class StockMovimento extends Model
     public const TIPOS_ENTRADA = ['entrada', 'ajuste'];
     public const TIPOS_SAIDA = ['saida', 'devolucao'];
 
+    protected static function booted(): void
+    {
+        static::saved(function (StockMovimento $movimento) {
+            if ($movimento->consumivel) {
+                $movimento->consumivel->recalcularStock();
+            }
+        });
+
+        static::deleted(function (StockMovimento $movimento) {
+            if ($movimento->consumivel) {
+                $movimento->consumivel->recalcularStock();
+            }
+        });
+    }
+
     /**
      * Consumível associado
      */

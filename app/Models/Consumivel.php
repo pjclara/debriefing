@@ -45,11 +45,15 @@ class Consumivel extends Model
     public function recalcularStock(): void
     {
         $total = 0.0;
+        
+        // Processar movimentos de stock
         foreach ($this->stockMovimentos()->orderBy('id')->get() as $m) {
             if (in_array($m->tipo_mov, StockMovimento::TIPOS_ENTRADA)) {
-                $total += $m->quantidade;
+                // Entrada: adiciona vidas_inicial
+                $total += (float) ($m->vidas_inicial ?? 0);
             } elseif (in_array($m->tipo_mov, StockMovimento::TIPOS_SAIDA)) {
-                $total -= $m->quantidade;
+                // Saida/Devolução: subtrai vidas_inicial
+                $total -= (float) ($m->vidas_inicial ?? 0);
             }
             // 'encomenda' não afecta stock
         }

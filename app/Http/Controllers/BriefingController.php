@@ -6,6 +6,7 @@ use App\Http\Requests\BriefingRequest;
 use App\Models\Briefing;
 use App\Models\Consumivel;
 use App\Models\Department;
+use App\Models\StockMovimento;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
@@ -41,13 +42,12 @@ class BriefingController extends Controller
 
     public function show(Briefing $briefing): Response
     {
-        $briefing->load(['surgeries.consumos', 'debriefing']);
+        $briefing->load(['surgeries.stockMovimentos.consumivel', 'debriefing']);
 
         // Consumiveis ativos para seleção
-        $consumiveis = Consumivel::where('ativo', true)
-            ->orderBy('categoria')
-            ->orderBy('designacao')
-            ->get(['id', 'designacao', 'categoria', 'unidade']);
+        $consumiveis = StockMovimento::whereHas('consumivel', function ($q) {
+            $q->where('ativo', true);
+        })->with('consumivel')->get()->pluck('consumivel')->unique('id')->values();
 
         return Inertia::render('briefings/show', [
             'briefing' => $briefing,
