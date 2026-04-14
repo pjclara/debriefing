@@ -43,9 +43,22 @@ class BriefingRequest extends FormRequest
             'equipamento_ok', 'mesa_emparelhada', 'ordem_mantida',
         ];
 
-        $this->merge(array_map(
-            fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
-            array_intersect_key($this->all(), array_flip($booleans))
-        ));
+        $processed = [];
+        foreach ($booleans as $field) {
+            if ($this->has($field)) {
+                // Converter valor para boolean de forma segura
+                $value = $this->input($field);
+                // Aceita true/false boolean, strings "true"/"false"/"1"/"0", ou 1/0
+                if (is_bool($value)) {
+                    $processed[$field] = $value;
+                } else {
+                    $processed[$field] = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+                }
+            }
+        }
+        
+        if (!empty($processed)) {
+            $this->merge($processed);
+        }
     }
 }

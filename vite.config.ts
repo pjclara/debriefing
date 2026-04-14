@@ -21,6 +21,13 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    server: {
+        host: '127.0.0.1',
+        hmr: {
+            host: '127.0.0.1',
+            protocol: 'http',
+        },
+    },
     esbuild: {
         jsx: 'automatic',
     },
