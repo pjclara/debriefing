@@ -15,11 +15,11 @@ class ConsumoRequest extends FormRequest
     {
         return [
             'consumivel_id'       => ['nullable', 'integer', 'exists:consumiveis,id'],
-            'stock_movimento_id'  => ['nullable', 'integer', 'exists:stock_movimentos,id'],
-            'designacao'          => ['required', 'string', 'max:255'],
+            'stock_movimento_id'  => ['required', 'integer', 'exists:stock_movimentos,id'],
+            'designacao'          => ['nullable', 'string', 'max:255'],
             'referencia'          => ['nullable', 'string', 'max:255'],
-            'quantidade'          => ['required', 'numeric', 'min:0.01'],
-            'unidade'             => ['required', 'string', 'max:50'],
+            'quantidade'          => ['nullable', 'numeric', 'min:0'],
+            'unidade'             => ['nullable', 'string', 'max:50'],
             'observacoes'         => ['nullable', 'string'],
         ];
     }

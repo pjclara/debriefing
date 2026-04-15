@@ -42,16 +42,20 @@ class BriefingController extends Controller
 
     public function show(Briefing $briefing): Response
     {
-        $briefing->load(['surgeries.stockMovimentos.consumivel', 'debriefing']);
+        $briefing->load([
+            'surgeries.consumos.stockMovimento.consumivel',
+            'debriefing',
+        ]);
 
-        // Consumiveis ativos para seleção
-        $consumiveis = StockMovimento::whereHas('consumivel', function ($q) {
-            $q->where('ativo', true);
-        })->with('consumivel')->get()->pluck('consumivel')->unique('id')->values();
+        // Stock movimentos disponíveis para associar a cirurgias
+        $stockMovimentos = StockMovimento::with('consumivel')
+            ->whereHas('consumivel', fn ($q) => $q->where('ativo', true))
+            ->orderByDesc('data_entrada')
+            ->get(['id', 'consumivel_id', 'tipo_mov', 'referencia', 'vidas_inicial', 'vidas_atual', 'data_entrada', 'observacoes']);
 
         return Inertia::render('briefings/show', [
             'briefing' => $briefing,
-            'consumiveis' => $consumiveis,
+            'stockMovimentos' => $stockMovimentos,
         ]);
     }
 

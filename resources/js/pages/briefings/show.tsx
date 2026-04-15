@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { Pencil, Trash2, Plus, X, Check, Search } from 'lucide-react';
+import { Trash2, Plus, X, Check, Search } from 'lucide-react';
 import type { Auth, BreadcrumbItem } from '@/types';
 
 interface Consumivel {
@@ -15,8 +15,8 @@ interface StockMovimento {
     id: number;
     consumivel_id: number;
     tipo_mov: string;
-    referencia?: string;
     codigo?: string;
+    referencia?: string;
     vidas_inicial?: number;
     vidas_atual?: number;
     data_entrada: string;
@@ -24,6 +24,14 @@ interface StockMovimento {
     motivo?: string;
     observacoes?: string;
     consumivel?: Consumivel;
+}
+
+interface Consumo {
+    id: number;
+    stock_movimento_id: number;
+    consumivel_id: number;
+    observacoes?: string;
+    stock_movimento?: StockMovimento;
 }
 
 interface Surgery {
@@ -39,7 +47,7 @@ interface Surgery {
     descricao_variacoes?: string;
     passos_criticos: boolean;
     descricao_passos?: string;
-    stock_movimentos?: StockMovimento[];
+    consumos?: Consumo[];
 }
 
 interface Debriefing {
@@ -76,7 +84,7 @@ interface Briefing {
 
 interface Props {
     briefing: Briefing;
-    consumiveis: Consumivel[];
+    stockMovimentos: StockMovimento[];
     flash?: { success?: string };
 }
 
@@ -120,49 +128,33 @@ function Row({
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const CATEGORIA_LABELS: Record<string, string> = {
-    robotico_vidas:       'Itens Robóticos com Vidas',
-    robotico_descartavel: 'Consumíveis Robóticos Descartáveis',
-    extra:                'Extras',
-};
-
 const fieldCls =
     'w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs focus:border-blue-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
 
-// ─── Combobox pesquisável para catálogo ───────────────────────────────────────
+// ─── Combobox pesquisável de StockMovimento ───────────────────────────────────
 
-function CatalogCombobox({
-    consumiveis,
+function StockMovimentoCombobox({
+    stockMovimentos,
     value,
     onChange,
 }: {
-    consumiveis: Consumivel[];
+    stockMovimentos: StockMovimento[];
     value: string;
-    onChange: (id: string, item?: Consumivel) => void;
+    onChange: (id: string) => void;
 }) {
     const [query, setQuery] = useState('');
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
-    // Garantir que consumiveis é sempre um array
-    const safeConsumiveis = consumiveis || [];
-
-    const selected = value ? safeConsumiveis.find((c) => String(c.id) === value) : null;
-    const displayQuery = open ? query : (selected?.designacao ?? '');
+    const selected = value ? stockMovimentos.find((m) => String(m.id) === value) : null;
 
     const filtered = query.trim() === ''
-        ? safeConsumiveis
-        : safeConsumiveis.filter((c) =>
-            c.designacao.toLowerCase().includes(query.toLowerCase()) ||
-            c.categoria.toLowerCase().includes(query.toLowerCase())
+        ? stockMovimentos
+        : stockMovimentos.filter((m) =>
+            m.consumivel?.designacao.toLowerCase().includes(query.toLowerCase()) ||
+            (m.codigo ?? '').toLowerCase().includes(query.toLowerCase())
           );
 
-    // Agrupar por categoria
-    const grupos = Object.entries(CATEGORIA_LABELS)
-        .map(([cat, label]) => ({ label, items: filtered.filter((c) => c.categoria === cat) }))
-        .filter((g) => g.items.length > 0);
-
-    // Fechar ao clicar fora
     useEffect(() => {
         function handleClick(e: MouseEvent) {
             if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -174,18 +166,6 @@ function CatalogCombobox({
         return () => document.removeEventListener('mousedown', handleClick);
     }, []);
 
-    function handleSelect(item: Consumivel) {
-        onChange(String(item.id), item);
-        setQuery('');
-        setOpen(false);
-    }
-
-    function handleClear() {
-        onChange('');
-        setQuery('');
-        setOpen(false);
-    }
-
     return (
         <div ref={ref} className="relative">
             <div className="flex items-center rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -193,50 +173,34 @@ function CatalogCombobox({
                 <input
                     type="text"
                     className="flex-1 bg-transparent px-2 py-1.5 text-xs focus:outline-none dark:text-gray-100"
-                    placeholder={selected ? selected.designacao : 'Pesquisar catálogo…'}
-                    value={open ? query : (selected ? selected.designacao : '')}
+                    placeholder="Pesquisar movimento de stock…"
+                    value={open ? query : (selected ? `${selected.consumivel?.designacao ?? '—'} (${selected.tipo_mov})` : '')}
                     onFocus={() => { setOpen(true); setQuery(''); }}
                     onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
                 />
                 {selected && !open && (
-                    <button type="button" onClick={handleClear} className="mr-1.5 rounded p-0.5 text-gray-400 hover:text-gray-600">
+                    <button type="button" onClick={() => { onChange(''); }} className="mr-1.5 rounded p-0.5 text-gray-400 hover:text-gray-600">
                         <X className="h-3 w-3" />
                     </button>
                 )}
             </div>
-            {selected && !open && (
-                <p className="mt-0.5 text-xs text-blue-600 dark:text-blue-400">
-                    Catálogo: <span className="font-medium">{CATEGORIA_LABELS[selected.categoria] ?? selected.categoria}</span>
-                </p>
-            )}
             {open && (
                 <div className="absolute z-50 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                    <div
-                        className="cursor-pointer px-3 py-2 text-xs text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                        onMouseDown={(e) => { e.preventDefault(); handleClear(); }}
-                    >
-                        — Manual (sem catálogo) —
-                    </div>
-                    {grupos.length === 0 && (
+                    {filtered.length === 0 && (
                         <div className="px-3 py-2 text-xs text-gray-400">Sem resultados</div>
                     )}
-                    {grupos.map((g) => (
-                        <div key={g.label}>
-                            <div className="bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
-                                {g.label}
-                            </div>
-                            {g.items.map((item) => (
-                                <div
-                                    key={item.id}
-                                    onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
-                                    className={`cursor-pointer px-3 py-2 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 ${
-                                        String(item.id) === value ? 'bg-blue-50 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'
-                                    }`}
-                                >
-                                    {item.designacao}
-                                    <span className="ml-2 text-gray-400">{item.unidade}</span>
-                                </div>
-                            ))}
+                    {filtered.map((m) => (
+                        <div
+                            key={m.id}
+                            onMouseDown={(e) => { e.preventDefault(); onChange(String(m.id)); setOpen(false); setQuery(''); }}
+                            className={`cursor-pointer px-3 py-2 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 ${
+                                String(m.id) === value ? 'bg-blue-50 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'
+                            }`}
+                        >
+                            <span className="font-medium">{m.consumivel?.designacao ?? `Movimento #${m.id}`}</span>
+                            <span className="ml-2 text-gray-400">Ref: {m.referencia}</span>
+                            {m.codigo && <span className="ml-2 text-gray-400">Codigo: {m.codigo}</span>}
+                            {m.vidas_atual != null && <span className="ml-2 text-gray-400">Vidas: {m.vidas_atual}</span>}
                         </div>
                     ))}
                 </div>
@@ -245,124 +209,41 @@ function CatalogCombobox({
     );
 }
 
-// ─── Formulário inline de movimento de stock ────────────────────────────────────
+// ─── Formulário inline para associar StockMovimento a Surgery ─────────────────
 
-function StockMovimentoInlineForm({
+function AssociarStockForm({
     surgeryId,
-    consumiveis,
-    editing,
+    stockMovimentos,
     onCancel,
 }: {
     surgeryId: number;
-    consumiveis: Consumivel[];
-    editing?: StockMovimento;
+    stockMovimentos: StockMovimento[];
     onCancel: () => void;
 }) {
-    const isEdit = !!editing?.id;
-
-    const { data, setData, post, put, processing, errors, reset } = useForm({
-        consumivel_id: editing?.consumivel_id ? String(editing.consumivel_id) : '',
-        tipo_mov:      editing?.tipo_mov ?? 'entrada',
-        referencia:    editing?.referencia ?? '',
-        codigo:        editing?.codigo ?? '',
-        vidas_inicial: editing?.vidas_inicial ?? 1,
-        vidas_atual:   editing?.vidas_atual ?? editing?.vidas_inicial ?? 1,
-        data_entrada:  editing?.data_entrada ?? new Date().toISOString().split('T')[0],
-        data_saida:    editing?.data_saida ?? '',
-        motivo:        editing?.motivo ?? '',
-        observacoes:   editing?.observacoes ?? '',
+    const { data, setData, post, processing, errors, reset } = useForm({
+        stock_movimento_id: '',
+        observacoes: '',
     });
-
-    function handleConsumivelChange(id: string, found?: Consumivel) {
-        if (id && found) {
-            setData((prev) => ({ ...prev, consumivel_id: id }));
-        } else {
-            setData((prev) => ({ ...prev, consumivel_id: '' }));
-        }
-    }
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (isEdit) {
-            put(`/stock_movimentos/${editing!.id}`, {
-                onSuccess: () => { reset(); onCancel(); },
-            });
-        } else {
-            post(`/surgeries/${surgeryId}/stock_movimentos`, {
-                onSuccess: () => { reset(); onCancel(); },
-            });
-        }
+        post(`/surgeries/${surgeryId}/consumos`, {
+            onSuccess: () => { reset(); onCancel(); },
+        });
     }
 
     return (
         <form onSubmit={handleSubmit} className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
             <div className="grid gap-2">
-                {!isEdit && (
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Consumível *</label>
-                        <CatalogCombobox
-                            consumiveis={consumiveis}
-                            value={data.consumivel_id}
-                            onChange={handleConsumivelChange}
-                        />
-                        {errors.consumivel_id && <p className="mt-0.5 text-xs text-red-500">{errors.consumivel_id}</p>}
-                    </div>
-                )}
-                <div className="grid grid-cols-2 gap-2">
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Ref.</label>
-                        <input type="text" value={data.referencia} onChange={(e) => setData('referencia', e.target.value)} className={fieldCls} />
-                        {errors.referencia && <p className="mt-0.5 text-xs text-red-500">{errors.referencia}</p>}
-                    </div>
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Código</label>
-                        <input type="text" value={data.codigo} onChange={(e) => setData('codigo', e.target.value)} className={fieldCls} />
-                        {errors.codigo && <p className="mt-0.5 text-xs text-red-500">{errors.codigo}</p>}
-                    </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Vidas Iniciais *</label>
-                        <input type="number" value={data.vidas_inicial as number} onChange={(e) => { const val = parseInt(e.target.value) || 1; setData('vidas_inicial', val); if (!isEdit) setData('vidas_atual', val); }} className={fieldCls} min="1" step="1" required />
-                        {errors.vidas_inicial && <p className="mt-0.5 text-xs text-red-500">{errors.vidas_inicial}</p>}
-                    </div>
-                    {isEdit && (
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Vidas Actuais</label>
-                            <input type="number" value={data.vidas_atual as number} onChange={(e) => setData('vidas_atual', parseInt(e.target.value) || 0)} className={fieldCls} min="0" step="1" />
-                            {errors.vidas_atual && <p className="mt-0.5 text-xs text-red-500">{errors.vidas_atual}</p>}
-                        </div>
-                    )}
-                </div>
                 <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Data Entrada *</label>
-                    <input type="date" value={data.data_entrada} onChange={(e) => setData('data_entrada', e.target.value)} className={fieldCls} required />
-                    {errors.data_entrada && <p className="mt-0.5 text-xs text-red-500">{errors.data_entrada}</p>}
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Movimento de Stock *</label>
+                    <StockMovimentoCombobox
+                        stockMovimentos={stockMovimentos}
+                        value={data.stock_movimento_id}
+                        onChange={(id) => setData('stock_movimento_id', id)}
+                    />
+                    {errors.stock_movimento_id && <p className="mt-0.5 text-xs text-red-500">{errors.stock_movimento_id}</p>}
                 </div>
-                {isEdit && (
-                    <>
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Tipo Momento</label>
-                            <select value={data.tipo_mov} onChange={(e) => setData('tipo_mov', e.target.value)} className={fieldCls}>
-                                <option value="entrada">Entrada</option>
-                                <option value="ajuste">Ajuste</option>
-                                <option value="saida">Saída</option>
-                                <option value="devolucao">Devolução</option>
-                            </select>
-                            {errors.tipo_mov && <p className="mt-0.5 text-xs text-red-500">{errors.tipo_mov}</p>}
-                        </div>
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Data Saída</label>
-                            <input type="date" value={data.data_saida} onChange={(e) => setData('data_saida', e.target.value)} className={fieldCls} />
-                            {errors.data_saida && <p className="mt-0.5 text-xs text-red-500">{errors.data_saida}</p>}
-                        </div>
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Motivo Saída</label>
-                            <input type="text" value={data.motivo} onChange={(e) => setData('motivo', e.target.value)} className={fieldCls} />
-                            {errors.motivo && <p className="mt-0.5 text-xs text-red-500">{errors.motivo}</p>}
-                        </div>
-                    </>
-                )}
                 <div>
                     <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Observações</label>
                     <input type="text" value={data.observacoes} onChange={(e) => setData('observacoes', e.target.value)} className={fieldCls} />
@@ -373,93 +254,77 @@ function StockMovimentoInlineForm({
                 <button type="button" onClick={onCancel} className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs text-gray-500 hover:text-gray-700">
                     <X className="h-3 w-3" /> Cancelar
                 </button>
-                <button type="submit" disabled={processing} className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
-                    <Check className="h-3 w-3" /> {isEdit ? 'Guardar' : 'Adicionar'}
+                <button type="submit" disabled={processing || !data.stock_movimento_id} className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+                    <Check className="h-3 w-3" /> Associar
                 </button>
             </div>
         </form>
     );
 }
 
-// ─── Painel de movimentos de stock por cirurgia ──────────────────────────────────
+// ─── Painel de consumos (associações StockMovimento ↔ Surgery) ───────────────
 
 function SurgeryStockPanel({
     surgery,
-    consumiveis,
+    stockMovimentos,
 }: {
     surgery: Surgery;
-    consumiveis: Consumivel[];
+    stockMovimentos: StockMovimento[];
 }) {
     const [showAdd, setShowAdd] = useState(false);
-    const [editingId, setEditingId] = useState<number | null>(null);
 
-    const stockMovimentos = surgery.stock_movimentos ?? [];
+    const consumos = surgery.consumos ?? [];
 
-    function handleDelete(movimentoId: number) {
-        if (confirm('Eliminar este movimento de stock?')) {
-            router.delete(`/stock_movimentos/${movimentoId}`);
+    // Filtrar movimentos já associados a esta cirurgia
+    const associadosIds = new Set(consumos.map((c) => c.stock_movimento_id));
+    const disponiveis = stockMovimentos.filter((m) => !associadosIds.has(m.id));
+
+    function handleDelete(consumoId: number) {
+        if (confirm('Remover esta associação de stock?')) {
+            router.delete(`/surgeries/${surgery.id}/consumos/${consumoId}`);
         }
     }
-
-    // Criar um mapa para lookup rápido de consumível
-    const consumivelMap = new Map(consumiveis.map((c) => [c.id, c]));
 
     return (
         <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-700">
             <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Movimentos de Stock{stockMovimentos.length > 0 ? ` (${stockMovimentos.length})` : ''}
+                    Stock{consumos.length > 0 ? ` (${consumos.length})` : ''}
                 </span>
-                {!showAdd && editingId === null && (
+                {!showAdd && disponiveis.length > 0 && (
                     <button
                         onClick={() => setShowAdd(true)}
                         className="flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400"
                     >
                         <Plus className="h-3 w-3" />
-                        Adicionar
+                        Associar
                     </button>
                 )}
             </div>
 
-            {stockMovimentos.length > 0 && (
+            {consumos.length > 0 && (
                 <div className="mb-2 flex flex-col gap-1">
-                    {stockMovimentos.map((m) => {
-                        const consumivel = m.consumivel || consumivelMap.get(m.consumivel_id);
-                        return editingId === m.id ? (
-                            <StockMovimentoInlineForm
-                                key={m.id}
-                                surgeryId={surgery.id}
-                                consumiveis={consumiveis}
-                                editing={m}
-                                onCancel={() => setEditingId(null)}
-                            />
-                        ) : (
-                            <div key={m.id} className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5 dark:bg-gray-800/50">
+                    {consumos.map((c) => {
+                        const mov = c.stock_movimento;
+                        return (
+                            <div key={c.id} className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5 dark:bg-gray-800/50">
                                 <div className="min-w-0 flex-1">
                                     <span className="text-xs font-medium text-gray-800 dark:text-gray-200">
-                                        {consumivel?.designacao || `Consumível #${m.consumivel_id}`}
+                                        {mov?.consumivel?.designacao ?? `Movimento #${c.stock_movimento_id}`}
                                     </span>
                                     <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-gray-500">
-                                        <span>Vidas: {m.vidas_inicial} → {m.vidas_atual}</span>
-                                        {m.referencia && <span>Ref: {m.referencia}</span>}
-                                        {m.codigo && <span>Código: {m.codigo}</span>}
-                                        <span>{new Date(m.data_entrada).toLocaleDateString('pt-PT')}</span>
+                                        {mov?.vidas_atual != null && <span>Vidas: {mov.vidas_atual}</span>}
+                                        {mov?.codigo && <span>Codigo: {mov.codigo}</span>}
+                                        {mov?.referencia && <span>Referencia: {mov.referencia}</span>}
                                     </div>
-                                    {m.observacoes && (
-                                        <p className="mt-0.5 text-xs text-gray-400">{m.observacoes}</p>
+                                    {c.observacoes && (
+                                        <p className="mt-0.5 text-xs text-gray-400">{c.observacoes}</p>
                                     )}
                                 </div>
                                 <button
-                                    onClick={() => { setShowAdd(false); setEditingId(m.id); }}
-                                    className="rounded p-0.5 text-gray-400 hover:text-blue-600"
-                                    title="Editar"
-                                >
-                                    <Pencil className="h-3 w-3" />
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(m.id)}
+                                    onClick={() => handleDelete(c.id)}
                                     className="rounded p-0.5 text-gray-400 hover:text-red-600"
-                                    title="Eliminar"
+                                    title="Remover associação"
                                 >
                                     <Trash2 className="h-3 w-3" />
                                 </button>
@@ -470,9 +335,9 @@ function SurgeryStockPanel({
             )}
 
             {showAdd && (
-                <StockMovimentoInlineForm
+                <AssociarStockForm
                     surgeryId={surgery.id}
-                    consumiveis={consumiveis}
+                    stockMovimentos={disponiveis}
                     onCancel={() => setShowAdd(false)}
                 />
             )}
@@ -482,7 +347,7 @@ function SurgeryStockPanel({
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 
-export default function BriefingShow({ briefing, consumiveis, flash }: Props) {
+export default function BriefingShow({ briefing, stockMovimentos, flash }: Props) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const isAdmin = auth.user?.role === 'admin';
 
@@ -653,7 +518,7 @@ export default function BriefingShow({ briefing, consumiveis, flash }: Props) {
                                             </div>
                                         )}
 
-                                        <SurgeryStockPanel surgery={s} consumiveis={consumiveis} />
+                                        <SurgeryStockPanel surgery={s} stockMovimentos={stockMovimentos} />
 
                                         <div className="mt-3 flex items-center gap-3 border-t border-gray-100 pt-2 dark:border-gray-700">
                                             <Link

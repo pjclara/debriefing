@@ -26,4 +26,15 @@ class StockMovimentoRequest extends FormRequest
             'observacoes'     => ['nullable', 'string'],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        // Preencher campos com defaults quando não enviados pelo inline form
+        if (!$this->has('tipo_mov')) {
+            $this->merge(['tipo_mov' => 'entrada']);
+        }
+        if (!$this->has('data_entrada')) {
+            $this->merge(['data_entrada' => now()->toDateString()]);
+        }
+    }
 }

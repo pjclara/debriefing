@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ConsumoRequest;
 use App\Models\Consumivel;
 use App\Models\Consumo;
+use App\Models\StockMovimento;
 use App\Models\Surgery;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,7 +31,16 @@ class ConsumoController extends Controller
 
     public function store(ConsumoRequest $request, Surgery $surgery): RedirectResponse
     {
-        $surgery->consumos()->create($request->validated());
+        $validated = $request->validated();
+
+        // Preencher campos a partir do StockMovimento se não enviados
+        $movimento = StockMovimento::with('consumivel')->findOrFail($validated['stock_movimento_id']);
+        $validated['consumivel_id'] ??= $movimento->consumivel_id;
+        $validated['designacao']    ??= $movimento->consumivel?->designacao ?? '';
+        $validated['unidade']       ??= $movimento->consumivel?->unidade ?? 'un';
+        $validated['quantidade']    ??= 1;
+
+        $surgery->consumos()->create($validated);
 
         return redirect()->back()
             ->with('success', 'Consumo adicionado.');

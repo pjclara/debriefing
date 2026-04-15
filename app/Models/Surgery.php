@@ -82,19 +82,4 @@ class Surgery extends Model
     {
         return $this->hasMany(Consumo::class);
     }
-
-    /**
-     * Stock movimentos através de consumos
-     */
-    public function stockMovimentos()
-    {
-        return $this->hasManyThrough(
-            StockMovimento::class,
-            Consumo::class,
-            'surgery_id',      // FK em consumos que referencia surgery
-            'id',              // PK em stock_movimentos
-            'id',              // PK em surgeries
-            'stock_movimento_id' // FK em consumos que referencia stock_movimentos
-        )->distinct();
-    }
 }

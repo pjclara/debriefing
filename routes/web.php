@@ -47,10 +47,6 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('surgeries/{surgery}/consumos/{consumo}', [ConsumoController::class, 'destroy'])
         ->name('surgeries.consumos.destroy');
 
-    // ── Movimentos de stock por cirurgia ─────────────────────────────────────
-    Route::post('surgeries/{surgery}/stock_movimentos', [StockMovimentoController::class, 'storeForSurgery'])
-        ->name('surgeries.stock_movimentos.store');
-
     // ── Debriefing ──────────────────────────────────────────────────────────
     Route::get('briefings/{briefing}/debriefing/create', [DebriefingController::class, 'create'])
         ->name('briefings.debriefing.create');
