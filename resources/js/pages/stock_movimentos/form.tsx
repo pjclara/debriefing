@@ -18,7 +18,8 @@ interface StockMovimento {
     codigo?: string;
     vidas_inicial?: number | string;
     vidas_atual?: number | string;
-    unidades?: number | string;
+    unidades_inicial?: number | string;
+    unidades_atual?: number | string;
     data_entrada?: string;
     data_saida?: string;
     motivo?: string;
@@ -44,7 +45,8 @@ export default function StockMovimentoForm({ movimento, tiposMovLabel, tipos }: 
         codigo: movimento?.codigo ?? '',
         vidas_inicial: movimento?.vidas_inicial ?? '',
         vidas_atual: movimento?.vidas_atual ?? movimento?.vidas_inicial ?? '',
-        unidades: movimento?.unidades ?? '',
+        unidades_inicial: movimento?.unidades_inicial ?? '',
+        unidades_atual: movimento?.unidades_atual ?? movimento?.unidades_inicial ?? '',
         data_entrada: movimento?.data_entrada ?? hoje,
         data_saida: movimento?.data_saida ?? '',
         motivo: movimento?.motivo ?? '',
@@ -72,10 +74,13 @@ export default function StockMovimentoForm({ movimento, tiposMovLabel, tipos }: 
             submitData.motivo = '';
             if (isRoboticoVidas) {
                 submitData.vidas_atual = submitData.vidas_inicial;
-                submitData.unidades = '';
+                submitData.unidades_inicial = '';
+                submitData.unidades_atual = '';
+                submitData.codigo = '';
             } else {
                 submitData.vidas_inicial = '';
                 submitData.vidas_atual = '';
+                submitData.unidades_atual = submitData.unidades_inicial;
                 submitData.codigo = '';
             }
         }
@@ -148,15 +153,28 @@ export default function StockMovimentoForm({ movimento, tiposMovLabel, tipos }: 
                         )}
 
                         {!isRoboticoVidas && tipoSelecionado && (
-                            <FormRow label="Unidades" error={errors.unidades}>
+                            <FormRow label="Unidades Iniciais" error={errors.unidades_inicial}>
                                 <input
                                     type="number"
-                                    value={data.unidades}
-                                    onChange={(e) => setData('unidades', e.target.value ? Number(e.target.value) : '')}
+                                    value={data.unidades_inicial}
+                                    onChange={(e) => setData('unidades_inicial', e.target.value ? Number(e.target.value) : '')}
                                     className={inputCls}
                                     placeholder="Ex: 5"
                                     min="0"
                                     required
+                                />
+                            </FormRow>
+                        )}
+
+                        {isEdit && !isRoboticoVidas && tipoSelecionado && (
+                            <FormRow label="Unidades Actuais" error={errors.unidades_atual}>
+                                <input
+                                    type="number"
+                                    value={data.unidades_atual}
+                                    onChange={(e) => setData('unidades_atual', e.target.value ? Number(e.target.value) : '')}
+                                    className={inputCls}
+                                    placeholder="Unidades após consumo"
+                                    min="0"
                                 />
                             </FormRow>
                         )}

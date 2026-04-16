@@ -33,7 +33,17 @@ class StockMovimentoController extends Controller
 
     public function store(StockMovimentoRequest $request): RedirectResponse
     {
-        StockMovimento::create($request->validated());
+        $data = $request->validated();
+
+        // Garantir que o valor actual é igual ao inicial no momento da criação
+        if (isset($data['vidas_inicial'])) {
+            $data['vidas_atual'] = $data['vidas_inicial'];
+        }
+        if (isset($data['unidades_inicial'])) {
+            $data['unidades_atual'] = $data['unidades_inicial'];
+        }
+
+        StockMovimento::create($data);
 
         return redirect('/stock_movimentos')->with('success', 'Movimento de stock registado com sucesso!');
     }

@@ -18,7 +18,8 @@ interface StockMovimento {
     referencia?: string;
     vidas_inicial?: number;
     vidas_atual?: number;
-    unidades?: number;
+    unidades_inicial?: number;
+    unidades_atual?: number;
     data_entrada: string;
     data_saida?: string;
     motivo?: string;
@@ -200,7 +201,7 @@ function StockMovimentoCombobox({
                             {m.consumivel_tipo?.categoria === 'robotico_vidas' && m.codigo && <span className="ml-2 text-gray-400">Codigo: {m.codigo}</span>}
                             {m.consumivel_tipo?.categoria === 'robotico_vidas'
                                 ? m.vidas_atual != null && <span className="ml-2 text-gray-400">Vidas: {m.vidas_atual}/{m.vidas_inicial}</span>
-                                : m.unidades != null && <span className="ml-2 text-gray-400">Unid.: {m.unidades}</span>}
+                                : m.unidades_atual != null && <span className="ml-2 text-gray-400">Unid.: {m.unidades_atual}/{m.unidades_inicial}</span>}
                         </div>
                     ))}
                 </div>
@@ -315,7 +316,7 @@ function SurgeryStockPanel({
                                     <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-gray-500">
                                         {mov?.consumivel_tipo?.categoria === 'robotico_vidas'
                                             ? mov?.vidas_atual != null && <span>Vidas: {mov.vidas_atual}/{mov.vidas_inicial}</span>
-                                            : mov?.unidades != null && <span>Unid.: {mov.unidades}</span>}
+                                            : mov?.unidades_atual != null && <span>Unid.: {mov.unidades_atual}/{mov.unidades_inicial}</span>}
                                         {mov?.consumivel_tipo?.categoria === 'robotico_vidas' && mov?.codigo && <span>Codigo: {mov.codigo}</span>}
                                         {mov?.referencia && <span>Referencia: {mov.referencia}</span>}
                                     </div>

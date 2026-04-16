@@ -18,7 +18,8 @@ interface StockMovimento {
     codigo: string | null;
     vidas_inicial: number | null;
     vidas_atual: number | null;
-    unidades: number | null;
+    unidades_inicial: number | null;
+    unidades_atual: number | null;
     data_entrada: string;
     data_saida: string | null;
     motivo: string | null;
@@ -111,7 +112,7 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel }: Prop
                                         <td className="px-4 py-3 text-sm text-gray-600">
                                             {mov.consumivel_tipo?.categoria === 'robotico_vidas'
                                                 ? (mov.vidas_atual !== null ? `${mov.vidas_atual}/${mov.vidas_inicial}x` : '—')
-                                                : (mov.unidades !== null ? `${mov.unidades} un.` : '—')}
+                                                : (mov.unidades_atual !== null ? `${mov.unidades_atual}/${mov.unidades_inicial} un.` : '—')}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{formatData(mov.data_entrada)}</td>
                                         <td className="px-4 py-3 text-right">

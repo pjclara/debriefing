@@ -19,13 +19,15 @@ interface StockMovimento {
     codigo?: string;
     vidas_inicial?: number;
     vidas_atual?: number;
-    unidades?: number;
+    unidades_inicial?: number;
+    unidades_atual?: number;
     observacoes?: string;
 }
 
 interface Consumo {
     id: number;
     stock_movimento_id: number;
+    quantidade: number;
     observacoes?: string;
     stock_movimento?: StockMovimento;
 }
@@ -60,7 +62,7 @@ function movQtd(m: StockMovimento): string | null {
     if (m.consumivel_tipo?.categoria === 'robotico_vidas') {
         return m.vidas_atual != null ? `Vidas: ${m.vidas_atual}/${m.vidas_inicial}` : null;
     }
-    return m.unidades != null ? `${m.unidades} un.` : null;
+    return m.unidades_atual != null ? `${m.unidades_atual}/${m.unidades_inicial} un.` : null;
 }
 
 function formatDate(dateStr: string) {
@@ -159,8 +161,16 @@ function ConsumoForm({
 }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         stock_movimento_id: '',
+        quantidade: 1,
         observacoes: '',
     });
+
+    // tipo do movimento seleccionado
+    const movSelecionado = data.stock_movimento_id
+        ? stockMovimentos.find((m) => String(m.id) === data.stock_movimento_id)
+        : null;
+    const isVidas = movSelecionado?.consumivel_tipo?.categoria === 'robotico_vidas';
+    const qtdLabel = isVidas ? 'Vidas a abater' : 'Unidades a abater';
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -180,6 +190,20 @@ function ConsumoForm({
                         onChange={(id) => setData('stock_movimento_id', id)}
                     />
                     {errors.stock_movimento_id && <p className="mt-1 text-xs text-red-500">{errors.stock_movimento_id}</p>}
+                </div>
+                <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
+                        {qtdLabel} *
+                    </label>
+                    <input
+                        type="number"
+                        value={data.quantidade}
+                        onChange={(e) => setData('quantidade', Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                        min="1"
+                        required
+                    />
+                    {errors.quantidade && <p className="mt-1 text-xs text-red-500">{errors.quantidade}</p>}
                 </div>
                 <div>
                     <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Observações</label>
@@ -290,7 +314,8 @@ export default function ConsumosIndex({ surgery, consumos, stockMovimentos, flas
                                                 {mov ? movLabel(mov) : `Movimento #${c.stock_movimento_id}`}
                                             </p>
                                             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                                                {mov && movQtd(mov) && <span>{movQtd(mov)}</span>}
+                                                {c.quantidade > 1 && <span className="font-medium">{c.quantidade}×</span>}
+                                                {' '}{mov && movQtd(mov) && <span>{movQtd(mov)}</span>}
                                                 {mov?.referencia && <span className="ml-2">Ref: {mov.referencia}</span>}
                                                 {c.observacoes && <span className="ml-2">{c.observacoes}</span>}
                                             </p>

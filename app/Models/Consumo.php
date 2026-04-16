@@ -10,10 +10,13 @@ class Consumo extends Model
     protected $fillable = [
         'surgery_id',
         'stock_movimento_id',
+        'quantidade',
         'observacoes',
     ];
 
-    protected $casts = [];
+    protected $casts = [
+        'quantidade' => 'integer',
+    ];
 
     public function surgery(): BelongsTo
     {

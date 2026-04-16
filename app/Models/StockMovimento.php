@@ -16,7 +16,8 @@ class StockMovimento extends Model
         'codigo',
         'vidas_inicial',
         'vidas_atual',
-        'unidades',
+        'unidades_inicial',
+        'unidades_atual',
         'data_entrada',
         'data_saida',
         'motivo',
@@ -26,9 +27,10 @@ class StockMovimento extends Model
     protected $casts = [
         'data_entrada'  => 'date',
         'data_saida'    => 'date',
-        'vidas_inicial' => 'integer',
-        'vidas_atual'   => 'integer',
-        'unidades'      => 'integer',
+        'vidas_inicial'    => 'integer',
+        'vidas_atual'     => 'integer',
+        'unidades_inicial' => 'integer',
+        'unidades_atual'   => 'integer',
     ];
 
     public static array $tiposMovLabel = [
@@ -62,6 +64,6 @@ class StockMovimento extends Model
      */
     public function getQuantidadeAttribute(): ?int
     {
-        return $this->usaVidas() ? $this->vidas_atual : $this->unidades;
+        return $this->usaVidas() ? $this->vidas_atual : $this->unidades_atual;
     }
 }

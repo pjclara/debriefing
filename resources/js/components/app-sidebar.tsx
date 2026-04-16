@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ClipboardList, LayoutGrid, Users, Building2, Wrench, Syringe, Boxes, TrendingDown } from 'lucide-react';
+import { ClipboardList, History, LayoutGrid, Users, Building2, Wrench, Syringe, Boxes, TrendingDown } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -45,6 +45,11 @@ const allNavGroups: NavGroup[] = [
                 href: '/stock_movimentos',
                 icon: TrendingDown,
                 adminOnly: true,
+            },
+            {
+                title: 'Histórico de Consumos',
+                href: '/consumos/historico',
+                icon: History,
             },
         ],
     },

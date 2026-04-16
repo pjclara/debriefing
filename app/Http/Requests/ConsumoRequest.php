@@ -15,6 +15,7 @@ class ConsumoRequest extends FormRequest
     {
         return [
             'stock_movimento_id' => ['required', 'integer', 'exists:stock_movimentos,id'],
+            'quantidade'         => ['sometimes', 'integer', 'min:1'],
             'observacoes'        => ['nullable', 'string'],
         ];
     }

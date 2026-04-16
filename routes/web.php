@@ -38,6 +38,8 @@ Route::middleware(['auth'])->group(function () {
         ->except(['index', 'show', 'destroy']);
 
     // ── Consumos por cirurgia ───────────────────────────────────────────────
+    Route::get('consumos/historico', [ConsumoController::class, 'historico'])
+        ->name('consumos.historico');
     Route::get('surgeries/{surgery}/consumos', [ConsumoController::class, 'index'])
         ->name('surgeries.consumos.index');
     Route::post('surgeries/{surgery}/consumos', [ConsumoController::class, 'store'])
