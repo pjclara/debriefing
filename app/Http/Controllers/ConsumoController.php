@@ -14,22 +14,22 @@ class ConsumoController extends Controller
 {
     public function index(Surgery $surgery): Response
     {
+        $surgery->load(['briefing', 'consumos.stockMovimento.consumivelTipo']);
+
+        $stockMovimentos = StockMovimento::with('consumivelTipo:id,nome,categoria')
+            ->orderByDesc('data_entrada')
+            ->get(['id', 'consumivel_tipo_id', 'tipo_mov', 'referencia', 'codigo', 'vidas_inicial', 'vidas_atual', 'unidades', 'observacoes']);
+
         return Inertia::render('consumos/index', [
-            'surgery'  => $surgery->load('briefing'),
-            'consumos' => $surgery->consumos()->orderBy('created_at')->get(),
+            'surgery'          => $surgery,
+            'consumos'         => $surgery->consumos,
+            'stockMovimentos'  => $stockMovimentos,
         ]);
     }
 
     public function store(ConsumoRequest $request, Surgery $surgery): RedirectResponse
     {
-        $validated = $request->validated();
-
-        // Preencher campos a partir do StockMovimento se não enviados
-        $movimento = StockMovimento::findOrFail($validated['stock_movimento_id']);
-        $validated['designacao'] ??= $movimento->designacao ?? '';
-        $validated['quantidade'] ??= 1;
-
-        $surgery->consumos()->create($validated);
+        $surgery->consumos()->create($request->validated());
 
         return redirect()->back()
             ->with('success', 'Consumo adicionado.');

@@ -9,6 +9,11 @@ class ConsumivelTipo extends Model
 {
     protected $table = 'consumivel_tipos';
 
+    // Valores possíveis de categoria
+    public const CAT_ROBOTICO_VIDAS       = 'robotico_vidas';
+    public const CAT_ROBOTICO_DESCARTAVEL = 'robotico_descartavel';
+    public const CAT_EXTRA                = 'extra';
+
     protected $fillable = [
         'nome',
         'categoria',

@@ -18,6 +18,7 @@ interface StockMovimento {
     codigo: string | null;
     vidas_inicial: number | null;
     vidas_atual: number | null;
+    unidades: number | null;
     data_entrada: string;
     data_saida: string | null;
     motivo: string | null;
@@ -88,7 +89,7 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel }: Prop
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Descrição</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Referência</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Código</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Vidas</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Qtd.</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Data</th>
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">Acções</th>
                                 </tr>
@@ -104,8 +105,14 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel }: Prop
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-900">{mov.consumivel_tipo?.nome ?? '—'}</td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{mov.referencia || '—'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{mov.codigo || '—'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{mov.vidas_atual !== null ? `${mov.vidas_atual}/${mov.vidas_inicial}x` : '—'}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                            {mov.consumivel_tipo?.categoria === 'robotico_vidas' ? (mov.codigo || '—') : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                            {mov.consumivel_tipo?.categoria === 'robotico_vidas'
+                                                ? (mov.vidas_atual !== null ? `${mov.vidas_atual}/${mov.vidas_inicial}x` : '—')
+                                                : (mov.unidades !== null ? `${mov.unidades} un.` : '—')}
+                                        </td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{formatData(mov.data_entrada)}</td>
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex items-center justify-end gap-2">

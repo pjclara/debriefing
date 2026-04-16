@@ -7,6 +7,7 @@ import type { Auth, BreadcrumbItem } from '@/types';
 interface ConsumivelTipo {
     id: number;
     nome: string;
+    categoria: 'robotico_vidas' | 'robotico_descartavel' | 'extra';
 }
 
 interface StockMovimento {
@@ -17,6 +18,7 @@ interface StockMovimento {
     referencia?: string;
     vidas_inicial?: number;
     vidas_atual?: number;
+    unidades?: number;
     data_entrada: string;
     data_saida?: string;
     motivo?: string;
@@ -195,8 +197,10 @@ function StockMovimentoCombobox({
                         >
                             <span className="font-medium">{m.consumivel_tipo?.nome}</span>
                             <span className="ml-2 text-gray-400">Ref: {m.referencia}</span>
-                            {m.codigo && <span className="ml-2 text-gray-400">Codigo: {m.codigo}</span>}
-                            {m.vidas_atual != null && <span className="ml-2 text-gray-400">Vidas: {m.vidas_atual}</span>}
+                            {m.consumivel_tipo?.categoria === 'robotico_vidas' && m.codigo && <span className="ml-2 text-gray-400">Codigo: {m.codigo}</span>}
+                            {m.consumivel_tipo?.categoria === 'robotico_vidas'
+                                ? m.vidas_atual != null && <span className="ml-2 text-gray-400">Vidas: {m.vidas_atual}/{m.vidas_inicial}</span>
+                                : m.unidades != null && <span className="ml-2 text-gray-400">Unid.: {m.unidades}</span>}
                         </div>
                     ))}
                 </div>
@@ -309,8 +313,10 @@ function SurgeryStockPanel({
                                         {mov?.consumivel_tipo?.nome ?? `Movimento #${c.stock_movimento_id}`}
                                     </span>
                                     <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-gray-500">
-                                        {mov?.vidas_atual != null && <span>Vidas: {mov.vidas_atual}</span>}
-                                        {mov?.codigo && <span>Codigo: {mov.codigo}</span>}
+                                        {mov?.consumivel_tipo?.categoria === 'robotico_vidas'
+                                            ? mov?.vidas_atual != null && <span>Vidas: {mov.vidas_atual}/{mov.vidas_inicial}</span>
+                                            : mov?.unidades != null && <span>Unid.: {mov.unidades}</span>}
+                                        {mov?.consumivel_tipo?.categoria === 'robotico_vidas' && mov?.codigo && <span>Codigo: {mov.codigo}</span>}
                                         {mov?.referencia && <span>Referencia: {mov.referencia}</span>}
                                     </div>
                                     {c.observacoes && (

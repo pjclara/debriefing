@@ -1,17 +1,33 @@
-import React, { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { SectionCard, FormRow, inputCls, selectCls } from '@/components/form-ui';
-import { PackageOpen, Pencil, Trash2, Plus, X, Check } from 'lucide-react';
+import { SectionCard } from '@/components/form-ui';
+import { PackageOpen, Trash2, Plus, X, Check, Search } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
+
+interface ConsumivelTipo {
+    id: number;
+    nome: string;
+    categoria: 'robotico_vidas' | 'robotico_descartavel' | 'extra';
+}
+
+interface StockMovimento {
+    id: number;
+    consumivel_tipo?: ConsumivelTipo;
+    tipo_mov: string;
+    referencia?: string;
+    codigo?: string;
+    vidas_inicial?: number;
+    vidas_atual?: number;
+    unidades?: number;
+    observacoes?: string;
+}
 
 interface Consumo {
     id: number;
-    designacao: string;
-    referencia?: string;
-    quantidade: number | string;
-    unidade: string;
+    stock_movimento_id: number;
     observacoes?: string;
+    stock_movimento?: StockMovimento;
 }
 
 interface Briefing {
@@ -29,20 +45,22 @@ interface SurgeryContext {
     briefing: Briefing;
 }
 
-interface Consumivel {
-    id: number;
-    designacao: string;
-    referencia: string;
-    categoria: string;
-    stock_atual: number;
-    stock_minimo: number;
-}
-
 interface Props {
     surgery: SurgeryContext;
     consumos: Consumo[];
-    consumiveis: Consumivel[];
+    stockMovimentos: StockMovimento[];
     flash?: { success?: string };
+}
+
+function movLabel(m: StockMovimento): string {
+    return m.consumivel_tipo?.nome ?? `Movimento #${m.id}`;
+}
+
+function movQtd(m: StockMovimento): string | null {
+    if (m.consumivel_tipo?.categoria === 'robotico_vidas') {
+        return m.vidas_atual != null ? `Vidas: ${m.vidas_atual}/${m.vidas_inicial}` : null;
+    }
+    return m.unidades != null ? `${m.unidades} un.` : null;
 }
 
 function formatDate(dateStr: string) {
@@ -50,199 +68,138 @@ function formatDate(dateStr: string) {
     return `${day}/${month}/${year}`;
 }
 
-// ─── Inline add / edit form ───────────────────────────────────────────────────
+// ─── Combobox de Stock Movimentos ─────────────────────────────────────────────
+
+function StockCombobox({
+    stockMovimentos,
+    value,
+    onChange,
+}: {
+    stockMovimentos: StockMovimento[];
+    value: string;
+    onChange: (id: string) => void;
+}) {
+    const [query, setQuery] = useState('');
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const selected = value ? stockMovimentos.find((m) => String(m.id) === value) : null;
+
+    const filtered = query.trim() === ''
+        ? stockMovimentos
+        : stockMovimentos.filter((m) =>
+            (m.consumivel_tipo?.nome ?? '').toLowerCase().includes(query.toLowerCase()) ||
+            (m.referencia ?? '').toLowerCase().includes(query.toLowerCase())
+          );
+
+    useEffect(() => {
+        function handleClick(e: MouseEvent) {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+                setQuery('');
+            }
+        }
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, []);
+
+    return (
+        <div ref={ref} className="relative">
+            <div className="flex items-center rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                <Search className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
+                <input
+                    type="text"
+                    className="flex-1 bg-transparent px-2 py-2 text-sm focus:outline-none dark:text-gray-100"
+                    placeholder="Pesquisar movimento de stock…"
+                    value={open ? query : (selected ? `${movLabel(selected)} (${selected.tipo_mov})` : '')}
+                    onFocus={() => { setOpen(true); setQuery(''); }}
+                    onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+                />
+                {selected && !open && (
+                    <button type="button" onClick={() => onChange('')} className="mr-2 rounded p-0.5 text-gray-400 hover:text-gray-600">
+                        <X className="h-4 w-4" />
+                    </button>
+                )}
+            </div>
+            {open && (
+                <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                    {filtered.length === 0 && (
+                        <div className="px-3 py-2 text-sm text-gray-400">Sem resultados</div>
+                    )}
+                    {filtered.map((m) => (
+                        <div
+                            key={m.id}
+                            onMouseDown={(e) => { e.preventDefault(); onChange(String(m.id)); setOpen(false); setQuery(''); }}
+                            className={`cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 ${
+                                String(m.id) === value ? 'bg-blue-50 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'
+                            }`}
+                        >
+                            <span className="font-medium">{movLabel(m)}</span>
+                            {m.referencia && <span className="ml-2 text-gray-400 text-xs">Ref: {m.referencia}</span>}
+                            {m.consumivel_tipo?.categoria === 'robotico_vidas' && m.codigo && <span className="ml-2 text-gray-400 text-xs">Cód: {m.codigo}</span>}
+                            {movQtd(m) && <span className="ml-2 text-gray-400 text-xs">{movQtd(m)}</span>}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Formulário de adicionar consumo ─────────────────────────────────────────
 
 function ConsumoForm({
     surgeryId,
-    initial,
+    stockMovimentos,
     onCancel,
-    consumiveis,
 }: {
     surgeryId: number;
-    initial?: Consumo;
+    stockMovimentos: StockMovimento[];
     onCancel: () => void;
-    consumiveis: Consumivel[];
 }) {
-    const isEdit = !!initial?.id;
-    const [selectedConsumivel, setSelectedConsumivel] = useState<Consumivel | null>(null);
-    const [searchOpen, setSearchOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const { data, setData, post, put, processing, errors, reset } = useForm({
-        designacao:  initial?.designacao  ?? '',
-        referencia:  initial?.referencia  ?? '',
-        quantidade:  initial?.quantidade  ?? 1,
-        unidade:     initial?.unidade     ?? 'un',
-        observacoes: initial?.observacoes ?? '',
+    const { data, setData, post, processing, errors, reset } = useForm({
+        stock_movimento_id: '',
+        observacoes: '',
     });
-
-    // Filtrar consumiveis baseado em search
-    const filteredConsumives = consumiveis.filter(c => 
-        c.designacao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.referencia.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    function handleConsumvelSelect(consumivel: Consumivel) {
-        setSelectedConsumivel(consumivel);
-        setData({
-            ...data,
-            designacao: consumivel.designacao,
-            referencia: consumivel.referencia,
-            unidade: 'un', // Default unit
-        });
-        setSearchTerm('');
-        setSearchOpen(false);
-    }
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (isEdit) {
-            put(`/surgeries/${surgeryId}/consumos/${initial!.id}`, {
-                onSuccess: () => { reset(); onCancel(); },
-            });
-        } else {
-            post(`/surgeries/${surgeryId}/consumos`, {
-                onSuccess: () => { reset(); onCancel(); },
-            });
-        }
+        post(`/surgeries/${surgeryId}/consumos`, {
+            onSuccess: () => { reset(); onCancel(); },
+        });
     }
 
     return (
         <form onSubmit={handleSubmit} className="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {/* Selector de Consumível */}
-                {!isEdit && (
-                    <div className="sm:col-span-2 relative">
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Selecionar consumível</label>
-                        <button
-                            type="button"
-                            onClick={() => setSearchOpen(!searchOpen)}
-                            className={inputCls + " text-left w-full"}
-                        >
-                            {selectedConsumivel 
-                                ? `${selectedConsumivel.designacao} (Ref: ${selectedConsumivel.referencia})`
-                                : 'Procurar consumível...'}
-                        </button>
-                        
-                        {searchOpen && (
-                            <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
-                                <input
-                                    type="text"
-                                    placeholder="Procurar..."
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                    autoFocus
-                                    className="w-full px-3 py-2 border-b border-gray-200 dark:border-gray-700 outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                />
-                                <div className="max-h-64 overflow-y-auto">
-                                    {filteredConsumives.length > 0 ? (
-                                        filteredConsumives.map(c => (
-                                            <button
-                                                key={c.id}
-                                                type="button"
-                                                onClick={() => handleConsumvelSelect(c)}
-                                                className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors"
-                                            >
-                                                <div className="font-medium text-gray-900 dark:text-white">{c.designacao}</div>
-                                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                                    Ref: {c.referencia} • Stock: {c.stock_atual} {c.categoria}
-                                                </div>
-                                            </button>
-                                        ))
-                                    ) : (
-                                        <div className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
-                                            Nenhum consumível encontrado
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Stock Info */}
-                {selectedConsumivel && !isEdit && (
-                    <div className="sm:col-span-2 rounded-lg bg-blue-100 dark:bg-blue-900/40 px-3 py-2 text-xs text-blue-800 dark:text-blue-200">
-                        <strong>Stock disponível:</strong> {selectedConsumivel.stock_atual} ({selectedConsumivel.categoria})
-                        {selectedConsumivel.stock_atual <= selectedConsumivel.stock_minimo && (
-                            <span className="ml-2 text-orange-700 dark:text-orange-300">⚠️ Abaixo do mínimo</span>
-                        )}
-                    </div>
-                )}
-
-                {/* Designação */}
-                <div className="sm:col-span-2">
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Designação *</label>
-                    <input
-                        type="text"
-                        value={data.designacao}
-                        onChange={e => setData('designacao', e.target.value)}
-                        className={inputCls}
-                        placeholder="Ex: PROGRASP FORCEPS"
-                        required
-                        readOnly={!isEdit && selectedConsumivel !== null}
-                    />
-                    {errors.designacao && <p className="mt-1 text-xs text-red-500">{errors.designacao}</p>}
-                </div>
-
+            <div className="flex flex-col gap-3">
                 <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Referência</label>
-                    <input
-                        type="text"
-                        value={data.referencia}
-                        onChange={e => setData('referencia', e.target.value)}
-                        className={inputCls}
-                        placeholder="Ex: PROGRASP-001"
-                        readOnly={!isEdit && selectedConsumivel !== null}
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Movimento de Stock *</label>
+                    <StockCombobox
+                        stockMovimentos={stockMovimentos}
+                        value={data.stock_movimento_id}
+                        onChange={(id) => setData('stock_movimento_id', id)}
                     />
+                    {errors.stock_movimento_id && <p className="mt-1 text-xs text-red-500">{errors.stock_movimento_id}</p>}
                 </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Qtd. *</label>
-                        <input
-                            type="number"
-                            value={data.quantidade as string}
-                            onChange={e => setData('quantidade', e.target.value)}
-                            className={inputCls}
-                            min="0.01"
-                            step="0.01"
-                            required
-                        />
-                        {errors.quantidade && <p className="mt-1 text-xs text-red-500">{errors.quantidade}</p>}
-                    </div>
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Unidade *</label>
-                        <input
-                            type="text"
-                            value={data.unidade}
-                            onChange={e => setData('unidade', e.target.value)}
-                            className={inputCls}
-                            required
-                        />
-                    </div>
-                </div>
-
-                <div className="sm:col-span-2">
+                <div>
                     <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Observações</label>
                     <input
                         type="text"
                         value={data.observacoes}
-                        onChange={e => setData('observacoes', e.target.value)}
-                        className={inputCls}
+                        onChange={(e) => setData('observacoes', e.target.value)}
+                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                         placeholder="Opcional"
                     />
                 </div>
             </div>
-
             <div className="mt-3 flex gap-2">
                 <button
                     type="submit"
-                    disabled={processing}
+                    disabled={processing || !data.stock_movimento_id}
                     className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
                 >
                     <Check size={14} />
-                    {isEdit ? 'Actualizar' : 'Adicionar'}
+                    Adicionar
                 </button>
                 <button
                     type="button"
@@ -259,9 +216,8 @@ function ConsumoForm({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function ConsumosIndex({ surgery, consumos, consumiveis, flash }: Props) {
+export default function ConsumosIndex({ surgery, consumos, stockMovimentos, flash }: Props) {
     const [adding, setAdding] = useState(false);
-    const [editingId, setEditingId] = useState<number | null>(null);
 
     const briefing = surgery.briefing;
 
@@ -272,8 +228,12 @@ export default function ConsumosIndex({ surgery, consumos, consumiveis, flash }:
         { title: 'Consumos', href: '#' },
     ];
 
+    const associadosIds = new Set(consumos.map((c) => c.stock_movimento_id));
+    const disponiveis = stockMovimentos.filter((m) => !associadosIds.has(m.id));
+
     function confirmDelete(consumo: Consumo) {
-        if (confirm(`Eliminar "${consumo.designacao}"?`)) {
+        const label = consumo.stock_movimento ? movLabel(consumo.stock_movimento) : `Consumo #${consumo.id}`;
+        if (confirm(`Remover "${label}" desta cirurgia?`)) {
             router.delete(`/surgeries/${surgery.id}/consumos/${consumo.id}`);
         }
     }
@@ -289,20 +249,17 @@ export default function ConsumosIndex({ surgery, consumos, consumiveis, flash }:
                     </div>
                 )}
 
-                {/* Contexto */}
                 <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
                     <span className="font-semibold">Cirurgia:</span>{' '}
                     {surgery.processo} &mdash; {surgery.procedimento} &middot;{' '}
                     {formatDate(briefing.data)} &middot; Sala {briefing.sala}
                 </div>
 
-                {/* Card principal */}
                 <SectionCard icon={PackageOpen} title="Consumos Intra-operatórios" description="Registo de material consumido durante a cirurgia">
 
-                    {/* Botão adicionar */}
-                    {!adding && (
+                    {!adding && disponiveis.length > 0 && (
                         <button
-                            onClick={() => { setAdding(true); setEditingId(null); }}
+                            onClick={() => setAdding(true)}
                             className="flex items-center gap-2 self-start rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
                         >
                             <Plus size={16} />
@@ -310,66 +267,48 @@ export default function ConsumosIndex({ surgery, consumos, consumiveis, flash }:
                         </button>
                     )}
 
-                    {/* Formulário de adição */}
                     {adding && (
                         <ConsumoForm
                             surgeryId={surgery.id}
+                            stockMovimentos={disponiveis}
                             onCancel={() => setAdding(false)}
-                            consumiveis={consumiveis}
                         />
                     )}
 
-                    {/* Lista */}
                     {consumos.length === 0 && !adding ? (
                         <div className="rounded-xl border border-dashed border-gray-300 py-10 text-center text-sm text-gray-400">
                             Nenhum consumo registado.
                         </div>
                     ) : (
                         <div className="flex flex-col gap-2">
-                            {consumos.map(c => (
-                                <div key={c.id}>
-                                    {editingId === c.id ? (
-                                        <ConsumoForm
-                                            surgeryId={surgery.id}
-                                            initial={c}
-                                            onCancel={() => setEditingId(null)}
-                                            consumiveis={consumiveis}
-                                        />
-                                    ) : (
-                                        <div className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{c.designacao}</p>
-                                                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                                                    {c.quantidade} {c.unidade}
-                                                    {c.referencia && <> &middot; Ref: {c.referencia}</>}
-                                                    {c.observacoes && <> &middot; {c.observacoes}</>}
-                                                </p>
-                                            </div>
-                                            <div className="flex shrink-0 gap-2">
-                                                <button
-                                                    onClick={() => { setEditingId(c.id); setAdding(false); }}
-                                                    className="rounded-lg p-1.5 text-gray-400 hover:bg-white hover:text-blue-600 dark:hover:bg-gray-700"
-                                                    title="Editar"
-                                                >
-                                                    <Pencil size={15} />
-                                                </button>
-                                                <button
-                                                    onClick={() => confirmDelete(c)}
-                                                    className="rounded-lg p-1.5 text-gray-400 hover:bg-white hover:text-red-500 dark:hover:bg-gray-700"
-                                                    title="Eliminar"
-                                                >
-                                                    <Trash2 size={15} />
-                                                </button>
-                                            </div>
+                            {consumos.map((c) => {
+                                const mov = c.stock_movimento;
+                                return (
+                                    <div key={c.id} className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                                                {mov ? movLabel(mov) : `Movimento #${c.stock_movimento_id}`}
+                                            </p>
+                                            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                                {mov && movQtd(mov) && <span>{movQtd(mov)}</span>}
+                                                {mov?.referencia && <span className="ml-2">Ref: {mov.referencia}</span>}
+                                                {c.observacoes && <span className="ml-2">{c.observacoes}</span>}
+                                            </p>
                                         </div>
-                                    )}
-                                </div>
-                            ))}
+                                        <button
+                                            onClick={() => confirmDelete(c)}
+                                            className="rounded-lg p-1.5 text-gray-400 hover:bg-white hover:text-red-500 dark:hover:bg-gray-700"
+                                            title="Remover"
+                                        >
+                                            <Trash2 size={15} />
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </SectionCard>
 
-                {/* Voltar */}
                 <div className="mt-6">
                     <Link
                         href={`/briefings/${briefing.id}`}

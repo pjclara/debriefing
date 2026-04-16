@@ -47,9 +47,9 @@ class BriefingController extends Controller
         ]);
 
         // Stock movimentos disponíveis para associar a cirurgias
-        $stockMovimentos = StockMovimento::with('consumivelTipo:id,nome')
+        $stockMovimentos = StockMovimento::with('consumivelTipo:id,nome,categoria')
             ->orderByDesc('data_entrada')
-            ->get(['id', 'consumivel_tipo_id', 'tipo_mov', 'referencia', 'vidas_inicial', 'vidas_atual', 'data_entrada', 'observacoes']);
+            ->get(['id', 'consumivel_tipo_id', 'tipo_mov', 'referencia', 'vidas_inicial', 'vidas_atual', 'unidades', 'data_entrada', 'observacoes']);
 
         return Inertia::render('briefings/show', [
             'briefing' => $briefing,

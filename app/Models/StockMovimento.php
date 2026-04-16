@@ -16,6 +16,7 @@ class StockMovimento extends Model
         'codigo',
         'vidas_inicial',
         'vidas_atual',
+        'unidades',
         'data_entrada',
         'data_saida',
         'motivo',
@@ -23,10 +24,11 @@ class StockMovimento extends Model
     ];
 
     protected $casts = [
-        'data_entrada' => 'date',
-        'data_saida'   => 'date',
+        'data_entrada'  => 'date',
+        'data_saida'    => 'date',
         'vidas_inicial' => 'integer',
         'vidas_atual'   => 'integer',
+        'unidades'      => 'integer',
     ];
 
     public static array $tiposMovLabel = [
@@ -43,5 +45,23 @@ class StockMovimento extends Model
     public function consumivelTipo(): BelongsTo
     {
         return $this->belongsTo(ConsumivelTipo::class, 'consumivel_tipo_id');
+    }
+
+    /**
+     * Indica se este movimento usa vidas (categoria robotico_vidas)
+     * em vez de número de unidades.
+     */
+    public function usaVidas(): bool
+    {
+        return ($this->consumivelTipo->categoria ?? null) === ConsumivelTipo::CAT_ROBOTICO_VIDAS;
+    }
+
+    /**
+     * Quantidade relevante: vidas_atual para robóticos com vidas,
+     * unidades para os restantes.
+     */
+    public function getQuantidadeAttribute(): ?int
+    {
+        return $this->usaVidas() ? $this->vidas_atual : $this->unidades;
     }
 }

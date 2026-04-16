@@ -22,7 +22,7 @@ class StockMovimentoRequest extends FormRequest
             'vidas_atual'     => ['nullable', 'integer', 'min:0'],
             'data_entrada'    => ['required', 'date'],
             'data_saida'      => ['nullable', 'date', 'after_or_equal:data_entrada'],
-            'motivo'          => ['nullable', 'string', 'max:255'],
+            'motivo'          => ['nullable', 'in:consumo,dano,outro'],
             'observacoes'     => ['nullable', 'string'],
         ];
     }

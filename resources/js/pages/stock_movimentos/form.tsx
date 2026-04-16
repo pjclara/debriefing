@@ -18,6 +18,7 @@ interface StockMovimento {
     codigo?: string;
     vidas_inicial?: number | string;
     vidas_atual?: number | string;
+    unidades?: number | string;
     data_entrada?: string;
     data_saida?: string;
     motivo?: string;
@@ -43,6 +44,7 @@ export default function StockMovimentoForm({ movimento, tiposMovLabel, tipos }: 
         codigo: movimento?.codigo ?? '',
         vidas_inicial: movimento?.vidas_inicial ?? '',
         vidas_atual: movimento?.vidas_atual ?? movimento?.vidas_inicial ?? '',
+        unidades: movimento?.unidades ?? '',
         data_entrada: movimento?.data_entrada ?? hoje,
         data_saida: movimento?.data_saida ?? '',
         motivo: movimento?.motivo ?? '',
@@ -68,7 +70,14 @@ export default function StockMovimentoForm({ movimento, tiposMovLabel, tipos }: 
             submitData.tipo_mov = 'entrada';
             submitData.data_saida = '';
             submitData.motivo = '';
-            submitData.vidas_atual = submitData.vidas_inicial;
+            if (isRoboticoVidas) {
+                submitData.vidas_atual = submitData.vidas_inicial;
+                submitData.unidades = '';
+            } else {
+                submitData.vidas_inicial = '';
+                submitData.vidas_atual = '';
+                submitData.codigo = '';
+            }
         }
         
         if (isEdit) {
@@ -126,15 +135,31 @@ export default function StockMovimentoForm({ movimento, tiposMovLabel, tipos }: 
                             />
                         </FormRow>
 
-                        <FormRow label="Código" error={errors.codigo}>
-                            <input
-                                type="text"
-                                value={data.codigo}
-                                onChange={(e) => setData('codigo', e.target.value)}
-                                className={inputCls}
-                                placeholder="Ex: 408414"
-                            />
-                        </FormRow>
+                        {isRoboticoVidas && (
+                            <FormRow label="Código" error={errors.codigo}>
+                                <input
+                                    type="text"
+                                    value={data.codigo}
+                                    onChange={(e) => setData('codigo', e.target.value)}
+                                    className={inputCls}
+                                    placeholder="Ex: 408414"
+                                />
+                            </FormRow>
+                        )}
+
+                        {!isRoboticoVidas && tipoSelecionado && (
+                            <FormRow label="Unidades" error={errors.unidades}>
+                                <input
+                                    type="number"
+                                    value={data.unidades}
+                                    onChange={(e) => setData('unidades', e.target.value ? Number(e.target.value) : '')}
+                                    className={inputCls}
+                                    placeholder="Ex: 5"
+                                    min="0"
+                                    required
+                                />
+                            </FormRow>
+                        )}
 
                         {isRoboticoVidas && (
                             <FormRow label="Vidas Iniciais" error={errors.vidas_inicial}>
@@ -185,13 +210,16 @@ export default function StockMovimentoForm({ movimento, tiposMovLabel, tipos }: 
                                 </FormRow>
 
                                 <FormRow label="Motivo da Saída" error={errors.motivo}>
-                                    <input
-                                        type="text"
+                                    <select
                                         value={data.motivo}
                                         onChange={(e) => setData('motivo', e.target.value)}
-                                        className={inputCls}
-                                        placeholder="Ex: Consumo em cirurgia, Devolução ao fornecedor"
-                                    />
+                                        className={selectCls}
+                                    >
+                                        <option value="">— Sem motivo —</option>
+                                        <option value="consumo">Consumo</option>
+                                        <option value="dano">Dano</option>
+                                        <option value="outro">Outro</option>
+                                    </select>
                                 </FormRow>
                             </>
                         )}
