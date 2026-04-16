@@ -3,15 +3,16 @@ import AppLayout from '@/layouts/app-layout';
 import { Plus, Pencil, Trash2, TrendingUp } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
-interface Consumivel {
+interface ConsumivelTipo {
     id: number;
-    designacao: string;
+    nome: string;
     categoria: string;
 }
 
 interface StockMovimento {
     id: number;
-    consumivel_id: number;
+    consumivel_tipo_id: number | null;
+    consumivel_tipo: ConsumivelTipo | null;
     tipo_mov: string;
     referencia: string | null;
     codigo: string | null;
@@ -21,7 +22,6 @@ interface StockMovimento {
     data_saida: string | null;
     motivo: string | null;
     observacoes: string | null;
-    consumivel: Consumivel;
 }
 
 interface Paginated {
@@ -85,7 +85,7 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel }: Prop
                             <thead className="bg-gray-50 border-b border-gray-200">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Tipo</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Consumível</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Descrição</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Referência</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Código</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Vidas</th>
@@ -102,7 +102,7 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel }: Prop
                                                 {tiposMovLabel[mov.tipo_mov]}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900">{mov.consumivel.designacao}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-900">{mov.consumivel_tipo?.nome ?? '—'}</td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{mov.referencia || '—'}</td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{mov.codigo || '—'}</td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{mov.vidas_atual !== null ? `${mov.vidas_atual}/${mov.vidas_inicial}x` : '—'}</td>

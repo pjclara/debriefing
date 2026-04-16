@@ -4,16 +4,14 @@ import AppLayout from '@/layouts/app-layout';
 import { Trash2, Plus, X, Check, Search } from 'lucide-react';
 import type { Auth, BreadcrumbItem } from '@/types';
 
-interface Consumivel {
+interface ConsumivelTipo {
     id: number;
-    designacao: string;
-    categoria: string;
-    unidade: string;
+    nome: string;
 }
 
 interface StockMovimento {
     id: number;
-    consumivel_id: number;
+    consumivel_tipo?: ConsumivelTipo;
     tipo_mov: string;
     codigo?: string;
     referencia?: string;
@@ -23,13 +21,11 @@ interface StockMovimento {
     data_saida?: string;
     motivo?: string;
     observacoes?: string;
-    consumivel?: Consumivel;
 }
 
 interface Consumo {
     id: number;
     stock_movimento_id: number;
-    consumivel_id: number;
     observacoes?: string;
     stock_movimento?: StockMovimento;
 }
@@ -151,7 +147,7 @@ function StockMovimentoCombobox({
     const filtered = query.trim() === ''
         ? stockMovimentos
         : stockMovimentos.filter((m) =>
-            m.consumivel?.designacao.toLowerCase().includes(query.toLowerCase()) ||
+            (m.consumivel_tipo?.nome ?? '').toLowerCase().includes(query.toLowerCase()) ||
             (m.codigo ?? '').toLowerCase().includes(query.toLowerCase())
           );
 
@@ -174,7 +170,7 @@ function StockMovimentoCombobox({
                     type="text"
                     className="flex-1 bg-transparent px-2 py-1.5 text-xs focus:outline-none dark:text-gray-100"
                     placeholder="Pesquisar movimento de stock…"
-                    value={open ? query : (selected ? `${selected.consumivel?.designacao ?? '—'} (${selected.tipo_mov})` : '')}
+                    value={open ? query : (selected ? `${selected.consumivel_tipo?.nome ?? ''} (${selected.tipo_mov})` : '')}
                     onFocus={() => { setOpen(true); setQuery(''); }}
                     onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
                 />
@@ -197,7 +193,7 @@ function StockMovimentoCombobox({
                                 String(m.id) === value ? 'bg-blue-50 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'
                             }`}
                         >
-                            <span className="font-medium">{m.consumivel?.designacao ?? `Movimento #${m.id}`}</span>
+                            <span className="font-medium">{m.consumivel_tipo?.nome}</span>
                             <span className="ml-2 text-gray-400">Ref: {m.referencia}</span>
                             {m.codigo && <span className="ml-2 text-gray-400">Codigo: {m.codigo}</span>}
                             {m.vidas_atual != null && <span className="ml-2 text-gray-400">Vidas: {m.vidas_atual}</span>}
@@ -310,7 +306,7 @@ function SurgeryStockPanel({
                             <div key={c.id} className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5 dark:bg-gray-800/50">
                                 <div className="min-w-0 flex-1">
                                     <span className="text-xs font-medium text-gray-800 dark:text-gray-200">
-                                        {mov?.consumivel?.designacao ?? `Movimento #${c.stock_movimento_id}`}
+                                        {mov?.consumivel_tipo?.nome ?? `Movimento #${c.stock_movimento_id}`}
                                     </span>
                                     <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-gray-500">
                                         {mov?.vidas_atual != null && <span>Vidas: {mov.vidas_atual}</span>}

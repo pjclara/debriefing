@@ -14,7 +14,7 @@ class StockMovimentoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'consumivel_id'   => ['required', 'integer', 'exists:consumiveis,id'],
+            'consumivel_tipo_id' => ['required', 'integer', 'exists:consumivel_tipos,id'],
             'tipo_mov'        => ['required', 'in:entrada,saida,ajuste,encomenda,devolucao'],
             'referencia'      => ['nullable', 'string', 'max:100'],
             'codigo'          => ['nullable', 'string', 'max:100'],

@@ -65,11 +65,11 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('surgeries/{surgery}', [SurgeryController::class, 'destroy'])
             ->name('surgeries.destroy');
 
-        // Tipos de consumíveis
-        Route::resource('consumivel_tipos', ConsumivelTipoController::class)->except(['show']);
-
         // Movimentos de stock
         Route::resource('stock_movimentos', StockMovimentoController::class)->except(['show']);
+
+        // Tipos de consumível
+        Route::resource('consumivel_tipos', ConsumivelTipoController::class)->except(['show']);
 
         // Departamentos
         Route::resource('departments', DepartmentController::class)->except(['destroy', 'show']);

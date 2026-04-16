@@ -9,7 +9,6 @@ class Consumo extends Model
 {
     protected $fillable = [
         'surgery_id',
-        'consumivel_id',
         'stock_movimento_id',
         'designacao',
         'referencia',
@@ -22,31 +21,9 @@ class Consumo extends Model
         'quantidade' => 'float',
     ];
 
-    protected static function booted(): void
-    {
-        static::saved(function (Consumo $consumo) {
-            // Recalcular stock do consumível quando um consumo é registado
-            if ($consumo->consumivel) {
-                $consumo->consumivel->recalcularStock();
-            }
-        });
-
-        static::deleted(function (Consumo $consumo) {
-            // Recalcular stock do consumível quando um consumo é eliminado
-            if ($consumo->consumivel) {
-                $consumo->consumivel->recalcularStock();
-            }
-        });
-    }
-
     public function surgery(): BelongsTo
     {
         return $this->belongsTo(Surgery::class);
-    }
-
-    public function consumivel(): BelongsTo
-    {
-        return $this->belongsTo(Consumivel::class);
     }
 
     public function stockMovimento(): BelongsTo

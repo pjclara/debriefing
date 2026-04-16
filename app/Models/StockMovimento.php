@@ -10,7 +10,7 @@ class StockMovimento extends Model
     protected $table = 'stock_movimentos';
 
     protected $fillable = [
-        'consumivel_id',
+        'consumivel_tipo_id',
         'tipo_mov',
         'referencia',
         'codigo',
@@ -40,26 +40,8 @@ class StockMovimento extends Model
     public const TIPOS_ENTRADA = ['entrada', 'ajuste'];
     public const TIPOS_SAIDA = ['saida', 'devolucao'];
 
-    protected static function booted(): void
+    public function consumivelTipo(): BelongsTo
     {
-        static::saved(function (StockMovimento $movimento) {
-            if ($movimento->consumivel) {
-                $movimento->consumivel->recalcularStock();
-            }
-        });
-
-        static::deleted(function (StockMovimento $movimento) {
-            if ($movimento->consumivel) {
-                $movimento->consumivel->recalcularStock();
-            }
-        });
-    }
-
-    /**
-     * Consumível associado
-     */
-    public function consumivel(): BelongsTo
-    {
-        return $this->belongsTo(Consumivel::class, 'consumivel_id');
+        return $this->belongsTo(ConsumivelTipo::class, 'consumivel_tipo_id');
     }
 }

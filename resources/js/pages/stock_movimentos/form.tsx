@@ -4,15 +4,15 @@ import { SectionCard, FormRow, inputCls, selectCls } from '@/components/form-ui'
 import { TrendingUp } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
-interface Consumivel {
+interface ConsumivelTipo {
     id: number;
-    designacao: string;
-    categoria: string;
+    nome: string;
+    categoria: 'robotico_vidas' | 'robotico_descartavel' | 'extra';
 }
 
 interface StockMovimento {
     id?: number;
-    consumivel_id?: number;
+    consumivel_tipo_id?: number | string;
     tipo_mov?: string;
     referencia?: string;
     codigo?: string;
@@ -22,23 +22,22 @@ interface StockMovimento {
     data_saida?: string;
     motivo?: string;
     observacoes?: string;
-    consumivel?: Consumivel;
 }
 
 interface Props {
     movimento?: StockMovimento;
-    consumiveis: Consumivel[];
     tiposMovLabel: Record<string, string>;
+    tipos: ConsumivelTipo[];
 }
 
-export default function StockMovimentoForm({ movimento, consumiveis, tiposMovLabel }: Props) {
+export default function StockMovimentoForm({ movimento, tiposMovLabel, tipos }: Props) {
     const isEdit = !!movimento?.id;
     
     // Definir data padrão como hoje
     const hoje = new Date().toISOString().split('T')[0];
 
     const { data, setData, post, put, processing, errors } = useForm({
-        consumivel_id: movimento?.consumivel_id ?? '',
+        consumivel_tipo_id: movimento?.consumivel_tipo_id ?? '',
         tipo_mov: movimento?.tipo_mov ?? 'entrada',
         referencia: movimento?.referencia ?? '',
         codigo: movimento?.codigo ?? '',
@@ -50,9 +49,9 @@ export default function StockMovimentoForm({ movimento, consumiveis, tiposMovLab
         observacoes: movimento?.observacoes ?? '',
     });
 
-    // Obter categoria do consumível selecionado
-    const consumivelSelecionado = consumiveis.find((c) => c.id === Number(data.consumivel_id));
-    const isRoboticoVidas = consumivelSelecionado?.categoria === 'robotico_vidas';
+    // Obter categoria do tipo selecionado
+    const tipoSelecionado = tipos.find((t) => t.id === Number(data.consumivel_tipo_id));
+    const isRoboticoVidas = tipoSelecionado?.categoria === 'robotico_vidas';
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Catálogo', href: '#' },
@@ -89,17 +88,17 @@ export default function StockMovimentoForm({ movimento, consumiveis, tiposMovLab
 
                 <form onSubmit={handleSubmit}>
                     <SectionCard icon={TrendingUp} title="Dados do Movimento">
-                        <FormRow label="Consumível" error={errors.consumivel_id}>
+                        <FormRow label="Tipo de Consumível" error={errors.consumivel_tipo_id}>
                             <select
-                                value={data.consumivel_id}
-                                onChange={(e) => setData('consumivel_id', e.target.value ? Number(e.target.value) : '')}
+                                value={data.consumivel_tipo_id}
+                                onChange={(e) => setData('consumivel_tipo_id', e.target.value)}
                                 className={selectCls}
                                 required
                             >
-                                <option value="">Seleccionar consumível...</option>
-                                {consumiveis.map((consumivel) => (
-                                    <option key={consumivel.id} value={consumivel.id}>
-                                        {consumivel.designacao}
+                                <option value="">Selecionar tipo…</option>
+                                {tipos.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.nome}
                                     </option>
                                 ))}
                             </select>
