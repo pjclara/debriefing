@@ -57,7 +57,7 @@ interface Surgery {
     b2?: number[];
     b3?: number[];
     b4?: number[];
-    equipamento_extra?: string;
+    equipamento_extra?: number[];
 }
 
 interface Props {
@@ -65,6 +65,7 @@ interface Props {
     surgery?: Surgery;
     procedures: Procedure[];
     consumivel_tipos: ConsumivelTipo[];
+    consumivel_tipos_extra: ConsumivelTipo[];
 }
 
 interface ConsumivelTipo {
@@ -103,7 +104,7 @@ function CheckField({label, name, checked, onChange}: {label: string; name: stri
 
 // ─── component ────────────────────────────────────────────────────────────────
 
-export default function SurgeryForm({ briefing, surgery, procedures, consumivel_tipos }: Props) {
+export default function SurgeryForm({ briefing, surgery, procedures, consumivel_tipos, consumivel_tipos_extra }: Props) {
     const isEdit = !!surgery?.id;
     const [currentStep, setCurrentStep] = useState<number>(0);
 
@@ -157,7 +158,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
         b2: Array.isArray(surgery?.b2) ? surgery.b2 : [],
         b3: Array.isArray(surgery?.b3) ? surgery.b3 : [],
         b4: Array.isArray(surgery?.b4) ? surgery.b4 : [],
-        equipamento_extra: surgery?.equipamento_extra ?? '',
+        equipamento_extra: Array.isArray(surgery?.equipamento_extra) ? surgery.equipamento_extra : [],
     });
 
     function handleSubmit(e: React.FormEvent) {
@@ -206,9 +207,8 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
 
         // Converter datetime-local para formato MySQL datetime (YYYY-MM-DD HH:mm)
         if (target.type === 'datetime-local' && value) {
-            const dt = new Date(value + ':00'); // Adiciona :00 para segundos
-            // Retorna em formato YYYY-MM-DD HH:mm (16 caracteres)
-            value = dt.toISOString().replace('T', ' ').substring(0, 16);
+            // O input já devolve YYYY-MM-DDTHH:mm em hora local — basta substituir o T
+            value = value.slice(0, 16).replace('T', ' ');
         }
 
         // Converter strings vazias em null para campos numéricos
@@ -237,7 +237,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={isEdit ? 'Editar Cirurgia' : 'Nova Cirurgia'} />
-            <div className="mx-auto max-w-4xl p-6">
+            <div className="mx-auto max-w-6xl p-6">
 
                 {/* Contexto do briefing */}
                 <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
@@ -366,7 +366,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                                     <input 
                                         type="datetime-local" 
                                         name="prep_inicio" 
-                                        value={data.prep_inicio ? new Date(data.prep_inicio as string).toISOString().slice(0, 16) : ''} 
+                                        value={data.prep_inicio ? (data.prep_inicio as string).slice(0, 16).replace(' ', 'T') : ''} 
                                         onChange={handleChange} 
                                         className={inputCls} 
                                     />
@@ -379,7 +379,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                                     <input 
                                         type="datetime-local" 
                                         name="prep_fim" 
-                                        value={data.prep_fim ? new Date(data.prep_fim as string).toISOString().slice(0, 16) : ''} 
+                                        value={data.prep_fim ? (data.prep_fim as string).slice(0, 16).replace(' ', 'T') : ''} 
                                         onChange={handleChange} 
                                         className={inputCls} 
                                     />
@@ -399,7 +399,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                                     <input 
                                         type="datetime-local" 
                                         name="consola_inicio" 
-                                        value={data.consola_inicio ? new Date(data.consola_inicio as string).toISOString().slice(0, 16) : ''} 
+                                        value={data.consola_inicio ? (data.consola_inicio as string).slice(0, 16).replace(' ', 'T') : ''} 
                                         onChange={handleChange} 
                                         className={inputCls} 
                                     />
@@ -412,7 +412,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                                     <input 
                                         type="datetime-local" 
                                         name="consola_fim" 
-                                        value={data.consola_fim ? new Date(data.consola_fim as string).toISOString().slice(0, 16) : ''} 
+                                        value={data.consola_fim ? (data.consola_fim as string).slice(0, 16).replace(' ', 'T') : ''} 
                                         onChange={handleChange} 
                                         className={inputCls} 
                                     />
@@ -540,7 +540,12 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                                 />
                             </Field>
                             <Field label="Equipamento extra" error={errors.equipamento_extra} full>
-                                <textarea name="equipamento_extra" value={data.equipamento_extra} onChange={handleChange} rows={3} className={inputCls} />
+                                <SearchableMultiSelect
+                                    options={consumivel_tipos_extra}
+                                    selectedIds={(data.equipamento_extra as number[]) ?? []}
+                                    onSelectionChange={(selectedIds) => setData('equipamento_extra', selectedIds as number[])}
+                                    placeholder="Procurar equipamento extra…"
+                                />
                             </Field>
                         </SectionCard>
                     )}

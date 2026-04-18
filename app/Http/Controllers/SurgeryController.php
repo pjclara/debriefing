@@ -24,12 +24,14 @@ class SurgeryController extends Controller
                 ->get(['id', 'nome'])
             : [];
 
-        $consumivel_tipos = ConsumivelTipo::orderBy('nome')->get(['id', 'nome']);
+        $consumivel_tipos = ConsumivelTipo::orderBy('nome')->get(['id', 'nome', 'categoria']);
+        $consumivel_tipos_extra = $consumivel_tipos->where('categoria', 'extra')->values();
 
         return Inertia::render('surgeries/form', [
             'briefing' => $briefing->only('id', 'data', 'hora', 'sala', 'especialidade'),
             'procedures' => $procedures,
             'consumivel_tipos' => $consumivel_tipos,
+            'consumivel_tipos_extra' => $consumivel_tipos_extra,
         ]);
     }
 
@@ -52,13 +54,15 @@ class SurgeryController extends Controller
                 ->get(['id', 'nome'])
             : [];
 
-        $consumivel_tipos = ConsumivelTipo::orderBy('nome')->get(['id', 'nome']);
+        $consumivel_tipos = ConsumivelTipo::orderBy('nome')->get(['id', 'nome', 'categoria']);
+        $consumivel_tipos_extra = $consumivel_tipos->where('categoria', 'extra')->values();
 
         return Inertia::render('surgeries/form', [
             'surgery' => $surgery,
             'briefing' => $briefing->only('id', 'data', 'hora', 'sala', 'especialidade'),
             'procedures' => $procedures,
             'consumivel_tipos' => $consumivel_tipos,
+            'consumivel_tipos_extra' => $consumivel_tipos_extra,
         ]);
     }
 

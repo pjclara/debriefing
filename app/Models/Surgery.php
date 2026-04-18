@@ -63,6 +63,7 @@ class Surgery extends Model
         'b2'                      => 'array',
         'b3'                      => 'array',
         'b4'                      => 'array',
+        'equipamento_extra'       => 'array',
         'antecedentes_relevantes' => 'boolean',
         'comorbidades'            => 'boolean',
         'variacoes_tecnicas'      => 'boolean',

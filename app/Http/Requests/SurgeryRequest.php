@@ -58,7 +58,8 @@ class SurgeryRequest extends FormRequest
             'b3.*'                   => ['integer'],
             'b4'                     => ['nullable', 'array'],
             'b4.*'                   => ['integer'],
-            'equipamento_extra'      => ['nullable', 'string'],
+            'equipamento_extra'      => ['nullable', 'array'],
+            'equipamento_extra.*'    => ['integer'],
         ];
     }
 
@@ -96,8 +97,8 @@ class SurgeryRequest extends FormRequest
             }
         }
 
-        // Converter arrays vazios em null para B1-B4
-        foreach (['b1', 'b2', 'b3', 'b4'] as $field) {
+        // Converter arrays vazios em null para B1-B4 e equipamento_extra
+        foreach (['b1', 'b2', 'b3', 'b4', 'equipamento_extra'] as $field) {
             if ($this->has($field) && (empty($this->input($field)) || !is_array($this->input($field)))) {
                 $this->merge([$field => []]);
             }
