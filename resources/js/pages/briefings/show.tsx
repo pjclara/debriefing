@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { createPortal } from 'react-dom';
 import AppLayout from '@/layouts/app-layout';
 import { Trash2, Plus, X, Check, Search } from 'lucide-react';
 import type { Auth, BreadcrumbItem } from '@/types';
@@ -125,141 +126,158 @@ function Row({
     );
 }
 
-// ─── Constantes ───────────────────────────────────────────────────────────────
+// ─── Modal para associar StockMovimento a Surgery ────────────────────────────
 
-const fieldCls =
-    'w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs focus:border-blue-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100';
-
-// ─── Combobox pesquisável de StockMovimento ───────────────────────────────────
-
-function StockMovimentoCombobox({
-    stockMovimentos,
-    value,
-    onChange,
-}: {
-    stockMovimentos: StockMovimento[];
-    value: string;
-    onChange: (id: string) => void;
-}) {
-    const [query, setQuery] = useState('');
-    const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    const selected = value ? stockMovimentos.find((m) => String(m.id) === value) : null;
-
-    const filtered = query.trim() === ''
-        ? stockMovimentos
-        : stockMovimentos.filter((m) =>
-            (m.consumivel_tipo?.nome ?? '').toLowerCase().includes(query.toLowerCase()) ||
-            (m.codigo ?? '').toLowerCase().includes(query.toLowerCase())
-          );
-
-    useEffect(() => {
-        function handleClick(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-                setQuery('');
-            }
-        }
-        document.addEventListener('mousedown', handleClick);
-        return () => document.removeEventListener('mousedown', handleClick);
-    }, []);
-
-    return (
-        <div ref={ref} className="relative">
-            <div className="flex items-center rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                <Search className="ml-2 h-3 w-3 shrink-0 text-gray-400" />
-                <input
-                    type="text"
-                    className="flex-1 bg-transparent px-2 py-1.5 text-xs focus:outline-none dark:text-gray-100"
-                    placeholder="Pesquisar movimento de stock…"
-                    value={open ? query : (selected ? `${selected.consumivel_tipo?.nome ?? ''} (${selected.tipo_mov})` : '')}
-                    onFocus={() => { setOpen(true); setQuery(''); }}
-                    onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-                />
-                {selected && !open && (
-                    <button type="button" onClick={() => { onChange(''); }} className="mr-1.5 rounded p-0.5 text-gray-400 hover:text-gray-600">
-                        <X className="h-3 w-3" />
-                    </button>
-                )}
-            </div>
-            {open && (
-                <div className="absolute z-50 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                    {filtered.length === 0 && (
-                        <div className="px-3 py-2 text-xs text-gray-400">Sem resultados</div>
-                    )}
-                    {filtered.map((m) => (
-                        <div
-                            key={m.id}
-                            onMouseDown={(e) => { e.preventDefault(); onChange(String(m.id)); setOpen(false); setQuery(''); }}
-                            className={`cursor-pointer px-3 py-2 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 ${
-                                String(m.id) === value ? 'bg-blue-50 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'
-                            }`}
-                        >
-                            <span className="font-medium">{m.consumivel_tipo?.nome}</span>
-                            <span className="ml-2 text-gray-400">Ref: {m.referencia}</span>
-                            {m.consumivel_tipo?.categoria === 'robotico_vidas' && m.codigo && <span className="ml-2 text-gray-400">Codigo: {m.codigo}</span>}
-                            {m.consumivel_tipo?.categoria === 'robotico_vidas'
-                                ? m.vidas_atual != null && <span className="ml-2 text-gray-400">Vidas: {m.vidas_atual}/{m.vidas_inicial}</span>
-                                : m.unidades_atual != null && <span className="ml-2 text-gray-400">Unid.: {m.unidades_atual}/{m.unidades_inicial}</span>}
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ─── Formulário inline para associar StockMovimento a Surgery ─────────────────
-
-function AssociarStockForm({
+function AssociarStockModal({
     surgeryId,
     stockMovimentos,
-    onCancel,
+    onClose,
 }: {
     surgeryId: number;
     stockMovimentos: StockMovimento[];
-    onCancel: () => void;
+    onClose: () => void;
 }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        stock_movimento_id: '',
-        observacoes: '',
-    });
+    const [search, setSearch] = useState('');
+    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [observacoes, setObservacoes] = useState('');
+    const [processing, setProcessing] = useState(false);
 
-    function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        post(`/surgeries/${surgeryId}/consumos`, {
-            onSuccess: () => { reset(); onCancel(); },
-        });
+    const filtered = stockMovimentos.filter((m) =>
+        (m.consumivel_tipo?.nome ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        (m.referencia ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        (m.codigo ?? '').toLowerCase().includes(search.toLowerCase())
+    );
+
+    function handleConfirm() {
+        if (!selectedId) return;
+        setProcessing(true);
+        router.post(
+            `/surgeries/${surgeryId}/consumos`,
+            { stock_movimento_id: selectedId, observacoes },
+            {
+                onSuccess: () => onClose(),
+                onError: () => setProcessing(false),
+                onFinish: () => setProcessing(false),
+            }
+        );
     }
 
-    return (
-        <form onSubmit={handleSubmit} className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
-            <div className="grid gap-2">
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Movimento de Stock *</label>
-                    <StockMovimentoCombobox
-                        stockMovimentos={stockMovimentos}
-                        value={data.stock_movimento_id}
-                        onChange={(id) => setData('stock_movimento_id', id)}
-                    />
-                    {errors.stock_movimento_id && <p className="mt-0.5 text-xs text-red-500">{errors.stock_movimento_id}</p>}
+    return createPortal(
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+            <div className="flex w-full max-w-2xl flex-col rounded-xl bg-white shadow-2xl dark:bg-gray-900" style={{ maxHeight: '85vh' }}>
+
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">Associar stock à cirurgia</h3>
+                    <button type="button" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <X className="h-5 w-5 text-gray-500" />
+                    </button>
                 </div>
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Observações</label>
-                    <input type="text" value={data.observacoes} onChange={(e) => setData('observacoes', e.target.value)} className={fieldCls} />
-                    {errors.observacoes && <p className="mt-0.5 text-xs text-red-500">{errors.observacoes}</p>}
+
+                {/* Search */}
+                <div className="border-b border-gray-200 px-5 py-3 dark:border-gray-700">
+                    <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 dark:border-gray-600 dark:bg-gray-800">
+                        <Search className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                        <input
+                            autoFocus
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Pesquisar por nome, referência ou código…"
+                            className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400 dark:text-gray-100"
+                        />
+                        {search && (
+                            <button type="button" onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600">
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Grid */}
+                <div className="flex-1 overflow-y-auto p-5">
+                    {filtered.length === 0 ? (
+                        <p className="text-center text-sm text-gray-400">Sem resultados</p>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {filtered.map((m) => {
+                                const checked = selectedId === m.id;
+                                const isVidas = m.consumivel_tipo?.categoria === 'robotico_vidas';
+                                return (
+                                    <label
+                                        key={m.id}
+                                        className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition-colors ${
+                                            checked
+                                                ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20'
+                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750'
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="stock_movimento"
+                                            checked={checked}
+                                            onChange={() => setSelectedId(m.id)}
+                                            className="mt-0.5 h-4 w-4 flex-shrink-0 accent-blue-600"
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-medium leading-tight text-gray-900 dark:text-white">
+                                                {m.consumivel_tipo?.nome ?? `Movimento #${m.id}`}
+                                            </p>
+                                            <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-gray-500 dark:text-gray-400">
+                                                <span>{m.tipo_mov}</span>
+                                                {m.referencia && <span>Ref: {m.referencia}</span>}
+                                                {m.codigo && <span>Cód: {m.codigo}</span>}
+                                                {isVidas && m.vidas_atual != null
+                                                    ? <span className="font-medium text-blue-600 dark:text-blue-400">Vidas: {m.vidas_atual}/{m.vidas_inicial}</span>
+                                                    : m.unidades_atual != null
+                                                        ? <span className="font-medium text-blue-600 dark:text-blue-400">Unid.: {m.unidades_atual}/{m.unidades_inicial}</span>
+                                                        : null}
+                                            </p>
+                                        </div>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Observações + Footer */}
+                <div className="border-t border-gray-200 px-5 py-3 dark:border-gray-700 space-y-3">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Observações (opcional)</label>
+                        <input
+                            type="text"
+                            value={observacoes}
+                            onChange={(e) => setObservacoes(e.target.value)}
+                            placeholder="Deixar em branco se não aplicável"
+                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                        />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleConfirm}
+                            disabled={!selectedId || processing}
+                            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            <Check className="h-4 w-4" />
+                            {processing ? 'A associar…' : 'Associar'}
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div className="mt-2 flex justify-end gap-2">
-                <button type="button" onClick={onCancel} className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs text-gray-500 hover:text-gray-700">
-                    <X className="h-3 w-3" /> Cancelar
-                </button>
-                <button type="submit" disabled={processing || !data.stock_movimento_id} className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
-                    <Check className="h-3 w-3" /> Associar
-                </button>
-            </div>
-        </form>
+        </div>,
+        document.body
     );
 }
 
@@ -338,10 +356,10 @@ function SurgeryStockPanel({
             )}
 
             {showAdd && (
-                <AssociarStockForm
+                <AssociarStockModal
                     surgeryId={surgery.id}
                     stockMovimentos={disponiveis}
-                    onCancel={() => setShowAdd(false)}
+                    onClose={() => setShowAdd(false)}
                 />
             )}
         </div>

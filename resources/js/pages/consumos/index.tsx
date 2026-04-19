@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { createPortal } from 'react-dom';
 import AppLayout from '@/layouts/app-layout';
 import { SectionCard } from '@/components/form-ui';
 import { PackageOpen, Trash2, Plus, X, Check, Search } from 'lucide-react';
@@ -70,171 +71,201 @@ function formatDate(dateStr: string) {
     return `${day}/${month}/${year}`;
 }
 
-// ─── Combobox de Stock Movimentos ─────────────────────────────────────────────
+// ─── StockModal ───────────────────────────────────────────────────────────────
 
-function StockCombobox({
-    stockMovimentos,
-    value,
-    onChange,
-}: {
-    stockMovimentos: StockMovimento[];
-    value: string;
-    onChange: (id: string) => void;
-}) {
-    const [query, setQuery] = useState('');
-    const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    const selected = value ? stockMovimentos.find((m) => String(m.id) === value) : null;
-
-    const filtered = query.trim() === ''
-        ? stockMovimentos
-        : stockMovimentos.filter((m) =>
-            (m.consumivel_tipo?.nome ?? '').toLowerCase().includes(query.toLowerCase()) ||
-            (m.referencia ?? '').toLowerCase().includes(query.toLowerCase())
-          );
-
-    useEffect(() => {
-        function handleClick(e: MouseEvent) {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
-                setQuery('');
-            }
-        }
-        document.addEventListener('mousedown', handleClick);
-        return () => document.removeEventListener('mousedown', handleClick);
-    }, []);
-
-    return (
-        <div ref={ref} className="relative">
-            <div className="flex items-center rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                <Search className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
-                <input
-                    type="text"
-                    className="flex-1 bg-transparent px-2 py-2 text-sm focus:outline-none dark:text-gray-100"
-                    placeholder="Pesquisar movimento de stock…"
-                    value={open ? query : (selected ? `${movLabel(selected)} (${selected.tipo_mov})` : '')}
-                    onFocus={() => { setOpen(true); setQuery(''); }}
-                    onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-                />
-                {selected && !open && (
-                    <button type="button" onClick={() => onChange('')} className="mr-2 rounded p-0.5 text-gray-400 hover:text-gray-600">
-                        <X className="h-4 w-4" />
-                    </button>
-                )}
-            </div>
-            {open && (
-                <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                    {filtered.length === 0 && (
-                        <div className="px-3 py-2 text-sm text-gray-400">Sem resultados</div>
-                    )}
-                    {filtered.map((m) => (
-                        <div
-                            key={m.id}
-                            onMouseDown={(e) => { e.preventDefault(); onChange(String(m.id)); setOpen(false); setQuery(''); }}
-                            className={`cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 ${
-                                String(m.id) === value ? 'bg-blue-50 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'
-                            }`}
-                        >
-                            <span className="font-medium">{movLabel(m)}</span>
-                            {m.referencia && <span className="ml-2 text-gray-400 text-xs">Ref: {m.referencia}</span>}
-                            {m.consumivel_tipo?.categoria === 'robotico_vidas' && m.codigo && <span className="ml-2 text-gray-400 text-xs">Cód: {m.codigo}</span>}
-                            {movQtd(m) && <span className="ml-2 text-gray-400 text-xs">{movQtd(m)}</span>}
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
+interface SelectedItem {
+    stock_movimento_id: number;
+    quantidade: number;
+    observacoes: string;
 }
 
-// ─── Formulário de adicionar consumo ─────────────────────────────────────────
-
-function ConsumoForm({
+function StockModal({
     surgeryId,
     stockMovimentos,
-    onCancel,
+    onClose,
 }: {
     surgeryId: number;
     stockMovimentos: StockMovimento[];
-    onCancel: () => void;
+    onClose: () => void;
 }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        stock_movimento_id: '',
-        quantidade: 1,
-        observacoes: '',
-    });
+    const [search, setSearch] = useState('');
+    const [selected, setSelected] = useState<Record<number, SelectedItem>>({});
+    const [processing, setProcessing] = useState(false);
 
-    // tipo do movimento seleccionado
-    const movSelecionado = data.stock_movimento_id
-        ? stockMovimentos.find((m) => String(m.id) === data.stock_movimento_id)
-        : null;
-    const isVidas = movSelecionado?.consumivel_tipo?.categoria === 'robotico_vidas';
-    const qtdLabel = isVidas ? 'Vidas a abater' : 'Unidades a abater';
+    const filtered = stockMovimentos.filter((m) =>
+        (m.consumivel_tipo?.nome ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        (m.referencia ?? '').toLowerCase().includes(search.toLowerCase())
+    );
 
-    function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        post(`/surgeries/${surgeryId}/consumos`, {
-            onSuccess: () => { reset(); onCancel(); },
+    function toggle(m: StockMovimento) {
+        setSelected((prev) => {
+            if (prev[m.id]) {
+                const next = { ...prev };
+                delete next[m.id];
+                return next;
+            }
+            return { ...prev, [m.id]: { stock_movimento_id: m.id, quantidade: 1, observacoes: '' } };
         });
     }
 
-    return (
-        <form onSubmit={handleSubmit} className="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-            <div className="flex flex-col gap-3">
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Movimento de Stock *</label>
-                    <StockCombobox
-                        stockMovimentos={stockMovimentos}
-                        value={data.stock_movimento_id}
-                        onChange={(id) => setData('stock_movimento_id', id)}
-                    />
-                    {errors.stock_movimento_id && <p className="mt-1 text-xs text-red-500">{errors.stock_movimento_id}</p>}
+    function setQty(id: number, qty: number) {
+        setSelected((prev) => ({ ...prev, [id]: { ...prev[id], quantidade: Math.max(1, qty) } }));
+    }
+
+    function setObs(id: number, obs: string) {
+        setSelected((prev) => ({ ...prev, [id]: { ...prev[id], observacoes: obs } }));
+    }
+
+    function handleConfirm() {
+        const items = Object.values(selected);
+        if (items.length === 0) return;
+        setProcessing(true);
+        router.post(
+            `/surgeries/${surgeryId}/consumos/batch`,
+            { items },
+            {
+                onSuccess: () => onClose(),
+                onError: () => setProcessing(false),
+                onFinish: () => setProcessing(false),
+            }
+        );
+    }
+
+    const count = Object.keys(selected).length;
+
+    return createPortal(
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+            <div className="flex w-full max-w-2xl flex-col rounded-xl bg-white shadow-2xl dark:bg-gray-900" style={{ maxHeight: '85vh' }}>
+
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">Adicionar consumos</h3>
+                    <button type="button" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <X className="h-5 w-5 text-gray-500" />
+                    </button>
                 </div>
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">
-                        {qtdLabel} *
-                    </label>
-                    <input
-                        type="number"
-                        value={data.quantidade}
-                        onChange={(e) => setData('quantidade', Math.max(1, parseInt(e.target.value) || 1))}
-                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                        min="1"
-                        required
-                    />
-                    {errors.quantidade && <p className="mt-1 text-xs text-red-500">{errors.quantidade}</p>}
+
+                {/* Search */}
+                <div className="border-b border-gray-200 px-5 py-3 dark:border-gray-700">
+                    <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 dark:border-gray-600 dark:bg-gray-800">
+                        <Search className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                        <input
+                            autoFocus
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Pesquisar stock…"
+                            className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400 dark:text-gray-100"
+                        />
+                        {search && (
+                            <button type="button" onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600">
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
                 </div>
-                <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-300">Observações</label>
-                    <input
-                        type="text"
-                        value={data.observacoes}
-                        onChange={(e) => setData('observacoes', e.target.value)}
-                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                        placeholder="Opcional"
-                    />
+
+                {/* Grid */}
+                <div className="flex-1 overflow-y-auto p-5">
+                    {filtered.length === 0 ? (
+                        <p className="text-center text-sm text-gray-400">Sem resultados</p>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {filtered.map((m) => {
+                                const checked = !!selected[m.id];
+                                const item = selected[m.id];
+                                const qtdInfo = movQtd(m);
+                                return (
+                                    <div
+                                        key={m.id}
+                                        className={`flex flex-col gap-2 rounded-lg border p-3 transition-colors ${
+                                            checked
+                                                ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20'
+                                                : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750'
+                                        }`}
+                                    >
+                                        {/* Linha principal: checkbox + nome */}
+                                        <label className="flex cursor-pointer items-start gap-2.5">
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() => toggle(m)}
+                                                className="mt-0.5 h-4 w-4 flex-shrink-0 accent-blue-600"
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-medium leading-tight text-gray-900 dark:text-white">
+                                                    {m.consumivel_tipo?.nome ?? `Movimento #${m.id}`}
+                                                </p>
+                                                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                                    {m.tipo_mov}
+                                                    {m.referencia && <span className="ml-1.5">· Ref: {m.referencia}</span>}
+                                                    {qtdInfo && <span className="ml-1.5 font-medium text-blue-600 dark:text-blue-400">· {qtdInfo}</span>}
+                                                </p>
+                                            </div>
+                                        </label>
+
+                                        {/* Campos de detalhe quando seleccionado */}
+                                        {checked && (
+                                            <div className="flex gap-2 pl-6">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <label className="text-xs text-gray-500">Qtd.</label>
+                                                    <input
+                                                        type="number"
+                                                        min={1}
+                                                        value={item.quantidade}
+                                                        onChange={(e) => setQty(m.id, parseInt(e.target.value) || 1)}
+                                                        className="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                                    />
+                                                </div>
+                                                <div className="flex flex-1 flex-col gap-0.5">
+                                                    <label className="text-xs text-gray-500">Observações</label>
+                                                    <input
+                                                        type="text"
+                                                        value={item.observacoes}
+                                                        onChange={(e) => setObs(m.id, e.target.value)}
+                                                        placeholder="Opcional"
+                                                        className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between border-t border-gray-200 px-5 py-3 dark:border-gray-700">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {count} item{count !== 1 ? 's' : ''} seleccionado{count !== 1 ? 's' : ''}
+                    </span>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleConfirm}
+                            disabled={count === 0 || processing}
+                            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            <Check className="h-4 w-4" />
+                            {processing ? 'A guardar…' : 'Confirmar'}
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div className="mt-3 flex gap-2">
-                <button
-                    type="submit"
-                    disabled={processing || !data.stock_movimento_id}
-                    className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-                >
-                    <Check size={14} />
-                    Adicionar
-                </button>
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-                >
-                    <X size={14} />
-                    Cancelar
-                </button>
-            </div>
-        </form>
+        </div>,
+        document.body
     );
 }
 
@@ -287,15 +318,15 @@ export default function ConsumosIndex({ surgery, consumos, stockMovimentos, flas
                             className="flex items-center gap-2 self-start rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
                         >
                             <Plus size={16} />
-                            Adicionar consumo
+                            Adicionar consumos
                         </button>
                     )}
 
                     {adding && (
-                        <ConsumoForm
+                        <StockModal
                             surgeryId={surgery.id}
                             stockMovimentos={disponiveis}
-                            onCancel={() => setAdding(false)}
+                            onClose={() => setAdding(false)}
                         />
                     )}
 

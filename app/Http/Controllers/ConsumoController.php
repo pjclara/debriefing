@@ -7,6 +7,7 @@ use App\Models\Consumo;
 use App\Models\ConsumivelTipo;
 use App\Models\StockMovimento;
 use App\Models\Surgery;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -95,5 +96,42 @@ class ConsumoController extends Controller
 
         return redirect()->back()
             ->with('success', 'Consumo eliminado.');
+    }
+
+    public function storeBatch(Request $request, Surgery $surgery): RedirectResponse
+    {
+        $request->validate([
+            'items'                       => ['required', 'array', 'min:1'],
+            'items.*.stock_movimento_id'  => ['required', 'integer', 'exists:stock_movimentos,id'],
+            'items.*.quantidade'          => ['required', 'integer', 'min:1'],
+            'items.*.observacoes'         => ['nullable', 'string', 'max:255'],
+        ]);
+
+        DB::transaction(function () use ($request, $surgery) {
+            foreach ($request->input('items') as $item) {
+                $quantidade = (int) $item['quantidade'];
+                $movimento  = StockMovimento::with('consumivelTipo')->findOrFail($item['stock_movimento_id']);
+
+                if ($movimento->consumivelTipo?->categoria === ConsumivelTipo::CAT_ROBOTICO_VIDAS) {
+                    DB::table('stock_movimentos')
+                        ->where('id', $movimento->id)
+                        ->update(['vidas_atual' => DB::raw('GREATEST(COALESCE(vidas_atual, 0) - ' . $quantidade . ', 0)')]);
+                } else {
+                    DB::table('stock_movimentos')
+                        ->where('id', $movimento->id)
+                        ->update(['unidades_atual' => DB::raw('GREATEST(COALESCE(unidades_atual, 0) - ' . $quantidade . ', 0)')]);
+                }
+
+                $surgery->consumos()->create([
+                    'stock_movimento_id' => $item['stock_movimento_id'],
+                    'quantidade'         => $quantidade,
+                    'observacoes'        => $item['observacoes'] ?? null,
+                ]);
+            }
+        });
+
+        $n = count($request->input('items'));
+        return redirect()->back()
+            ->with('success', $n . ' consumo' . ($n !== 1 ? 's' : '') . ' adicionado' . ($n !== 1 ? 's' : '') . '.');
     }
 }

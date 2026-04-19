@@ -44,6 +44,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('surgeries.consumos.index');
     Route::post('surgeries/{surgery}/consumos', [ConsumoController::class, 'store'])
         ->name('surgeries.consumos.store');
+    Route::post('surgeries/{surgery}/consumos/batch', [ConsumoController::class, 'storeBatch'])
+        ->name('surgeries.consumos.storeBatch');
     Route::put('surgeries/{surgery}/consumos/{consumo}', [ConsumoController::class, 'update'])
         ->name('surgeries.consumos.update');
     Route::delete('surgeries/{surgery}/consumos/{consumo}', [ConsumoController::class, 'destroy'])
