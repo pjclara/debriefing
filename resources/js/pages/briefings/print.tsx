@@ -21,21 +21,21 @@ interface Surgery {
     docking?: number;
     consola_inicio?: string;
     consola_fim?: string;
-    antecedentes_relevantes: boolean;
+    antecedentes_relevantes: boolean | null;
     descricao_antecedentes?: string;
-    comorbidades: boolean;
+    comorbidades: boolean | null;
     descricao_comorbidades?: string;
-    variacoes_tecnicas: boolean;
+    variacoes_tecnicas: boolean | null;
     descricao_variacoes?: string;
-    passos_criticos: boolean;
+    passos_criticos: boolean | null;
     descricao_passos?: string;
-    consentimento: boolean;
+    consentimento: boolean | null;
     lateralidade: string;
-    medicacao_suspensa: boolean;
+    medicacao_suspensa: boolean | null;
     antibiotico?: string;
-    profilaxia: boolean;
+    profilaxia: boolean | null;
     perdas_estimadas?: number;
-    reserva_ativa: boolean;
+    reserva_ativa: boolean | null;
     reserva_unidades?: number;
     trocares?: number;
     otica?: string;
@@ -54,11 +54,13 @@ interface Surgery {
 }
 
 interface Debriefing {
-    complicacoes: boolean;
-    falha_sistema: boolean;
-    inicio_a_horas: boolean;
-    fim_a_horas: boolean;
-    evento_adverso: boolean;
+    complicacoes: boolean | null;
+    falha_sistema: boolean | null;
+    falha_solucionada?: boolean | null;
+    falha_reportada?: boolean | null;
+    inicio_a_horas: boolean | null;
+    fim_a_horas: boolean | null;
+    evento_adverso: boolean | null;
     correu_bem?: string;
     melhorar?: string;
     falha_comunicacao?: string;
@@ -70,15 +72,15 @@ interface Briefing {
     hora: string;
     especialidade: string;
     sala: string;
-    equipa_segura: boolean;
-    alteracao_equipa: boolean;
+    equipa_segura: boolean | null;
+    alteracao_equipa: boolean | null;
     descricao_alteracao_equipa?: string;
-    problemas_sala: boolean;
+    problemas_sala: boolean | null;
     descricao_problemas?: string;
-    equipamento_ok: boolean;
+    equipamento_ok: boolean | null;
     descricao_equipamento?: string;
-    mesa_emparelhada: boolean;
-    ordem_mantida: boolean;
+    mesa_emparelhada: boolean | null;
+    ordem_mantida: boolean | null;
     descricao_ordem?: string;
     surgeries: Surgery[];
     debriefing?: Debriefing | null;
@@ -89,7 +91,10 @@ function formatDate(d: string) {
     return `${day}/${m}/${y}`;
 }
 
-function Yn({ value }: { value: boolean }) {
+function Yn({ value }: { value: boolean | null }) {
+    if (value === null || value === undefined) {
+        return <span style={{ color: '#9ca3af', fontWeight: 500 }}>—</span>;
+    }
     return (
         <span style={{ color: value ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
             {value ? 'Sim' : 'Não'}
@@ -297,14 +302,14 @@ export default function BriefingPrint({ briefing }: { briefing: Briefing }) {
                                     { flag: s.comorbidades, label: 'Comorbidades', desc: s.descricao_comorbidades },
                                     { flag: s.variacoes_tecnicas, label: 'Variações técnicas', desc: s.descricao_variacoes },
                                     { flag: s.passos_criticos, label: 'Passos críticos', desc: s.descricao_passos },
-                                ].filter(f => f.flag).length > 0 && (
+                        ].filter(f => f.flag === true).length > 0 && (
                                     <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
                                         {[
                                             { flag: s.antecedentes_relevantes, label: 'Antecedentes de relevo', desc: s.descricao_antecedentes },
                                             { flag: s.comorbidades, label: 'Comorbidades', desc: s.descricao_comorbidades },
                                             { flag: s.variacoes_tecnicas, label: 'Variações técnicas', desc: s.descricao_variacoes },
                                             { flag: s.passos_criticos, label: 'Passos críticos', desc: s.descricao_passos },
-                                        ].filter(f => f.flag).map(f => (
+                                        ].filter(f => f.flag === true).map(f => (
                                             <div key={f.label} style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 4, padding: '4px 8px', fontSize: 11 }}>
                                                 <strong>⚠ {f.label}:</strong>{f.desc ? ' ' + f.desc : ' Sim'}
                                             </div>
@@ -321,6 +326,8 @@ export default function BriefingPrint({ briefing }: { briefing: Briefing }) {
                     <Section title="3 · Debriefing" color="#059669">
                         <Row label="Complicações intra-operatórias" value={<Yn value={briefing.debriefing.complicacoes} />} />
                         <Row label="Falha no sistema Da Vinci Xi" value={<Yn value={briefing.debriefing.falha_sistema} />} />
+                        {briefing.debriefing.falha_solucionada !== undefined && briefing.debriefing.falha_solucionada !== null && <Row label="Falha solucionada" value={<Yn value={briefing.debriefing.falha_solucionada} />} />}
+                        {briefing.debriefing.falha_reportada !== undefined && briefing.debriefing.falha_reportada !== null && <Row label="Falha reportada" value={<Yn value={briefing.debriefing.falha_reportada} />} />}
                         <Row label="Lista operatória – Iniciou a horas" value={<Yn value={briefing.debriefing.inicio_a_horas} />} />
                         <Row label="Lista operatória – Finalizou a horas" value={<Yn value={briefing.debriefing.fim_a_horas} />} />
                         <Row label="Evento adverso notificado" value={<Yn value={briefing.debriefing.evento_adverso} />} />
