@@ -3,12 +3,14 @@ import { useEffect } from 'react';
 
 interface Consumo {
     id: number;
-    designacao: string;
-    referencia?: string;
+    stock_movimento_id: number;
     quantidade: number;
-    unidade: string;
     observacoes?: string;
-    consumivel?: { designacao: string; categoria: string };
+    stock_movimento?: {
+        consumivel_tipo?: { nome: string; categoria: string };
+        referencia?: string;
+        codigo?: string;
+    };
 }
 
 interface Surgery {
@@ -49,7 +51,7 @@ interface Surgery {
     b2?: number[];
     b3?: number[];
     b4?: number[];
-    equipamento_extra?: string;
+    equipamento_extra?: number[];
     consumos?: Consumo[];
 }
 
@@ -124,7 +126,7 @@ function Section({ title, color, children }: { title: string; color: string; chi
     );
 }
 
-export default function BriefingPrint({ briefing }: { briefing: Briefing }) {
+export default function BriefingPrint({ briefing, consumivelTipos }: { briefing: Briefing; consumivelTipos: Record<number, string> }) {
     useEffect(() => {
         // Auto-print após render
         const timer = setTimeout(() => window.print(), 400);
@@ -161,7 +163,7 @@ export default function BriefingPrint({ briefing }: { briefing: Briefing }) {
 
     const formatPincas = (arr: number[] | undefined) => {
         if (!arr || arr.length === 0) return '—';
-        return arr.join(', ');
+        return arr.map((id) => consumivelTipos[id] ?? `#${id}`).join(', ');
     };
 
     return (
@@ -261,7 +263,7 @@ export default function BriefingPrint({ briefing }: { briefing: Briefing }) {
                                         {s.b2 && s.b2.length > 0 && <Row label="B2 - Pinças" value={formatPincas(s.b2)} />}
                                         {s.b3 && s.b3.length > 0 && <Row label="B3 - Pinças" value={formatPincas(s.b3)} />}
                                         {s.b4 && s.b4.length > 0 && <Row label="B4 - Pinças" value={formatPincas(s.b4)} />}
-                                        {s.equipamento_extra && <Row label="Equipamento extra" value={s.equipamento_extra} />}
+                                        {s.equipamento_extra && s.equipamento_extra.length > 0 && <Row label="Equipamento extra" value={formatPincas(s.equipamento_extra)} />}
                                     </tbody>
                                 </table>
 
@@ -277,17 +279,15 @@ export default function BriefingPrint({ briefing }: { briefing: Briefing }) {
                                                     <th style={{ padding: '3px 6px', textAlign: 'left', borderBottom: '1px solid #ddd6fe', color: '#6d28d9' }}>Designação</th>
                                                     <th style={{ padding: '3px 6px', textAlign: 'left', borderBottom: '1px solid #ddd6fe', color: '#6d28d9' }}>Ref.</th>
                                                     <th style={{ padding: '3px 6px', textAlign: 'center', borderBottom: '1px solid #ddd6fe', color: '#6d28d9' }}>Qtd.</th>
-                                                    <th style={{ padding: '3px 6px', textAlign: 'left', borderBottom: '1px solid #ddd6fe', color: '#6d28d9' }}>Un.</th>
                                                     <th style={{ padding: '3px 6px', textAlign: 'left', borderBottom: '1px solid #ddd6fe', color: '#6d28d9' }}>Obs.</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {s.consumos.map((c, ci) => (
                                                     <tr key={c.id} style={{ background: ci % 2 === 0 ? '#fff' : '#faf5ff' }}>
-                                                        <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6' }}>{c.consumivel?.designacao ?? c.designacao}</td>
-                                                        <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}>{c.referencia ?? '—'}</td>
+                                                        <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6' }}>{c.stock_movimento?.consumivel_tipo?.nome ?? '—'}</td>
+                                                        <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}>{c.stock_movimento?.referencia ?? '—'}</td>
                                                         <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6', textAlign: 'center', fontWeight: 600 }}>{c.quantidade}</td>
-                                                        <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}>{c.unidade}</td>
                                                         <td style={{ padding: '3px 6px', borderBottom: '1px solid #f3f4f6', color: '#6b7280' }}>{c.observacoes ?? '—'}</td>
                                                     </tr>
                                                 ))}

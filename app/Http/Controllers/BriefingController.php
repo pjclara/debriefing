@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BriefingRequest;
 use App\Models\Briefing;
+use App\Models\ConsumivelTipo;
 use App\Models\Department;
 use App\Models\StockMovimento;
 use Inertia\Inertia;
@@ -59,9 +60,18 @@ class BriefingController extends Controller
 
     public function print(Briefing $briefing): Response
     {
-        $briefing->load(['surgeries.consumos', 'debriefing']);
+        $briefing->load([
+            'surgeries.consumos.stockMovimento.consumivelTipo',
+            'debriefing',
+        ]);
 
-        return Inertia::render('briefings/print', ['briefing' => $briefing]);
+        // Mapa id → nome para resolver b1/b2/b3/b4/equipamento_extra
+        $consumivelTipos = ConsumivelTipo::orderBy('nome')->pluck('nome', 'id');
+
+        return Inertia::render('briefings/print', [
+            'briefing'        => $briefing,
+            'consumivelTipos' => $consumivelTipos,
+        ]);
     }
 
     public function edit(Briefing $briefing): Response

@@ -47,7 +47,7 @@ export default function StockMovimentoForm({ movimento, tiposMovLabel, tipos }: 
         vidas_atual: movimento?.vidas_atual ?? movimento?.vidas_inicial ?? '',
         unidades_inicial: movimento?.unidades_inicial ?? '',
         unidades_atual: movimento?.unidades_atual ?? movimento?.unidades_inicial ?? '',
-        data_entrada: movimento?.data_entrada ?? hoje,
+        data_entrada: (movimento?.data_entrada ?? hoje).substring(0, 10),
         data_saida: movimento?.data_saida ?? '',
         motivo: movimento?.motivo ?? '',
         observacoes: movimento?.observacoes ?? '',

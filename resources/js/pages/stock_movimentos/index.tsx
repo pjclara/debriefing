@@ -1,7 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { Plus, Pencil, Trash2, TrendingUp } from 'lucide-react';
+import { Plus, Pencil, Trash2, TrendingUp, Search, X } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
+import { useState, useCallback } from 'react';
 
 interface ConsumivelTipo {
     id: number;
@@ -35,6 +36,7 @@ interface Paginated {
 interface Props {
     movimentos: Paginated;
     tiposMovLabel: Record<string, string>;
+    filters: { q?: string; tipo?: string; data_de?: string; data_ate?: string };
 }
 
 const tiposMovColors: Record<string, string> = {
@@ -53,11 +55,30 @@ const tiposMovIcons: Record<string, string> = {
     devolucao: '↺',
 };
 
-export default function StockMovimentosIndex({ movimentos, tiposMovLabel }: Props) {
+export default function StockMovimentosIndex({ movimentos, tiposMovLabel, filters }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Catálogo', href: '#' },
         { title: 'Movimentos de Stock', href: '/stock_movimentos' },
     ];
+
+    const [q, setQ] = useState(filters.q ?? '');
+    const [tipo, setTipo] = useState(filters.tipo ?? '');
+    const [dataDE, setDataDE] = useState(filters.data_de ?? '');
+    const [dataATE, setDataATE] = useState(filters.data_ate ?? '');
+
+    const applyFilters = useCallback((overrides: Record<string, string> = {}) => {
+        const params: Record<string, string> = {};
+        const merged = { q, tipo, data_de: dataDE, data_ate: dataATE, ...overrides };
+        Object.entries(merged).forEach(([k, v]) => { if (v) params[k] = v; });
+        router.get('/stock_movimentos', params, { preserveState: true, replace: true });
+    }, [q, tipo, dataDE, dataATE]);
+
+    const clearFilters = () => {
+        setQ(''); setTipo(''); setDataDE(''); setDataATE('');
+        router.get('/stock_movimentos', {}, { preserveState: false, replace: true });
+    };
+
+    const hasFilters = !!(filters.q || filters.tipo || filters.data_de || filters.data_ate);
 
     const handleDelete = (id: number) => {
         if (window.confirm('Confirmar eliminação?')) {
@@ -79,6 +100,72 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel }: Prop
                         <Plus size={18} />
                         Novo Movimento
                     </Link>
+                </div>
+
+                {/* ── Barra de filtros ── */}
+                <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-white p-4">
+                    {/* Pesquisa livre */}
+                    <div className="relative min-w-[220px] flex-1">
+                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Designação, referência, código…"
+                            value={q}
+                            onChange={e => setQ(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && applyFilters()}
+                            className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:outline-none"
+                        />
+                    </div>
+
+                    {/* Tipo de movimento */}
+                    <select
+                        value={tipo}
+                        onChange={e => { setTipo(e.target.value); applyFilters({ tipo: e.target.value }); }}
+                        className="rounded-lg border border-gray-300 py-2 pl-3 pr-8 text-sm focus:border-blue-500 focus:outline-none"
+                    >
+                        <option value="">Todos os tipos</option>
+                        {Object.entries(tiposMovLabel).map(([k, v]) => (
+                            <option key={k} value={k}>{v}</option>
+                        ))}
+                    </select>
+
+                    {/* Data de */}
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-gray-500 whitespace-nowrap">De</span>
+                        <input
+                            type="date"
+                            value={dataDE}
+                            onChange={e => { setDataDE(e.target.value); applyFilters({ data_de: e.target.value }); }}
+                            className="rounded-lg border border-gray-300 py-2 px-3 text-sm focus:border-blue-500 focus:outline-none"
+                        />
+                    </div>
+
+                    {/* Data até */}
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-gray-500 whitespace-nowrap">Até</span>
+                        <input
+                            type="date"
+                            value={dataATE}
+                            onChange={e => { setDataATE(e.target.value); applyFilters({ data_ate: e.target.value }); }}
+                            className="rounded-lg border border-gray-300 py-2 px-3 text-sm focus:border-blue-500 focus:outline-none"
+                        />
+                    </div>
+
+                    {/* Pesquisar / Limpar */}
+                    <button
+                        onClick={() => applyFilters()}
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                    >
+                        Pesquisar
+                    </button>
+                    {hasFilters && (
+                        <button
+                            onClick={clearFilters}
+                            className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                        >
+                            <X size={14} /> Limpar
+                        </button>
+                    )}
                 </div>
 
                 {movimentos.data.length > 0 ? (
