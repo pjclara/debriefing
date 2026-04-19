@@ -145,11 +145,9 @@ function ModalMultiSelect({
 
     const modal = open
         ? createPortal(
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
-            >
-                <div className="flex w-full max-w-2xl flex-col rounded-xl bg-white shadow-2xl dark:bg-gray-900" style={{ maxHeight: '80vh' }}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+                <div className="relative flex w-full max-w-2xl flex-col rounded-xl bg-white shadow-2xl dark:bg-gray-900" style={{ maxHeight: '80vh' }}>
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
                         <h3 className="text-base font-semibold text-gray-900 dark:text-white">{label}</h3>
