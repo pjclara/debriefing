@@ -40,6 +40,8 @@ Route::middleware(['auth'])->group(function () {
     // ── Consumos por cirurgia ───────────────────────────────────────────────
     Route::get('consumos/historico', [ConsumoController::class, 'historico'])
         ->name('consumos.historico');
+    Route::get('consumos/historico/print', [ConsumoController::class, 'printHistorico'])
+        ->name('consumos.historico.print');
     Route::get('surgeries/{surgery}/consumos', [ConsumoController::class, 'index'])
         ->name('surgeries.consumos.index');
     Route::post('surgeries/{surgery}/consumos', [ConsumoController::class, 'store'])
@@ -70,6 +72,8 @@ Route::middleware(['auth'])->group(function () {
             ->name('surgeries.destroy');
 
         // Movimentos de stock
+        Route::get('stock_movimentos/print', [StockMovimentoController::class, 'print'])
+            ->name('stock_movimentos.print');
         Route::resource('stock_movimentos', StockMovimentoController::class)->except(['show']);
 
         // Tipos de consumível

@@ -44,6 +44,20 @@ class ConsumoController extends Controller
         ]);
     }
 
+    public function printHistorico(): Response
+    {
+        $consumos = Consumo::with([
+            'surgery.briefing',
+            'stockMovimento.consumivelTipo',
+        ])
+        ->orderByDesc('created_at')
+        ->get();
+
+        return Inertia::render('consumos/print', [
+            'consumos' => $consumos,
+        ]);
+    }
+
     public function store(ConsumoRequest $request, Surgery $surgery): RedirectResponse
     {
         $validated = $request->validated();

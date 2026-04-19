@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { History } from 'lucide-react';
+import { History, FileDown } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
 interface ConsumivelTipo {
@@ -82,14 +82,25 @@ export default function HistoricoConsumos({ consumos }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Histórico de Consumos" />
             <div className="mx-auto max-w-7xl p-6">
-                <div className="mb-6 flex items-center gap-3">
-                    <History className="h-6 w-6 text-gray-500" />
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Histórico de Consumos</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {consumos.total} registo{consumos.total !== 1 ? 's' : ''} no total
-                        </p>
+                <div className="mb-6 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <History className="h-6 w-6 text-gray-500" />
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Histórico de Consumos</h1>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {consumos.total} registo{consumos.total !== 1 ? 's' : ''} no total
+                            </p>
+                        </div>
                     </div>
+                    <a
+                        href="/consumos/historico/print"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                    >
+                        <FileDown size={16} />
+                        PDF
+                    </a>
                 </div>
 
                 {consumos.data.length === 0 ? (

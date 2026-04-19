@@ -88,4 +88,32 @@ class StockMovimentoController extends Controller
 
         return redirect('/stock_movimentos')->with('success', 'Movimento de stock eliminado com sucesso!');
     }
+
+    public function print(Request $request): Response
+    {
+        $q       = $request->input('q');
+        $tipo    = $request->input('tipo');
+        $dataDE  = $request->input('data_de');
+        $dataATE = $request->input('data_ate');
+
+        $movimentos = StockMovimento::with('consumivelTipo')
+            ->when($q, function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->whereHas('consumivelTipo', fn($ct) => $ct->where('nome', 'like', "%{$q}%"))
+                        ->orWhere('referencia', 'like', "%{$q}%")
+                        ->orWhere('codigo', 'like', "%{$q}%");
+                });
+            })
+            ->when($tipo, fn($query) => $query->where('tipo_mov', $tipo))
+            ->when($dataDE, fn($query) => $query->whereDate('data_entrada', '>=', $dataDE))
+            ->when($dataATE, fn($query) => $query->whereDate('data_entrada', '<=', $dataATE))
+            ->orderByDesc('data_entrada')
+            ->get();
+
+        return Inertia::render('stock_movimentos/print', [
+            'movimentos'    => $movimentos,
+            'tiposMovLabel' => StockMovimento::$tiposMovLabel,
+            'filters'       => $request->only(['q', 'tipo', 'data_de', 'data_ate']),
+        ]);
+    }
 }

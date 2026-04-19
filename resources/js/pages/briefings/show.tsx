@@ -30,6 +30,7 @@ interface StockMovimento {
 interface Consumo {
     id: number;
     stock_movimento_id: number;
+    quantidade: number;
     observacoes?: string;
     stock_movimento?: StockMovimento;
 }
@@ -138,8 +139,7 @@ function AssociarStockModal({
     onClose: () => void;
 }) {
     const [search, setSearch] = useState('');
-    const [selectedId, setSelectedId] = useState<number | null>(null);
-    const [observacoes, setObservacoes] = useState('');
+    const [selected, setSelected] = useState<Record<number, { quantidade: number; observacoes: string }>>({});
     const [processing, setProcessing] = useState(false);
 
     const filtered = stockMovimentos.filter((m) =>
@@ -148,12 +148,26 @@ function AssociarStockModal({
         (m.codigo ?? '').toLowerCase().includes(search.toLowerCase())
     );
 
+    const toggle = (id: number) => {
+        setSelected(prev => {
+            if (prev[id]) { const next = { ...prev }; delete next[id]; return next; }
+            return { ...prev, [id]: { quantidade: 1, observacoes: '' } };
+        });
+    };
+
+    const selectedCount = Object.keys(selected).length;
+
     function handleConfirm() {
-        if (!selectedId) return;
+        if (selectedCount === 0) return;
         setProcessing(true);
+        const items = Object.entries(selected).map(([id, v]) => ({
+            stock_movimento_id: Number(id),
+            quantidade: v.quantidade,
+            observacoes: v.observacoes || null,
+        }));
         router.post(
-            `/surgeries/${surgeryId}/consumos`,
-            { stock_movimento_id: selectedId, observacoes },
+            `/surgeries/${surgeryId}/consumos/batch`,
+            { items },
             {
                 onSuccess: () => onClose(),
                 onError: () => setProcessing(false),
@@ -171,7 +185,14 @@ function AssociarStockModal({
 
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">Associar stock à cirurgia</h3>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                        Associar stock à cirurgia
+                        {selectedCount > 0 && (
+                            <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                                {selectedCount}
+                            </span>
+                        )}
+                    </h3>
                     <button type="button" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
                         <X className="h-5 w-5 text-gray-500" />
                     </button>
@@ -197,83 +218,97 @@ function AssociarStockModal({
                     </div>
                 </div>
 
-                {/* Grid */}
+                {/* Lista */}
                 <div className="flex-1 overflow-y-auto p-5">
                     {filtered.length === 0 ? (
                         <p className="text-center text-sm text-gray-400">Sem resultados</p>
                     ) : (
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {filtered.map((m) => {
-                                const checked = selectedId === m.id;
+                                const checked = !!selected[m.id];
                                 const isVidas = m.consumivel_tipo?.categoria === 'robotico_vidas';
                                 return (
-                                    <label
+                                    <div
                                         key={m.id}
-                                        className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-3 transition-colors ${
+                                        className={`rounded-lg border p-3 transition-colors ${
                                             checked
                                                 ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20'
-                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750'
+                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
                                         }`}
                                     >
-                                        <input
-                                            type="radio"
-                                            name="stock_movimento"
-                                            checked={checked}
-                                            onChange={() => setSelectedId(m.id)}
-                                            className="mt-0.5 h-4 w-4 flex-shrink-0 accent-blue-600"
-                                        />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-medium leading-tight text-gray-900 dark:text-white">
-                                                {m.consumivel_tipo?.nome ?? `Movimento #${m.id}`}
-                                            </p>
-                                            <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-gray-500 dark:text-gray-400">
-                                                <span>{m.tipo_mov}</span>
-                                                {m.referencia && <span>Ref: {m.referencia}</span>}
-                                                {m.codigo && <span>Cód: {m.codigo}</span>}
-                                                {isVidas && m.vidas_atual != null
-                                                    ? <span className="font-medium text-blue-600 dark:text-blue-400">Vidas: {m.vidas_atual}/{m.vidas_inicial}</span>
-                                                    : m.unidades_atual != null
-                                                        ? <span className="font-medium text-blue-600 dark:text-blue-400">Unid.: {m.unidades_atual}/{m.unidades_inicial}</span>
-                                                        : null}
-                                            </p>
-                                        </div>
-                                    </label>
+                                        <label className="flex cursor-pointer items-start gap-2.5">
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() => toggle(m.id)}
+                                                className="mt-0.5 h-4 w-4 flex-shrink-0 accent-blue-600"
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-medium leading-tight text-gray-900 dark:text-white">
+                                                    {m.consumivel_tipo?.nome ?? `Movimento #${m.id}`}
+                                                </p>
+                                                <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-gray-500 dark:text-gray-400">
+                                                    {m.referencia && <span>Ref: {m.referencia}</span>}
+                                                    {m.codigo && <span>Cód: {m.codigo}</span>}
+                                                    {isVidas && m.vidas_atual != null
+                                                        ? <span className="font-medium text-blue-600 dark:text-blue-400">Vidas: {m.vidas_atual}/{m.vidas_inicial}</span>
+                                                        : m.unidades_atual != null
+                                                            ? <span className="font-medium text-blue-600 dark:text-blue-400">Unid.: {m.unidades_atual}/{m.unidades_inicial}</span>
+                                                            : null}
+                                                </p>
+                                            </div>
+                                        </label>
+
+                                        {/* Quantidade + obs. — apenas quando selecionado */}
+                                        {checked && (
+                                            <div className="mt-2 flex items-center gap-2 pl-6">
+                                                <label className="text-xs text-gray-500 whitespace-nowrap">Qtd.</label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    value={selected[m.id].quantidade}
+                                                    onChange={(e) => {
+                                                        const qty = Math.max(1, parseInt(e.target.value) || 1);
+                                                        setSelected(prev => ({ ...prev, [m.id]: { ...prev[m.id], quantidade: qty } }));
+                                                    }}
+                                                    className="w-16 rounded border border-gray-300 px-2 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Obs. (opcional)"
+                                                    value={selected[m.id].observacoes}
+                                                    onChange={(e) => {
+                                                        setSelected(prev => ({ ...prev, [m.id]: { ...prev[m.id], observacoes: e.target.value } }));
+                                                    }}
+                                                    className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
                                 );
                             })}
                         </div>
                     )}
                 </div>
 
-                {/* Observações + Footer */}
-                <div className="border-t border-gray-200 px-5 py-3 dark:border-gray-700 space-y-3">
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Observações (opcional)</label>
-                        <input
-                            type="text"
-                            value={observacoes}
-                            onChange={(e) => setObservacoes(e.target.value)}
-                            placeholder="Deixar em branco se não aplicável"
-                            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                        />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleConfirm}
-                            disabled={!selectedId || processing}
-                            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                        >
-                            <Check className="h-4 w-4" />
-                            {processing ? 'A associar…' : 'Associar'}
-                        </button>
-                    </div>
+                {/* Footer */}
+                <div className="flex justify-end gap-2 border-t border-gray-200 px-5 py-3 dark:border-gray-700">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleConfirm}
+                        disabled={selectedCount === 0 || processing}
+                        className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                        <Check className="h-4 w-4" />
+                        {processing ? 'A associar…' : `Associar${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
+                    </button>
                 </div>
             </div>
         </div>,
@@ -332,6 +367,7 @@ function SurgeryStockPanel({
                                         {mov?.consumivel_tipo?.nome ?? `Movimento #${c.stock_movimento_id}`}
                                     </span>
                                     <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-gray-500">
+                                        <span className="font-semibold text-gray-700 dark:text-gray-300">Qtd: {c.quantidade}</span>
                                         {mov?.consumivel_tipo?.categoria === 'robotico_vidas'
                                             ? mov?.vidas_atual != null && <span>Vidas: {mov.vidas_atual}/{mov.vidas_inicial}</span>
                                             : mov?.unidades_atual != null && <span>Unid.: {mov.unidades_atual}/{mov.unidades_inicial}</span>}

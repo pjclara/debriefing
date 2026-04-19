@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { Plus, Pencil, Trash2, TrendingUp, Search, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, TrendingUp, Search, X, FileDown } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 import { useState, useCallback } from 'react';
 
@@ -80,6 +80,16 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel, filter
 
     const hasFilters = !!(filters.q || filters.tipo || filters.data_de || filters.data_ate);
 
+    const printUrl = () => {
+        const params = new URLSearchParams();
+        if (filters.q)       params.set('q', filters.q);
+        if (filters.tipo)    params.set('tipo', filters.tipo);
+        if (filters.data_de)  params.set('data_de', filters.data_de);
+        if (filters.data_ate) params.set('data_ate', filters.data_ate);
+        const qs = params.toString();
+        return `/stock_movimentos/print${qs ? '?' + qs : ''}`;
+    };
+
     const handleDelete = (id: number) => {
         if (window.confirm('Confirmar eliminação?')) {
             router.delete(`/stock_movimentos/${id}`);
@@ -96,10 +106,21 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel, filter
             <div className="mx-auto max-w-6xl p-6">
                 <div className="mb-6 flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Movimentos de Stock</h1>
-                    <Link href="/stock_movimentos/create" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
-                        <Plus size={18} />
-                        Novo Movimento
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <a
+                            href={printUrl()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                        >
+                            <FileDown size={16} />
+                            PDF
+                        </a>
+                        <Link href="/stock_movimentos/create" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
+                            <Plus size={18} />
+                            Novo Movimento
+                        </Link>
+                    </div>
                 </div>
 
                 {/* ── Barra de filtros ── */}
