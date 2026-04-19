@@ -11,15 +11,15 @@ interface BriefingData {
     hora?: string;
     especialidade?: string;
     sala?: string;
-    equipa_segura?: boolean;
-    alteracao_equipa?: boolean;
+    equipa_segura?: boolean | null;
+    alteracao_equipa?: boolean | null;
     descricao_alteracao_equipa?: string;
-    problemas_sala?: boolean;
+    problemas_sala?: boolean | null;
     descricao_problemas?: string;
-    equipamento_ok?: boolean;
+    equipamento_ok?: boolean | null;
     descricao_equipamento?: string;
-    mesa_emparelhada?: boolean;
-    ordem_mantida?: boolean;
+    mesa_emparelhada?: boolean | null;
+    ordem_mantida?: boolean | null;
     descricao_ordem?: string;
 }
 
@@ -46,6 +46,7 @@ interface Step {
 export default function BriefingForm({ briefing, departments }: Props) {
     const isEdit = !!briefing?.id;
     const [currentStep, setCurrentStep] = useState<number>(0);
+    const [stepError, setStepError] = useState<string | null>(null);
 
     const steps: Step[] = [
         { id: 'sala', label: 'Sala / Dia', icon: Calendar },
@@ -60,15 +61,15 @@ export default function BriefingForm({ briefing, departments }: Props) {
         hora: briefing?.hora ? briefing.hora.substring(0, 5) : '',
         especialidade: briefing?.especialidade ?? '',
         sala: briefing?.sala ?? '',
-        equipa_segura: briefing?.equipa_segura ?? false,
-        alteracao_equipa: briefing?.alteracao_equipa ?? false,
+        equipa_segura: briefing?.equipa_segura ?? null,
+        alteracao_equipa: briefing?.alteracao_equipa ?? null,
         descricao_alteracao_equipa: briefing?.descricao_alteracao_equipa ?? '',
-        problemas_sala: briefing?.problemas_sala ?? false,
+        problemas_sala: briefing?.problemas_sala ?? null,
         descricao_problemas: briefing?.descricao_problemas ?? '',
-        equipamento_ok: briefing?.equipamento_ok ?? false,
+        equipamento_ok: briefing?.equipamento_ok ?? null,
         descricao_equipamento: briefing?.descricao_equipamento ?? '',
-        mesa_emparelhada: briefing?.mesa_emparelhada ?? false,
-        ordem_mantida: briefing?.ordem_mantida ?? true,
+        mesa_emparelhada: briefing?.mesa_emparelhada ?? null,
+        ordem_mantida: briefing?.ordem_mantida ?? null,
         descricao_ordem: briefing?.descricao_ordem ?? '',
     });
 
@@ -88,6 +89,17 @@ export default function BriefingForm({ briefing, departments }: Props) {
                 if (!data.especialidade) return 'Especialidade é obrigatória';
                 if (!data.sala) return 'Sala é obrigatória';
                 return null;
+            case 'equipa':
+                if (data.equipa_segura === null) return 'Indique se a dotação é segura';
+                return null;
+            case 'checklist':
+                if (data.problemas_sala === null) return 'Indique se existem problemas na sala';
+                if (data.equipamento_ok === null) return 'Indique se o equipamento está disponível e funcionante';
+                if (data.mesa_emparelhada === null) return 'Indique se a mesa operatória está emparelhada';
+                return null;
+            case 'plano':
+                if (data.ordem_mantida === null) return 'Indique se a ordem de doentes foi mantida';
+                return null;
             default:
                 return null;
         }
@@ -97,15 +109,17 @@ export default function BriefingForm({ briefing, departments }: Props) {
         const stepId = steps[currentStep].id as StepName;
         const error = validateStep(stepId);
         if (error) {
-            alert(error);
+            setStepError(error);
             return;
         }
+        setStepError(null);
         if (currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
         }
     }
 
     function previousStep() {
+        setStepError(null);
         if (currentStep > 0) {
             setCurrentStep(currentStep - 1);
         }
@@ -189,7 +203,7 @@ export default function BriefingForm({ briefing, departments }: Props) {
                             <button
                                 key={step.id}
                                 type="button"
-                                onClick={() => idx < currentStep && setCurrentStep(idx)}
+                                onClick={() => { if (idx < currentStep) { setStepError(null); setCurrentStep(idx); } }}
                                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-lg text-sm font-medium transition-all ${
                                     isActive
                                         ? 'bg-blue-600 text-white'
@@ -206,6 +220,12 @@ export default function BriefingForm({ briefing, departments }: Props) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                    {stepError && (
+                        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+                            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                            {stepError}
+                        </div>
+                    )}
                     {/* ── STEP 1: SALA / DIA ── */}
                     {currentStepName === 'sala' && (
                         <SectionCard icon={Calendar} title="Dados da Sessão" description="Data, hora e localização">
@@ -237,12 +257,12 @@ export default function BriefingForm({ briefing, departments }: Props) {
                     {currentStepName === 'equipa' && (
                         <SectionCard icon={Users} title="Equipa" description="Constituição e alterações de equipa">
                             <FormRow label="Dotação segura?">
-                                <YesNo value={!!data.equipa_segura} onChange={toggle('equipa_segura')} />
+                                <YesNo value={data.equipa_segura ?? null} onChange={toggle('equipa_segura')} />
                             </FormRow>
                             <FormRow label="Alguma alteração de equipa que afecte o plano operatório?">
-                                <YesNo value={!!data.alteracao_equipa} onChange={toggle('alteracao_equipa')} />
+                                <YesNo value={data.alteracao_equipa ?? null} onChange={toggle('alteracao_equipa')} />
                             </FormRow>
-                            {data.alteracao_equipa && (
+                            {data.alteracao_equipa === true && (
                                 <FormRow label="Descrição da alteração de equipa" error={errors.descricao_alteracao_equipa}>
                                     <textarea name="descricao_alteracao_equipa" value={data.descricao_alteracao_equipa} onChange={handleChange} rows={3} className={textareaCls} placeholder="Descreva as alterações…" />
                                 </FormRow>
@@ -254,23 +274,23 @@ export default function BriefingForm({ briefing, departments }: Props) {
                     {currentStepName === 'checklist' && (
                         <SectionCard icon={ClipboardCheck} title="Checklist da Sala" description="Verificação pré-operatória">
                             <FormRow label="Problemas identificados na sala?">
-                                <YesNo value={!!data.problemas_sala} onChange={toggle('problemas_sala')} />
+                                <YesNo value={data.problemas_sala ?? null} onChange={toggle('problemas_sala')} />
                             </FormRow>
-                            {data.problemas_sala && (
+                            {data.problemas_sala === true && (
                                 <FormRow label="Descrição dos problemas" error={errors.descricao_problemas}>
                                     <textarea name="descricao_problemas" value={data.descricao_problemas} onChange={handleChange} rows={3} className={textareaCls} placeholder="Descreva os problemas…" />
                                 </FormRow>
                             )}
                             <FormRow label="Equipamento, instrumental e consumíveis disponíveis e funcionantes?">
-                                <YesNo value={!!data.equipamento_ok} onChange={toggle('equipamento_ok')} />
+                                <YesNo value={data.equipamento_ok ?? null} onChange={toggle('equipamento_ok')} />
                             </FormRow>
-                            {!data.equipamento_ok && (
+                            {data.equipamento_ok === false && (
                                 <FormRow label="O que não está disponível / funcionante?" error={errors.descricao_equipamento}>
                                     <textarea name="descricao_equipamento" value={data.descricao_equipamento} onChange={handleChange} rows={3} className={textareaCls} placeholder="Indique o que não está disponível…" />
                                 </FormRow>
                             )}
                             <FormRow label="Mesa operatória emparelhada?">
-                                <YesNo value={!!data.mesa_emparelhada} onChange={toggle('mesa_emparelhada')} />
+                                <YesNo value={data.mesa_emparelhada ?? null} onChange={toggle('mesa_emparelhada')} />
                             </FormRow>
                         </SectionCard>
                     )}
@@ -279,9 +299,9 @@ export default function BriefingForm({ briefing, departments }: Props) {
                     {currentStepName === 'plano' && (
                         <SectionCard icon={ListChecks} title="Plano Cirúrgico" description="Ordem e disposição dos doentes">
                             <FormRow label="Ordem de doentes mantida?">
-                                <YesNo value={!!data.ordem_mantida} onChange={toggle('ordem_mantida')} />
+                                <YesNo value={data.ordem_mantida ?? null} onChange={toggle('ordem_mantida')} />
                             </FormRow>
-                            {!data.ordem_mantida && (
+                            {data.ordem_mantida === false && (
                                 <FormRow label="Alterações à ordem de doentes" error={errors.descricao_ordem}>
                                     <textarea name="descricao_ordem" value={data.descricao_ordem} onChange={handleChange} rows={3} className={textareaCls} placeholder="Descreva as alterações…" />
                                 </FormRow>
@@ -330,9 +350,9 @@ export default function BriefingForm({ briefing, departments }: Props) {
                                     <div className="space-y-2 text-sm">
                                         <div>
                                             <p className="text-gray-500">Dotação segura?</p>
-                                            <p className="font-medium">{data.equipa_segura ? 'Sim' : 'Não'}</p>
+                                            <p className="font-medium">{data.equipa_segura === true ? 'Sim' : data.equipa_segura === false ? 'Não' : '—'}</p>
                                         </div>
-                                        {data.alteracao_equipa && (
+                                        {data.alteracao_equipa === true && (
                                             <div>
                                                 <p className="text-gray-500">Alterações de equipa</p>
                                                 <p className="font-medium">{data.descricao_alteracao_equipa}</p>
@@ -346,11 +366,11 @@ export default function BriefingForm({ briefing, departments }: Props) {
                                     <div className="space-y-2 text-sm">
                                         <div>
                                             <p className="text-gray-500">Equipamento ok?</p>
-                                            <p className="font-medium">{data.equipamento_ok ? 'Sim' : 'Não'}</p>
+                                            <p className="font-medium">{data.equipamento_ok === true ? 'Sim' : data.equipamento_ok === false ? 'Não' : '—'}</p>
                                         </div>
                                         <div>
                                             <p className="text-gray-500">Mesa emparelhada?</p>
-                                            <p className="font-medium">{data.mesa_emparelhada ? 'Sim' : 'Não'}</p>
+                                            <p className="font-medium">{data.mesa_emparelhada === true ? 'Sim' : data.mesa_emparelhada === false ? 'Não' : '—'}</p>
                                         </div>
                                     </div>
                                 </SectionCard>

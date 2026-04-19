@@ -14,25 +14,25 @@ class DebriefingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'complicacoes'            => ['boolean'],
+            'complicacoes'            => ['required', 'boolean'],
             'descricao_complicacoes'  => ['nullable', 'string'],
 
-            'falha_sistema'           => ['boolean'],
+            'falha_sistema'           => ['required', 'boolean'],
             'descricao_falha_sistema' => ['nullable', 'string'],
-            'falha_solucionada'       => ['boolean'],
-            'falha_reportada'         => ['boolean'],
+            'falha_solucionada'       => ['nullable', 'boolean'],
+            'falha_reportada'         => ['nullable', 'boolean'],
             'falha_reportada_a_quem'  => ['nullable', 'string', 'max:255'],
 
-            'inicio_a_horas'          => ['boolean'],
+            'inicio_a_horas'          => ['required', 'boolean'],
             'descricao_inicio'        => ['nullable', 'string'],
-            'fim_a_horas'             => ['boolean'],
+            'fim_a_horas'             => ['required', 'boolean'],
             'descricao_fim'           => ['nullable', 'string'],
 
             'correu_bem'              => ['nullable', 'string'],
             'melhorar'                => ['nullable', 'string'],
             'falha_comunicacao'       => ['nullable', 'string'],
 
-            'evento_adverso'          => ['boolean'],
+            'evento_adverso'          => ['required', 'boolean'],
             'descricao_evento'        => ['nullable', 'string'],
         ];
     }
@@ -45,7 +45,7 @@ class DebriefingRequest extends FormRequest
         ];
 
         $this->merge(array_map(
-            fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
+            fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
             array_intersect_key($this->all(), array_flip($booleans))
         ));
     }

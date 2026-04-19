@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Option {
     id: number | string;
@@ -25,8 +26,22 @@ export default function SearchableMultiSelect({
 }: SearchableMultiSelectProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isOpen, setIsOpen] = useState(false);
+    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Calcular posição do dropdown com base no elemento do input
+    const updateDropdownPosition = useCallback(() => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        setDropdownStyle({
+            position: 'fixed',
+            top: rect.bottom + 4,
+            left: rect.left,
+            width: rect.width,
+            zIndex: 9999,
+        });
+    }, []);
 
     // Filtrar options baseado no search term
     const filteredOptions = options.filter((option) =>
@@ -47,9 +62,19 @@ export default function SearchableMultiSelect({
             }
         };
 
+        const handleScroll = () => {
+            if (isOpen) updateDropdownPosition();
+        };
+
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        window.addEventListener('scroll', handleScroll, true);
+        window.addEventListener('resize', updateDropdownPosition);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', handleScroll, true);
+            window.removeEventListener('resize', updateDropdownPosition);
+        };
+    }, [isOpen, updateDropdownPosition]);
 
     const handleSelect = (id: number | string) => {
         if (selectedIds.includes(id)) {
@@ -68,7 +93,7 @@ export default function SearchableMultiSelect({
         <div ref={containerRef} className={`relative w-full ${maxWidth} ${className}`}>
             {/* Campo de input com items selecionados como tags */}
             <div
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => { updateDropdownPosition(); setIsOpen(!isOpen); }}
                 className="w-full min-h-12 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 cursor-text flex flex-wrap gap-2 items-center hover:border-gray-400 dark:hover:border-gray-500 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-1 focus-within:ring-blue-500 dark:focus-within:ring-blue-400 transition-colors"
             >
                 {/* Tags dos items selecionados */}
@@ -95,14 +120,14 @@ export default function SearchableMultiSelect({
                     placeholder={selectedOptions.length === 0 ? placeholder : ''}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    onFocus={() => setIsOpen(true)}
+                    onFocus={() => { updateDropdownPosition(); setIsOpen(true); }}
                     className="flex-1 min-w-max outline-none bg-transparent text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 />
             </div>
 
-            {/* Dropdown com opções filtradas */}
-            {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-xl z-10 max-h-64 overflow-y-auto">
+            {/* Dropdown via portal para escapar ao overflow:hidden dos contentores pai */}
+            {isOpen && createPortal(
+                <div style={dropdownStyle} className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-xl max-h-64 overflow-y-auto">
                     {filteredOptions.length > 0 ? (
                         filteredOptions.map((option) => (
                             <div
@@ -130,7 +155,8 @@ export default function SearchableMultiSelect({
                             Nenhum resultado encontrado
                         </div>
                     )}
-                </div>
+                </div>,
+                document.body,
             )}
         </div>
     );

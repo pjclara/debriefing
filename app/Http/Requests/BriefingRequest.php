@@ -19,19 +19,19 @@ class BriefingRequest extends FormRequest
             'especialidade'               => ['required', 'string', 'max:255'],
             'sala'                        => ['required', 'string', 'max:255'],
 
-            'equipa_segura'               => ['boolean'],
-            'alteracao_equipa'            => ['boolean'],
+            'equipa_segura'               => ['required', 'boolean'],
+            'alteracao_equipa'            => ['required', 'boolean'],
             'descricao_alteracao_equipa'  => ['nullable', 'string'],
 
-            'problemas_sala'              => ['boolean'],
+            'problemas_sala'              => ['required', 'boolean'],
             'descricao_problemas'         => ['nullable', 'string'],
 
-            'equipamento_ok'              => ['boolean'],
+            'equipamento_ok'              => ['required', 'boolean'],
             'descricao_equipamento'       => ['nullable', 'string'],
 
-            'mesa_emparelhada'            => ['boolean'],
+            'mesa_emparelhada'            => ['required', 'boolean'],
 
-            'ordem_mantida'               => ['boolean'],
+            'ordem_mantida'               => ['required', 'boolean'],
             'descricao_ordem'             => ['nullable', 'string'],
         ];
     }
@@ -52,7 +52,7 @@ class BriefingRequest extends FormRequest
                 if (is_bool($value)) {
                     $processed[$field] = $value;
                 } else {
-                    $processed[$field] = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+                    $processed[$field] = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
                 }
             }
         }

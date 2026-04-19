@@ -15,21 +15,21 @@ interface BriefingContext {
 
 interface Debriefing {
     id?: number;
-    complicacoes?: boolean;
+    complicacoes?: boolean | null;
     descricao_complicacoes?: string;
-    falha_sistema?: boolean;
+    falha_sistema?: boolean | null;
     descricao_falha_sistema?: string;
-    falha_solucionada?: boolean;
-    falha_reportada?: boolean;
+    falha_solucionada?: boolean | null;
+    falha_reportada?: boolean | null;
     falha_reportada_a_quem?: string;
-    inicio_a_horas?: boolean;
+    inicio_a_horas?: boolean | null;
     descricao_inicio?: string;
-    fim_a_horas?: boolean;
+    fim_a_horas?: boolean | null;
     descricao_fim?: string;
     correu_bem?: string;
     melhorar?: string;
     falha_comunicacao?: string;
-    evento_adverso?: boolean;
+    evento_adverso?: boolean | null;
     descricao_evento?: string;
 }
 
@@ -61,23 +61,42 @@ function Field({ label, error, children, full }: { label: string; error?: string
     );
 }
 
-function CheckField({ label, name, checked, onChange }: {
+function YesNoField({ label, name, value, onSet, error }: {
     label: string;
     name: string;
-    checked: boolean;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    value: boolean | null;
+    onSet: (v: boolean) => void;
+    error?: string;
 }) {
     return (
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <input
-                type="checkbox"
-                name={name}
-                checked={checked}
-                onChange={onChange}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            {label}
-        </label>
+        <div className={`flex items-center justify-between gap-4 rounded-lg border px-4 py-3 sm:col-span-2 ${
+            error ? 'border-red-400 bg-red-50 dark:border-red-600 dark:bg-red-900/20' : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+        }`}>
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</span>
+            <div className="flex gap-6">
+                <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+                    <input
+                        type="radio"
+                        name={name}
+                        checked={value === true}
+                        onChange={() => onSet(true)}
+                        className="h-4 w-4 accent-green-600"
+                    />
+                    <span className="text-gray-700 dark:text-gray-300">Sim</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+                    <input
+                        type="radio"
+                        name={name}
+                        checked={value === false}
+                        onChange={() => onSet(false)}
+                        className="h-4 w-4 accent-red-600"
+                    />
+                    <span className="text-gray-700 dark:text-gray-300">Não</span>
+                </label>
+            </div>
+            {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+        </div>
     );
 }
 
@@ -87,21 +106,21 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
     const isEdit = !!debriefing?.id;
 
     const { data, setData, post, put, processing, errors } = useForm<Debriefing>({
-        complicacoes: debriefing?.complicacoes ?? false,
+        complicacoes: debriefing?.complicacoes ?? null,
         descricao_complicacoes: debriefing?.descricao_complicacoes ?? '',
-        falha_sistema: debriefing?.falha_sistema ?? false,
+        falha_sistema: debriefing?.falha_sistema ?? null,
         descricao_falha_sistema: debriefing?.descricao_falha_sistema ?? '',
-        falha_solucionada: debriefing?.falha_solucionada ?? false,
-        falha_reportada: debriefing?.falha_reportada ?? false,
+        falha_solucionada: debriefing?.falha_solucionada ?? null,
+        falha_reportada: debriefing?.falha_reportada ?? null,
         falha_reportada_a_quem: debriefing?.falha_reportada_a_quem ?? '',
-        inicio_a_horas: debriefing?.inicio_a_horas ?? false,
+        inicio_a_horas: debriefing?.inicio_a_horas ?? null,
         descricao_inicio: debriefing?.descricao_inicio ?? '',
-        fim_a_horas: debriefing?.fim_a_horas ?? false,
+        fim_a_horas: debriefing?.fim_a_horas ?? null,
         descricao_fim: debriefing?.descricao_fim ?? '',
         correu_bem: debriefing?.correu_bem ?? '',
         melhorar: debriefing?.melhorar ?? '',
         falha_comunicacao: debriefing?.falha_comunicacao ?? '',
-        evento_adverso: debriefing?.evento_adverso ?? false,
+        evento_adverso: debriefing?.evento_adverso ?? null,
         descricao_evento: debriefing?.descricao_evento ?? '',
     });
 
@@ -122,7 +141,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Briefings', href: '/briefings' },
-        { title: `${briefing.data} – Sala ${briefing.sala}`, href: `/briefings/${briefing.id}` },
+        { title: `${briefing.data.substring(0, 10)} – Sala ${briefing.sala}`, href: `/briefings/${briefing.id}` },
         { title: isEdit ? 'Editar Debriefing' : 'Registar Debriefing', href: '#' },
     ];
 
@@ -134,7 +153,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                 {/* Contexto do briefing */}
                 <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200">
                     <span className="font-semibold">Sessão:</span>{' '}
-                    {briefing.data} &mdash; {briefing.hora} &middot; {briefing.especialidade} &middot; Sala {briefing.sala}
+                    {briefing.data.substring(0, 10)} &mdash; {briefing.hora} &middot; {briefing.especialidade} &middot; Sala {briefing.sala}
                 </div>
 
                 <h1 className="mb-6 text-2xl font-bold">
@@ -154,15 +173,14 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                         {/* ── COMPLICAÇÕES ── */}
                         <TabsContent value="complicacoes">
                             <SectionTab color="border-orange-500" title="Complicações">
-                                <div className="flex flex-col gap-2 sm:col-span-2">
-                                    <CheckField
-                                        label="Complicações intra-operatórias?"
-                                        name="complicacoes"
-                                        checked={!!data.complicacoes}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                {data.complicacoes && (
+                                <YesNoField
+                                    label="Complicações intra-operatórias?"
+                                    name="complicacoes"
+                                    value={data.complicacoes ?? null}
+                                    onSet={(v) => setData('complicacoes', v)}
+                                    error={errors.complicacoes}
+                                />
+                                {data.complicacoes === true && (
                                     <Field label="Quais as complicações?" error={errors.descricao_complicacoes} full>
                                         <textarea
                                             name="descricao_complicacoes"
@@ -179,15 +197,14 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                         {/* ── FALHA DO SISTEMA ── */}
                         <TabsContent value="falha">
                             <SectionTab color="border-red-500" title="Falha do Sistema Da Vinci Xi">
-                                <div className="flex flex-col gap-2 sm:col-span-2">
-                                    <CheckField
-                                        label="Falhas no sistema Da Vinci Xi?"
-                                        name="falha_sistema"
-                                        checked={!!data.falha_sistema}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                {data.falha_sistema && (
+                                <YesNoField
+                                    label="Falhas no sistema Da Vinci Xi?"
+                                    name="falha_sistema"
+                                    value={data.falha_sistema ?? null}
+                                    onSet={(v) => setData('falha_sistema', v)}
+                                    error={errors.falha_sistema}
+                                />
+                                {data.falha_sistema === true && (
                                     <>
                                         <Field label="Descrição da falha" error={errors.descricao_falha_sistema} full>
                                             <textarea
@@ -198,21 +215,21 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                                 className={inputCls}
                                             />
                                         </Field>
-                                        <div className="flex flex-col gap-3 sm:col-span-2">
-                                            <CheckField
-                                                label="Falha solucionada?"
-                                                name="falha_solucionada"
-                                                checked={!!data.falha_solucionada}
-                                                onChange={handleChange}
-                                            />
-                                            <CheckField
-                                                label="Falha reportada?"
-                                                name="falha_reportada"
-                                                checked={!!data.falha_reportada}
-                                                onChange={handleChange}
-                                            />
-                                        </div>
-                                        {data.falha_reportada && (
+                                        <YesNoField
+                                            label="Falha solucionada?"
+                                            name="falha_solucionada"
+                                            value={data.falha_solucionada ?? null}
+                                            onSet={(v) => setData('falha_solucionada', v)}
+                                            error={errors.falha_solucionada}
+                                        />
+                                        <YesNoField
+                                            label="Falha reportada?"
+                                            name="falha_reportada"
+                                            value={data.falha_reportada ?? null}
+                                            onSet={(v) => setData('falha_reportada', v)}
+                                            error={errors.falha_reportada}
+                                        />
+                                        {data.falha_reportada === true && (
                                             <Field label="Reportada a quem?" error={errors.falha_reportada_a_quem} full>
                                                 <input
                                                     type="text"
@@ -231,15 +248,14 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                         {/* ── LISTA OPERATÓRIA ── */}
                         <TabsContent value="lista">
                             <SectionTab color="border-yellow-500" title="Lista Operatória">
-                                <div className="flex flex-col gap-3 sm:col-span-2">
-                                    <CheckField
-                                        label="Iniciou a horas?"
-                                        name="inicio_a_horas"
-                                        checked={!!data.inicio_a_horas}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                {!data.inicio_a_horas && (
+                                <YesNoField
+                                    label="Iniciou a horas?"
+                                    name="inicio_a_horas"
+                                    value={data.inicio_a_horas ?? null}
+                                    onSet={(v) => setData('inicio_a_horas', v)}
+                                    error={errors.inicio_a_horas}
+                                />
+                                {data.inicio_a_horas === false && (
                                     <Field label="Motivo do atraso no início" error={errors.descricao_inicio} full>
                                         <textarea
                                             name="descricao_inicio"
@@ -250,15 +266,14 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                         />
                                     </Field>
                                 )}
-                                <div className="flex flex-col gap-3 sm:col-span-2">
-                                    <CheckField
-                                        label="Finalizou a horas?"
-                                        name="fim_a_horas"
-                                        checked={!!data.fim_a_horas}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                {!data.fim_a_horas && (
+                                <YesNoField
+                                    label="Finalizou a horas?"
+                                    name="fim_a_horas"
+                                    value={data.fim_a_horas ?? null}
+                                    onSet={(v) => setData('fim_a_horas', v)}
+                                    error={errors.fim_a_horas}
+                                />
+                                {data.fim_a_horas === false && (
                                     <Field label="Motivo do atraso no fim" error={errors.descricao_fim} full>
                                         <textarea
                                             name="descricao_fim"
@@ -314,15 +329,14 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                         {/* ── EVENTO ADVERSO ── */}
                         <TabsContent value="evento">
                             <SectionTab color="border-pink-600" title="Evento Adverso">
-                                <div className="flex flex-col gap-2 sm:col-span-2">
-                                    <CheckField
-                                        label="Incidente / evento adverso que precise de ser notificado?"
-                                        name="evento_adverso"
-                                        checked={!!data.evento_adverso}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                {data.evento_adverso && (
+                                <YesNoField
+                                    label="Incidente / evento adverso que precise de ser notificado?"
+                                    name="evento_adverso"
+                                    value={data.evento_adverso ?? null}
+                                    onSet={(v) => setData('evento_adverso', v)}
+                                    error={errors.evento_adverso}
+                                />
+                                {data.evento_adverso === true && (
                                     <Field label="Descrição do evento adverso" error={errors.descricao_evento} full>
                                         <textarea
                                             name="descricao_evento"

@@ -71,7 +71,7 @@ export function FormRow({
 
 // ─── YesNo pill buttons ───────────────────────────────────────────────────────
 
-export function YesNo({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+export function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boolean) => void }) {
     return (
         <div className="grid grid-cols-2 gap-3">
             <button
@@ -79,7 +79,7 @@ export function YesNo({ value, onChange }: { value: boolean; onChange: (v: boole
                 onClick={() => onChange(true)}
                 className={cn(
                     'flex h-12 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-150',
-                    value
+                    value === true
                         ? 'bg-green-600 text-white shadow-sm'
                         : 'bg-gray-100 text-gray-500 hover:bg-green-50 hover:text-green-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-green-900/20',
                 )}
@@ -92,7 +92,7 @@ export function YesNo({ value, onChange }: { value: boolean; onChange: (v: boole
                 onClick={() => onChange(false)}
                 className={cn(
                     'flex h-12 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-150',
-                    !value
+                    value === false
                         ? 'bg-red-500 text-white shadow-sm'
                         : 'bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-red-900/20',
                 )}

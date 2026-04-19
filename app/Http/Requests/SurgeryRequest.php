@@ -24,22 +24,22 @@ class SurgeryRequest extends FormRequest
             'consola_inicio'         => ['nullable', 'date_format:Y-m-d H:i:s,Y-m-d H:i'],
             'consola_fim'            => ['nullable', 'date_format:Y-m-d H:i:s,Y-m-d H:i'],
 
-            'antecedentes_relevantes'  => ['boolean'],
+            'antecedentes_relevantes'  => ['required', 'boolean'],
             'descricao_antecedentes'   => ['nullable', 'string'],
-            'comorbidades'             => ['boolean'],
+            'comorbidades'             => ['required', 'boolean'],
             'descricao_comorbidades'   => ['nullable', 'string'],
-            'variacoes_tecnicas'       => ['boolean'],
+            'variacoes_tecnicas'       => ['required', 'boolean'],
             'descricao_variacoes'      => ['nullable', 'string'],
-            'passos_criticos'          => ['boolean'],
+            'passos_criticos'          => ['required', 'boolean'],
             'descricao_passos'         => ['nullable', 'string'],
 
-            'consentimento'          => ['boolean'],
+            'consentimento'          => ['required', 'boolean'],
             'lateralidade'           => ['required', 'in:N/A,Direito,Esquerdo'],
-            'medicacao_suspensa'     => ['boolean'],
+            'medicacao_suspensa'     => ['required', 'boolean'],
             'antibiotico'            => ['nullable', 'string', 'max:255'],
-            'profilaxia'             => ['boolean'],
+            'profilaxia'             => ['required', 'boolean'],
             'perdas_estimadas'       => ['nullable', 'integer', 'min:0'],
-            'reserva_ativa'          => ['boolean'],
+            'reserva_ativa'          => ['required', 'boolean'],
             'reserva_unidades'       => ['nullable', 'integer', 'min:0'],
 
             'trocares'               => ['nullable', 'integer', 'min:0'],
@@ -71,7 +71,7 @@ class SurgeryRequest extends FormRequest
         ];
 
         $this->merge(array_map(
-            fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
+            fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
             array_intersect_key($this->all(), array_flip($booleans))
         ));
 

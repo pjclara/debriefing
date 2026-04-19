@@ -29,21 +29,21 @@ interface Surgery {
     docking?: number | string;
     consola_inicio?: string;
     consola_fim?: string;
-    antecedentes_relevantes?: boolean;
+    antecedentes_relevantes?: boolean | null;
     descricao_antecedentes?: string;
-    comorbidades?: boolean;
+    comorbidades?: boolean | null;
     descricao_comorbidades?: string;
-    variacoes_tecnicas?: boolean;
+    variacoes_tecnicas?: boolean | null;
     descricao_variacoes?: string;
-    passos_criticos?: boolean;
+    passos_criticos?: boolean | null;
     descricao_passos?: string;
-    consentimento?: boolean;
+    consentimento?: boolean | null;
     lateralidade?: string;
-    medicacao_suspensa?: boolean;
+    medicacao_suspensa?: boolean | null;
     antibiotico?: string;
-    profilaxia?: boolean;
+    profilaxia?: boolean | null;
     perdas_estimadas?: number | string;
-    reserva_ativa?: boolean;
+    reserva_ativa?: boolean | null;
     reserva_unidades?: number | string;
     trocares?: number | string;
     otica?: string;
@@ -85,19 +85,29 @@ interface Step {
 
 const Field = FormRow; // Alias para manter compatibilidade
 
-function CheckField({label, name, checked, onChange}: {label: string; name: string; checked: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void}) {
+function YesNoField({ label, name, value, onSet, error }: {
+    label: string;
+    name: string;
+    value: boolean | null;
+    onSet: (v: boolean) => void;
+    error?: string;
+}) {
     return (
-        <div className="flex items-center gap-3">
-            <input
-                type="checkbox"
-                name={name}
-                checked={checked}
-                onChange={onChange}
-                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-            />
-            <label htmlFor={name} className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                {label}
-            </label>
+        <div className={`flex items-center justify-between gap-4 rounded-lg border px-4 py-3 ${
+            error ? 'border-red-400 bg-red-50 dark:border-red-600 dark:bg-red-900/20' : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+        }`}>
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</span>
+            <div className="flex gap-6">
+                <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+                    <input type="radio" name={name} checked={value === true} onChange={() => onSet(true)} className="h-4 w-4 accent-green-600" />
+                    <span className="text-gray-700 dark:text-gray-300">Sim</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+                    <input type="radio" name={name} checked={value === false} onChange={() => onSet(false)} className="h-4 w-4 accent-red-600" />
+                    <span className="text-gray-700 dark:text-gray-300">Não</span>
+                </label>
+            </div>
+            {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
         </div>
     );
 }
@@ -107,6 +117,7 @@ function CheckField({label, name, checked, onChange}: {label: string; name: stri
 export default function SurgeryForm({ briefing, surgery, procedures, consumivel_tipos, consumivel_tipos_extra }: Props) {
     const isEdit = !!surgery?.id;
     const [currentStep, setCurrentStep] = useState<number>(0);
+    const [stepError, setStepError] = useState<string | null>(null);
 
     const steps: Step[] = [
         { id: 'identificacao', label: 'Identificação', icon: User },
@@ -122,28 +133,28 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
         procedimento: surgery?.procedimento ?? '',
         destino: surgery?.destino ?? '',
 
-        prep_inicio: surgery?.prep_inicio ?? '',
-        prep_fim: surgery?.prep_fim ?? '',
+        prep_inicio: surgery?.prep_inicio ?? (briefing.data.substring(0, 10) + ' 00:00'),
+        prep_fim: surgery?.prep_fim ?? (briefing.data.substring(0, 10) + ' 00:00'),
         docking: surgery?.docking ?? '',
-        consola_inicio: surgery?.consola_inicio ?? '',
-        consola_fim: surgery?.consola_fim ?? '',
+        consola_inicio: surgery?.consola_inicio ?? (briefing.data.substring(0, 10) + ' 00:00'),
+        consola_fim: surgery?.consola_fim ?? (briefing.data.substring(0, 10) + ' 00:00'),
 
-        antecedentes_relevantes: surgery?.antecedentes_relevantes ?? false,
+        antecedentes_relevantes: surgery?.antecedentes_relevantes ?? null,
         descricao_antecedentes: surgery?.descricao_antecedentes ?? '',
-        comorbidades: surgery?.comorbidades ?? false,
+        comorbidades: surgery?.comorbidades ?? null,
         descricao_comorbidades: surgery?.descricao_comorbidades ?? '',
-        variacoes_tecnicas: surgery?.variacoes_tecnicas ?? false,
+        variacoes_tecnicas: surgery?.variacoes_tecnicas ?? null,
         descricao_variacoes: surgery?.descricao_variacoes ?? '',
-        passos_criticos: surgery?.passos_criticos ?? false,
+        passos_criticos: surgery?.passos_criticos ?? null,
         descricao_passos: surgery?.descricao_passos ?? '',
 
-        consentimento: surgery?.consentimento ?? false,
+        consentimento: surgery?.consentimento ?? null,
         lateralidade: surgery?.lateralidade ?? 'N/A',
-        medicacao_suspensa: surgery?.medicacao_suspensa ?? false,
+        medicacao_suspensa: surgery?.medicacao_suspensa ?? null,
         antibiotico: surgery?.antibiotico ?? '',
-        profilaxia: surgery?.profilaxia ?? false,
+        profilaxia: surgery?.profilaxia ?? null,
         perdas_estimadas: surgery?.perdas_estimadas ?? '',
-        reserva_ativa: surgery?.reserva_ativa ?? false,
+        reserva_ativa: surgery?.reserva_ativa ?? null,
         reserva_unidades: surgery?.reserva_unidades ?? '',
 
         trocares: surgery?.trocares ?? '',
@@ -177,6 +188,18 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                 if (!data.procedimento) return 'Procedimento é obrigatório';
                 if (!data.destino) return 'Destino é obrigatório';
                 return null;
+            case 'clinicos':
+                if (data.antecedentes_relevantes === null) return 'Indique se existem antecedentes de relevo';
+                if (data.comorbidades === null) return 'Indique se existem comorbidades';
+                if (data.variacoes_tecnicas === null) return 'Indique se existem variações técnicas';
+                if (data.passos_criticos === null) return 'Indique se existem passos críticos';
+                return null;
+            case 'planeamento':
+                if (data.consentimento === null) return 'Indique se o consentimento foi obtido';
+                if (data.medicacao_suspensa === null) return 'Indique se a medicação foi suspensa';
+                if (data.profilaxia === null) return 'Indique se foi feita profilaxia';
+                if (data.reserva_ativa === null) return 'Indique se existe reserva activa';
+                return null;
             default:
                 return null;
         }
@@ -186,15 +209,17 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
         const stepId = steps[currentStep].id as StepName;
         const error = validateStep(stepId);
         if (error) {
-            alert(error);
+            setStepError(error);
             return;
         }
+        setStepError(null);
         if (currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
         }
     }
 
     function previousStep() {
+        setStepError(null);
         if (currentStep > 0) {
             setCurrentStep(currentStep - 1);
         }
@@ -221,7 +246,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
             value = null;
         }
 
-        setData(key, (target.type === 'checkbox' ? target.checked : value) as any);
+        setData(key, value as any);
     }
 
     function toggleFlag(flag: keyof Surgery) {
@@ -230,7 +255,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Briefings', href: '/briefings' },
-        { title: `${briefing.data} – Sala ${briefing.sala}`, href: `/briefings/${briefing.id}` },
+        { title: `${briefing.data.substring(0, 10)} – Sala ${briefing.sala}`, href: `/briefings/${briefing.id}` },
         { title: isEdit ? 'Editar Cirurgia' : 'Nova Cirurgia', href: '#' },
     ];
 
@@ -242,7 +267,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                 {/* Contexto do briefing */}
                 <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
                     <span className="font-semibold">Briefing:</span>{' '}
-                    {briefing.data} &mdash; {briefing.hora} &middot; {briefing.especialidade} &middot; Sala {briefing.sala}
+                    {briefing.data.substring(0, 10)} &mdash; {briefing.hora} &middot; {briefing.especialidade} &middot; Sala {briefing.sala}
                 </div>
 
                 <h1 className="mb-6 text-2xl font-bold">{isEdit ? 'Editar Cirurgia' : 'Nova Cirurgia'}</h1>
@@ -255,7 +280,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                             <div key={step.id} className="flex flex-1 items-center">
                                 <button
                                     type="button"
-                                    onClick={() => setCurrentStep(idx)}
+                                    onClick={() => { setStepError(null); setCurrentStep(idx); }}
                                     className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold transition-colors ${
                                         idx === currentStep
                                             ? 'bg-blue-600 text-white'
@@ -279,37 +304,48 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{steps[currentStep].label}</h2>
                     </div>
 
+                    {stepError && (
+                        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+                            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                            {stepError}
+                        </div>
+                    )}
+
                     {/* ── STEP 1: IDENTIFICAÇÃO ── */}
                     {currentStep === 0 && (
                         <SectionCard color="border-blue-500" title="Identificação do Doente">
-                            <Field label="Processo" error={errors.processo}>
-                                <input type="text" name="processo" value={data.processo} onChange={handleChange} className={inputCls} required />
-                            </Field>
-                            <Field label="Procedimento" error={errors.procedimento}>
-                                <select name="procedimento" value={data.procedimento} onChange={handleChange} className={selectCls} required>
-                                    <option value="">Selecione um procedimento…</option>
-                                    {procedures.map((proc) => (
-                                        <option key={proc.id} value={proc.nome}>
-                                            {proc.nome}
-                                        </option>
-                                    ))}
-                                </select>
-                            </Field>
-                            <Field label="Destino" error={errors.destino}>
-                                <select name="destino" value={data.destino} onChange={handleChange} className={selectCls} required>
-                                    <option value="">Selecione o destino…</option>
-                                    <option value="UCPA">UCPA</option>
-                                    <option value="Enfermaria">Enfermaria</option>
-                                    <option value="SMI">SMI</option>
-                                    <option value="Outro">Outro</option>
-                                </select>
-                            </Field>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <Field label="Processo" error={errors.processo}>
+                                    <input type="text" name="processo" value={data.processo} onChange={handleChange} className={inputCls} required />
+                                </Field>
+                                <Field label="Destino" error={errors.destino}>
+                                    <select name="destino" value={data.destino} onChange={handleChange} className={selectCls} required>
+                                        <option value="">Selecione o destino…</option>
+                                        <option value="UCPA">UCPA</option>
+                                        <option value="Enfermaria">Enfermaria</option>
+                                        <option value="SMI">SMI</option>
+                                        <option value="Outro">Outro</option>
+                                    </select>
+                                </Field>
+                                <div className="md:col-span-2">
+                                    <Field label="Procedimento" error={errors.procedimento}>
+                                        <select name="procedimento" value={data.procedimento} onChange={handleChange} className={selectCls} required>
+                                            <option value="">Selecione um procedimento…</option>
+                                            {procedures.map((proc) => (
+                                                <option key={proc.id} value={proc.nome}>
+                                                    {proc.nome}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </Field>
+                                </div>
+                            </div>
                         </SectionCard>
                     )}
 
                     {/* ── STEP 2: CLÍNICOS ── */}
                     {currentStep === 1 && (
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             {(
                                 [
                                     { flag: 'antecedentes_relevantes', desc: 'descricao_antecedentes',  label: 'Antecedentes de relevo' },
@@ -325,20 +361,20 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                                             <button
                                                 type="button"
                                                 onClick={() => setData(flag, true)}
-                                                className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${data[flag] ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:hover:bg-green-900/30'}`}
+                                                className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${data[flag] === true ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:hover:bg-green-900/30'}`}
                                             >
                                                 Sim
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setData(flag, false)}
-                                                className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${!data[flag] ? 'bg-gray-500 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300 dark:bg-gray-700'}`}
+                                                className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${data[flag] === false ? 'bg-gray-500 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300 dark:bg-gray-700'}`}
                                             >
                                                 Não
                                             </button>
                                         </div>
                                     </div>
-                                    {data[flag] && (
+                                    {data[flag] === true && (
                                         <textarea
                                             name={desc}
                                             value={data[desc] as string}
@@ -360,63 +396,65 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                                 <span className="font-semibold">Formato: YYYY/MM/DD HH:MM</span>
                             </div>
 
-                            {/* Prep Início */}
-                            <div className="rounded-lg border border-orange-100 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-900/10">
-                                <Field label="Início de Preparação" error={errors.prep_inicio}>
-                                    <input 
-                                        type="datetime-local" 
-                                        name="prep_inicio" 
-                                        value={data.prep_inicio ? (data.prep_inicio as string).slice(0, 16).replace(' ', 'T') : ''} 
-                                        onChange={handleChange} 
-                                        className={inputCls} 
-                                    />
-                                </Field>
-                            </div>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                {/* Prep Início */}
+                                <div className="rounded-lg border border-orange-100 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-900/10">
+                                    <Field label="Início de Preparação" error={errors.prep_inicio}>
+                                        <input 
+                                            type="datetime-local" 
+                                            name="prep_inicio" 
+                                            value={data.prep_inicio ? (data.prep_inicio as string).slice(0, 16).replace(' ', 'T') : ''} 
+                                            onChange={handleChange} 
+                                            className={inputCls} 
+                                        />
+                                    </Field>
+                                </div>
 
-                            {/* Prep Fim */}
-                            <div className="rounded-lg border border-orange-100 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-900/10">
-                                <Field label="Fim de Preparação" error={errors.prep_fim}>
-                                    <input 
-                                        type="datetime-local" 
-                                        name="prep_fim" 
-                                        value={data.prep_fim ? (data.prep_fim as string).slice(0, 16).replace(' ', 'T') : ''} 
-                                        onChange={handleChange} 
-                                        className={inputCls} 
-                                    />
-                                </Field>
-                            </div>
+                                {/* Prep Fim */}
+                                <div className="rounded-lg border border-orange-100 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-900/10">
+                                    <Field label="Fim de Preparação" error={errors.prep_fim}>
+                                        <input 
+                                            type="datetime-local" 
+                                            name="prep_fim" 
+                                            value={data.prep_fim ? (data.prep_fim as string).slice(0, 16).replace(' ', 'T') : ''} 
+                                            onChange={handleChange} 
+                                            className={inputCls} 
+                                        />
+                                    </Field>
+                                </div>
 
-                            {/* Docking */}
-                            <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-900/10">
-                                <Field label="Docking (Minutos)" error={errors.docking} full>
-                                    <input type="number" name="docking" value={data.docking as string} onChange={handleChange} min={0} className={inputCls} placeholder="Tempo de preparação do robô em minutos" />
-                                </Field>
-                            </div>
+                                {/* Docking */}
+                                <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-900/10">
+                                    <Field label="Docking (Minutos)" error={errors.docking} full>
+                                        <input type="number" name="docking" value={data.docking as string} onChange={handleChange} min={0} className={inputCls} placeholder="Minutos" />
+                                    </Field>
+                                </div>
 
-                            {/* Consola Início */}
-                            <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-4 dark:border-purple-900 dark:bg-purple-900/10">
-                                <Field label="Início da Consola" error={errors.consola_inicio}>
-                                    <input 
-                                        type="datetime-local" 
-                                        name="consola_inicio" 
-                                        value={data.consola_inicio ? (data.consola_inicio as string).slice(0, 16).replace(' ', 'T') : ''} 
-                                        onChange={handleChange} 
-                                        className={inputCls} 
-                                    />
-                                </Field>
-                            </div>
+                                {/* Consola Início */}
+                                <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-4 dark:border-purple-900 dark:bg-purple-900/10">
+                                    <Field label="Início da Consola" error={errors.consola_inicio}>
+                                        <input 
+                                            type="datetime-local" 
+                                            name="consola_inicio" 
+                                            value={data.consola_inicio ? (data.consola_inicio as string).slice(0, 16).replace(' ', 'T') : ''} 
+                                            onChange={handleChange} 
+                                            className={inputCls} 
+                                        />
+                                    </Field>
+                                </div>
 
-                            {/* Consola Fim */}
-                            <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-4 dark:border-purple-900 dark:bg-purple-900/10">
-                                <Field label="Fim da Consola" error={errors.consola_fim}>
-                                    <input 
-                                        type="datetime-local" 
-                                        name="consola_fim" 
-                                        value={data.consola_fim ? (data.consola_fim as string).slice(0, 16).replace(' ', 'T') : ''} 
-                                        onChange={handleChange} 
-                                        className={inputCls} 
-                                    />
-                                </Field>
+                                {/* Consola Fim */}
+                                <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-4 dark:border-purple-900 dark:bg-purple-900/10">
+                                    <Field label="Fim da Consola" error={errors.consola_fim}>
+                                        <input 
+                                            type="datetime-local" 
+                                            name="consola_fim" 
+                                            value={data.consola_fim ? (data.consola_fim as string).slice(0, 16).replace(' ', 'T') : ''} 
+                                            onChange={handleChange} 
+                                            className={inputCls} 
+                                        />
+                                    </Field>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -424,129 +462,137 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                     {/* ── STEP 4: PLANEAMENTO ── */}
                     {currentStep === 3 && (
                         <SectionCard color="border-yellow-500" title="Planeamento">
-                            <Field label="Lateralidade" error={errors.lateralidade}>
-                                <select name="lateralidade" value={data.lateralidade} onChange={handleChange} className={inputCls}>
-                                    <option value="N/A">N/A</option>
-                                    <option value="Direito">Direito</option>
-                                    <option value="Esquerdo">Esquerdo</option>
-                                </select>
-                            </Field>
-                            <Field label="Perdas estimadas (mL)" error={errors.perdas_estimadas}>
-                                <input type="number" name="perdas_estimadas" value={data.perdas_estimadas as string} onChange={handleChange} min={0} className={inputCls} />
-                            </Field>
-                            <Field label="Reserva de unidades" error={errors.reserva_unidades}>
-                                <input type="number" name="reserva_unidades" value={data.reserva_unidades as string} onChange={handleChange} min={0} className={inputCls} />
-                            </Field>
-                            <div className="flex flex-col gap-3">
-                                <CheckField label="Consentimento obtido" name="consentimento" checked={!!data.consentimento} onChange={handleChange} />
-                                <CheckField label="Medicação suspensa" name="medicacao_suspensa" checked={!!data.medicacao_suspensa} onChange={handleChange} />
-                                <CheckField label="Profilaxia" name="profilaxia" checked={!!data.profilaxia} onChange={handleChange} />
-                                <CheckField label="Reserva activa" name="reserva_ativa" checked={!!data.reserva_ativa} onChange={handleChange} />
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <Field label="Lateralidade" error={errors.lateralidade}>
+                                    <select name="lateralidade" value={data.lateralidade} onChange={handleChange} className={inputCls}>
+                                        <option value="N/A">N/A</option>
+                                        <option value="Direito">Direito</option>
+                                        <option value="Esquerdo">Esquerdo</option>
+                                    </select>
+                                </Field>
+                                <Field label="Perdas estimadas (mL)" error={errors.perdas_estimadas}>
+                                    <input type="number" name="perdas_estimadas" value={data.perdas_estimadas as string} onChange={handleChange} min={0} className={inputCls} />
+                                </Field>
+                                <Field label="Reserva de unidades" error={errors.reserva_unidades}>
+                                    <input type="number" name="reserva_unidades" value={data.reserva_unidades as string} onChange={handleChange} min={0} className={inputCls} />
+                                </Field>
+                                <div className="flex flex-col gap-3 md:col-span-2">
+                                    <YesNoField label="Consentimento obtido" name="consentimento" value={data.consentimento ?? null} onSet={(v) => setData('consentimento', v)} error={errors.consentimento} />
+                                    <YesNoField label="Medicação suspensa" name="medicacao_suspensa" value={data.medicacao_suspensa ?? null} onSet={(v) => setData('medicacao_suspensa', v)} error={errors.medicacao_suspensa} />
+                                    <YesNoField label="Profilaxia" name="profilaxia" value={data.profilaxia ?? null} onSet={(v) => setData('profilaxia', v)} error={errors.profilaxia} />
+                                    <YesNoField label="Reserva activa" name="reserva_ativa" value={data.reserva_ativa ?? null} onSet={(v) => setData('reserva_ativa', v)} error={errors.reserva_ativa} />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <Field label="Antibiótico" error={errors.antibiotico}>
+                                        <input type="text" name="antibiotico" value={data.antibiotico} onChange={handleChange} className={inputCls} placeholder="Deixar vazio se não aplicável" />
+                                    </Field>
+                                </div>
                             </div>
-                            <Field label="Antibiótico" error={errors.antibiotico} full>
-                                <input type="text" name="antibiotico" value={data.antibiotico} onChange={handleChange} className={inputCls} placeholder="Deixar vazio se não aplicável" />
-                            </Field>
                         </SectionCard>
                     )}
 
                     {/* ── STEP 5: ROBÓTICO ── */}
                     {currentStep === 4 && (
                         <SectionCard color="border-purple-500" title="Robótico">
-                            <Field label="Trócares" error={errors.trocares}>
-                                <input type="number" name="trocares" value={data.trocares as string} onChange={handleChange} min={0} className={inputCls} />
-                            </Field>
-                            <Field label="Ótica" error={errors.otica}>
-                                <select name="otica" value={data.otica} onChange={handleChange} className={inputCls}>
-                                    <option value="0">0°</option>
-                                    <option value="30">30°</option>
-                                </select>
-                            </Field>
-
-                            {/* Monopolar Coag */}
-                            <div className="grid grid-cols-2 gap-4 rounded-lg border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-900/10 sm:col-span-2">
-                                <Field label="Monopolar Coag - Potência (W)" error={errors.monopolar_coag_watts}>
-                                    <input type="number" name="monopolar_coag_watts" value={data.monopolar_coag_watts as string} onChange={handleChange} min={0} className={inputCls} />
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <Field label="Trócares" error={errors.trocares}>
+                                    <input type="number" name="trocares" value={data.trocares as string} onChange={handleChange} min={0} className={inputCls} />
                                 </Field>
-                                <Field label="Monopolar Coag - Tipo" error={errors.monopolar_coag_tipo}>
-                                    <select name="monopolar_coag_tipo" value={data.monopolar_coag_tipo} onChange={handleChange} className={selectCls}>
-                                        <option value="">Selecione…</option>
-                                        <option value="pure">Pure</option>
-                                        <option value="flugurate">Flugurate</option>
-                                        <option value="soft">Soft</option>
+                                <Field label="Ótica" error={errors.otica}>
+                                    <select name="otica" value={data.otica} onChange={handleChange} className={inputCls}>
+                                        <option value="0">0°</option>
+                                        <option value="30">30°</option>
                                     </select>
                                 </Field>
-                            </div>
 
-                            {/* Monopolar Cut */}
-                            <div className="grid grid-cols-2 gap-4 rounded-lg border border-green-100 bg-green-50/50 p-4 dark:border-green-900 dark:bg-green-900/10 sm:col-span-2">
-                                <Field label="Monopolar Cut - Potência (W)" error={errors.monopolar_cut_watts}>
-                                    <input type="number" name="monopolar_cut_watts" value={data.monopolar_cut_watts as string} onChange={handleChange} min={0} className={inputCls} />
-                                </Field>
-                                <Field label="Monopolar Cut - Tipo" error={errors.monopolar_cut_tipo}>
-                                    <select name="monopolar_cut_tipo" value={data.monopolar_cut_tipo} onChange={handleChange} className={selectCls}>
-                                        <option value="">Selecione…</option>
-                                        <option value="pure">Pure</option>
-                                        <option value="flugurate">Flugurate</option>
-                                        <option value="soft">Soft</option>
-                                    </select>
-                                </Field>
-                            </div>
+                                {/* Monopolar Coag */}
+                                <div className="grid grid-cols-2 gap-4 rounded-lg border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-900/10 md:col-span-2">
+                                    <Field label="Monopolar Coag - Potência (W)" error={errors.monopolar_coag_watts}>
+                                        <input type="number" name="monopolar_coag_watts" value={data.monopolar_coag_watts as string} onChange={handleChange} min={0} className={inputCls} />
+                                    </Field>
+                                    <Field label="Monopolar Coag - Tipo" error={errors.monopolar_coag_tipo}>
+                                        <select name="monopolar_coag_tipo" value={data.monopolar_coag_tipo} onChange={handleChange} className={selectCls}>
+                                            <option value="">Selecione…</option>
+                                            <option value="pure">Pure</option>
+                                            <option value="flugurate">Flugurate</option>
+                                            <option value="soft">Soft</option>
+                                        </select>
+                                    </Field>
+                                </div>
 
-                            {/* Bipolar Coag */}
-                            <div className="grid grid-cols-2 gap-4 rounded-lg border border-orange-100 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-900/10 sm:col-span-2">
-                                <Field label="Bipolar Coag - Potência (W)" error={errors.bipolar_coag_watts}>
-                                    <input type="number" name="bipolar_coag_watts" value={data.bipolar_coag_watts as string} onChange={handleChange} min={0} className={inputCls} />
-                                </Field>
-                                <Field label="Bipolar Coag - Tipo" error={errors.bipolar_coag_tipo}>
-                                    <select name="bipolar_coag_tipo" value={data.bipolar_coag_tipo} onChange={handleChange} className={selectCls}>
-                                        <option value="">Selecione…</option>
-                                        <option value="pure">Pure</option>
-                                        <option value="flugurate">Flugurate</option>
-                                        <option value="soft">Soft</option>
-                                    </select>
-                                </Field>
-                            </div>
+                                {/* Monopolar Cut */}
+                                <div className="grid grid-cols-2 gap-4 rounded-lg border border-green-100 bg-green-50/50 p-4 dark:border-green-900 dark:bg-green-900/10 md:col-span-2">
+                                    <Field label="Monopolar Cut - Potência (W)" error={errors.monopolar_cut_watts}>
+                                        <input type="number" name="monopolar_cut_watts" value={data.monopolar_cut_watts as string} onChange={handleChange} min={0} className={inputCls} />
+                                    </Field>
+                                    <Field label="Monopolar Cut - Tipo" error={errors.monopolar_cut_tipo}>
+                                        <select name="monopolar_cut_tipo" value={data.monopolar_cut_tipo} onChange={handleChange} className={selectCls}>
+                                            <option value="">Selecione…</option>
+                                            <option value="pure">Pure</option>
+                                            <option value="flugurate">Flugurate</option>
+                                            <option value="soft">Soft</option>
+                                        </select>
+                                    </Field>
+                                </div>
 
-                            <Field label="B1 - Pinças" error={errors.b1}>
-                                <SearchableMultiSelect
-                                    options={consumivel_tipos}
-                                    selectedIds={(data.b1 as number[]) ?? []}
-                                    onSelectionChange={(selectedIds) => setData('b1', selectedIds)}
-                                    placeholder="Procurar pinças B1..."
-                                />
-                            </Field>
-                            <Field label="B2 - Pinças" error={errors.b2}>
-                                <SearchableMultiSelect
-                                    options={consumivel_tipos}
-                                    selectedIds={(data.b2 as number[]) ?? []}
-                                    onSelectionChange={(selectedIds) => setData('b2', selectedIds)}
-                                    placeholder="Procurar pinças B2..."
-                                />
-                            </Field>
-                            <Field label="B3 - Pinças" error={errors.b3}>
-                                <SearchableMultiSelect
-                                    options={consumivel_tipos}
-                                    selectedIds={(data.b3 as number[]) ?? []}
-                                    onSelectionChange={(selectedIds) => setData('b3', selectedIds)}
-                                    placeholder="Procurar pinças B3..."
-                                />
-                            </Field>
-                            <Field label="B4 - Pinças" error={errors.b4}>
-                                <SearchableMultiSelect
-                                    options={consumivel_tipos}
-                                    selectedIds={(data.b4 as number[]) ?? []}
-                                    onSelectionChange={(selectedIds) => setData('b4', selectedIds)}
-                                    placeholder="Procurar pinças B4..."
-                                />
-                            </Field>
-                            <Field label="Equipamento extra" error={errors.equipamento_extra} full>
-                                <SearchableMultiSelect
-                                    options={consumivel_tipos_extra}
-                                    selectedIds={(data.equipamento_extra as number[]) ?? []}
-                                    onSelectionChange={(selectedIds) => setData('equipamento_extra', selectedIds as number[])}
-                                    placeholder="Procurar equipamento extra…"
-                                />
-                            </Field>
+                                {/* Bipolar Coag */}
+                                <div className="grid grid-cols-2 gap-4 rounded-lg border border-orange-100 bg-orange-50/50 p-4 dark:border-orange-900 dark:bg-orange-900/10 md:col-span-2">
+                                    <Field label="Bipolar Coag - Potência (W)" error={errors.bipolar_coag_watts}>
+                                        <input type="number" name="bipolar_coag_watts" value={data.bipolar_coag_watts as string} onChange={handleChange} min={0} className={inputCls} />
+                                    </Field>
+                                    <Field label="Bipolar Coag - Tipo" error={errors.bipolar_coag_tipo}>
+                                        <select name="bipolar_coag_tipo" value={data.bipolar_coag_tipo} onChange={handleChange} className={selectCls}>
+                                            <option value="">Selecione…</option>
+                                            <option value="pure">Pure</option>
+                                            <option value="flugurate">Flugurate</option>
+                                            <option value="soft">Soft</option>
+                                        </select>
+                                    </Field>
+                                </div>
+
+                                <Field label="B1 - Pinças" error={errors.b1}>
+                                    <SearchableMultiSelect
+                                        options={consumivel_tipos}
+                                        selectedIds={(data.b1 as number[]) ?? []}
+                                        onSelectionChange={(selectedIds) => setData('b1', selectedIds)}
+                                        placeholder="Procurar pinças B1..."
+                                    />
+                                </Field>
+                                <Field label="B2 - Pinças" error={errors.b2}>
+                                    <SearchableMultiSelect
+                                        options={consumivel_tipos}
+                                        selectedIds={(data.b2 as number[]) ?? []}
+                                        onSelectionChange={(selectedIds) => setData('b2', selectedIds)}
+                                        placeholder="Procurar pinças B2..."
+                                    />
+                                </Field>
+                                <Field label="B3 - Pinças" error={errors.b3}>
+                                    <SearchableMultiSelect
+                                        options={consumivel_tipos}
+                                        selectedIds={(data.b3 as number[]) ?? []}
+                                        onSelectionChange={(selectedIds) => setData('b3', selectedIds)}
+                                        placeholder="Procurar pinças B3..."
+                                    />
+                                </Field>
+                                <Field label="B4 - Pinças" error={errors.b4}>
+                                    <SearchableMultiSelect
+                                        options={consumivel_tipos}
+                                        selectedIds={(data.b4 as number[]) ?? []}
+                                        onSelectionChange={(selectedIds) => setData('b4', selectedIds)}
+                                        placeholder="Procurar pinças B4..."
+                                    />
+                                </Field>
+                                <div className="md:col-span-2">
+                                    <Field label="Equipamento extra" error={errors.equipamento_extra}>
+                                        <SearchableMultiSelect
+                                            options={consumivel_tipos_extra}
+                                            selectedIds={(data.equipamento_extra as number[]) ?? []}
+                                            onSelectionChange={(selectedIds) => setData('equipamento_extra', selectedIds as number[])}
+                                            placeholder="Procurar equipamento extra…"
+                                        />
+                                    </Field>
+                                </div>
+                            </div>
                         </SectionCard>
                     )}
 
