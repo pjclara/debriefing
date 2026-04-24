@@ -33,16 +33,26 @@ class SurgeryRequest extends FormRequest
             'passos_criticos'          => ['required', 'boolean'],
             'descricao_passos'         => ['nullable', 'string'],
 
-            'consentimento'          => ['required', 'boolean'],
-            'lateralidade'           => ['required', 'in:N/A,Direito,Esquerdo'],
-            'medicacao_suspensa'     => ['required', 'boolean'],
-            'antibiotico'            => ['nullable', 'string', 'max:255'],
-            'profilaxia'             => ['required', 'boolean'],
-            'perdas_estimadas'       => ['nullable', 'integer', 'min:0'],
-            'reserva_ativa'          => ['required', 'boolean'],
-            'reserva_unidades'       => ['nullable', 'integer', 'min:0'],
+            'consentimento'            => ['required', 'boolean'],
+            'lateralidade'             => ['required', 'in:N/A,Sim'],
+            'lateralidade_lado'        => ['nullable', 'in:Esquerda,Direita,Bilateral'],
+            'lateralidade_marcacao'    => ['nullable', 'boolean'],
+            'medicacao_suspensa'       => ['nullable', 'in:Sim,Não,N/A'],
+            'medicacao_qual'           => ['nullable', 'string', 'max:255'],
+            'antibiotico'              => ['nullable', 'string', 'max:255'],
+            'antibioterapia'           => ['nullable', 'boolean'],
+            'profilaxia'               => ['nullable', 'boolean'],
+            'profilaxia_tipo'          => ['nullable', 'string', 'max:255'],
+            'perdas_estimadas'         => ['nullable', 'integer', 'min:0'],
+            'reserva_ativa'            => ['nullable', 'boolean'],
+            'reserva_estado'           => ['nullable', 'in:Tem,Necessita,N/A'],
+            'reserva_unidades'         => ['nullable', 'integer', 'min:0'],
 
             'trocares'               => ['nullable', 'integer', 'min:0'],
+            'trocares_roboticos'              => ['nullable', 'integer', 'min:0'],
+            'trocares_roboticos_tamanho'      => ['nullable', 'string', 'max:50'],
+            'trocares_nao_roboticos'          => ['nullable', 'integer', 'min:0'],
+            'trocares_nao_roboticos_tamanho'  => ['nullable', 'string', 'max:50'],
             'otica'                  => ['required', 'in:0,30'],
             'monopolar_coag_watts'   => ['nullable', 'integer', 'min:0'],
             'monopolar_coag_tipo'    => ['nullable', 'in:pure,flugurate,soft'],
@@ -67,7 +77,7 @@ class SurgeryRequest extends FormRequest
     {
         $booleans = [
             'antecedentes_relevantes', 'comorbidades', 'variacoes_tecnicas', 'passos_criticos',
-            'consentimento', 'medicacao_suspensa', 'profilaxia', 'reserva_ativa',
+            'consentimento', 'lateralidade_marcacao', 'antibioterapia', 'profilaxia', 'reserva_ativa',
         ];
 
         $this->merge(array_map(
@@ -78,6 +88,7 @@ class SurgeryRequest extends FormRequest
         // Converter campos numéricos vazios em null e strings vazias em null para watts/tipo
         $numericFields = [
             'docking', 'perdas_estimadas', 'reserva_unidades', 'trocares',
+            'trocares_roboticos', 'trocares_nao_roboticos',
             'monopolar_coag_watts', 'monopolar_cut_watts', 'bipolar_coag_watts',
         ];
 

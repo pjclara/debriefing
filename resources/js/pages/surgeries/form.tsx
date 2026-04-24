@@ -39,11 +39,17 @@ interface Surgery {
     descricao_passos?: string;
     consentimento?: boolean | null;
     lateralidade?: string;
-    medicacao_suspensa?: boolean | null;
+    lateralidade_lado?: string;
+    lateralidade_marcacao?: boolean | null;
+    medicacao_suspensa?: string | null;
+    medicacao_qual?: string;
     antibiotico?: string;
+    antibioterapia?: boolean | null;
     profilaxia?: boolean | null;
+    profilaxia_tipo?: string;
     perdas_estimadas?: number | string;
     reserva_ativa?: boolean | null;
+    reserva_estado?: string | null;
     reserva_unidades?: number | string;
     trocares?: number | string;
     otica?: string;
@@ -109,6 +115,52 @@ function YesNoField({ label, name, value, onSet, error }: {
             </div>
             {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
         </div>
+    );
+}
+
+// ─── PlanRow / SubRow / Btn3 ─────────────────────────────────────────────────
+
+function PlanRow({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
+    return (
+        <div className="flex flex-col gap-1">
+            <div className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 ${
+                error ? 'border-red-400 bg-red-50 dark:border-red-600 dark:bg-red-900/20' : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+            }`}>
+                <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</span>
+                <div className="flex flex-wrap gap-2">{children}</div>
+            </div>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+        </div>
+    );
+}
+
+function SubRow({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <div className="ml-6 flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-white px-4 py-2.5 dark:border-gray-600 dark:bg-gray-900">
+            <span className="min-w-24 text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>
+            <div className="flex flex-wrap gap-2">{children}</div>
+        </div>
+    );
+}
+
+function Btn3({ active, onClick, color, children }: {
+    active: boolean;
+    onClick: () => void;
+    color: 'green' | 'red' | 'slate' | 'blue' | 'yellow';
+    children: React.ReactNode;
+}) {
+    const base = 'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors';
+    const colors: Record<string, string> = {
+        green:  active ? 'bg-green-600 text-white'  : 'bg-gray-100 text-gray-500 hover:bg-green-100 hover:text-green-700 dark:bg-gray-700 dark:hover:bg-green-900/30',
+        red:    active ? 'bg-red-500 text-white'    : 'bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-700 dark:bg-gray-700 dark:hover:bg-red-900/30',
+        slate:  active ? 'bg-gray-500 text-white'   : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600',
+        blue:   active ? 'bg-blue-600 text-white'   : 'bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-700 dark:bg-gray-700 dark:hover:bg-blue-900/30',
+        yellow: active ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-yellow-100 hover:text-yellow-700 dark:bg-gray-700 dark:hover:bg-yellow-900/30',
+    };
+    return (
+        <button type="button" onClick={onClick} className={`${base} ${colors[color]}`}>
+            {children}
+        </button>
     );
 }
 
@@ -263,9 +315,9 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
     const [stepError, setStepError] = useState<string | null>(null);
 
     const steps: Step[] = [
-        { id: 'identificacao', label: 'Identificação', icon: User },
-        { id: 'clinicos', label: 'Clínicos', icon: FileText },
-        { id: 'tempos', label: 'Tempos', icon: Clock },
+        { id: 'identificacao', label: 'Identificação do utente', icon: User },
+        { id: 'clinicos', label: 'Elementos Clínicos', icon: FileText },
+        { id: 'tempos', label: 'Tempos Operatórios Robóticos', icon: Clock },
         { id: 'planeamento', label: 'Planeamento', icon: FileText },
         { id: 'robotico', label: 'Robótico', icon: Cpu },
         { id: 'review', label: 'Revisão', icon: Check },
@@ -292,12 +344,18 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
         descricao_passos: surgery?.descricao_passos ?? '',
 
         consentimento: surgery?.consentimento ?? null,
-        lateralidade: surgery?.lateralidade ?? 'N/A',
-        medicacao_suspensa: surgery?.medicacao_suspensa ?? null,
+        lateralidade: (!surgery?.lateralidade || surgery.lateralidade === 'N/A') ? 'N/A' : 'Sim',
+        lateralidade_lado: surgery?.lateralidade_lado ?? '',
+        lateralidade_marcacao: surgery?.lateralidade_marcacao ?? null,
+        medicacao_suspensa: (surgery?.medicacao_suspensa as string) ?? null,
+        medicacao_qual: surgery?.medicacao_qual ?? '',
         antibiotico: surgery?.antibiotico ?? '',
+        antibioterapia: surgery?.antibioterapia ?? null,
         profilaxia: surgery?.profilaxia ?? null,
+        profilaxia_tipo: surgery?.profilaxia_tipo ?? '',
         perdas_estimadas: surgery?.perdas_estimadas ?? '',
         reserva_ativa: surgery?.reserva_ativa ?? null,
+        reserva_estado: surgery?.reserva_estado ?? null,
         reserva_unidades: surgery?.reserva_unidades ?? '',
 
         trocares: surgery?.trocares ?? '',
@@ -338,10 +396,11 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                 if (data.passos_criticos === null) return 'Indique se existem passos críticos';
                 return null;
             case 'planeamento':
-                if (data.consentimento === null) return 'Indique se o consentimento foi obtido';
-                if (data.medicacao_suspensa === null) return 'Indique se a medicação foi suspensa';
-                if (data.profilaxia === null) return 'Indique se foi feita profilaxia';
-                if (data.reserva_ativa === null) return 'Indique se existe reserva activa';
+                if (data.consentimento === null) return 'Indique se os consentimentos foram obtidos';
+                if (data.medicacao_suspensa === null) return 'Indique o estado da medicação suspensa';
+                if (data.antibioterapia === null) return 'Indique se é necessária antibioterapia';
+                if (data.profilaxia === null) return 'Indique se é necessária profilaxia tromboembólica';
+                if (!data.reserva_estado) return 'Indique o estado da reserva de eritrócitos';
                 return null;
             default:
                 return null;
@@ -456,7 +515,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
 
                     {/* ── STEP 1: IDENTIFICAÇÃO ── */}
                     {currentStep === 0 && (
-                        <SectionCard color="border-blue-500" title="Identificação do Doente">
+                        <SectionCard color="border-blue-500" title="Identificação do utente">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <Field label="Processo" error={errors.processo}>
                                     <input type="text" name="processo" value={data.processo} onChange={handleChange} className={inputCls} required />
@@ -573,6 +632,8 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                                     </Field>
                                 </div>
 
+                                <div></div>
+
                                 {/* Consola Início */}
                                 <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-4 dark:border-purple-900 dark:bg-purple-900/10">
                                     <Field label="Início da Consola" error={errors.consola_inicio}>
@@ -605,31 +666,95 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                     {/* ── STEP 4: PLANEAMENTO ── */}
                     {currentStep === 3 && (
                         <SectionCard color="border-yellow-500" title="Planeamento">
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <Field label="Lateralidade" error={errors.lateralidade}>
-                                    <select name="lateralidade" value={data.lateralidade} onChange={handleChange} className={inputCls}>
-                                        <option value="N/A">N/A</option>
-                                        <option value="Direito">Direito</option>
-                                        <option value="Esquerdo">Esquerdo</option>
-                                    </select>
-                                </Field>
-                                <Field label="Perdas estimadas (mL)" error={errors.perdas_estimadas}>
-                                    <input type="number" name="perdas_estimadas" value={data.perdas_estimadas as string} onChange={handleChange} min={0} className={inputCls} />
-                                </Field>
-                                <Field label="Reserva de unidades" error={errors.reserva_unidades}>
-                                    <input type="number" name="reserva_unidades" value={data.reserva_unidades as string} onChange={handleChange} min={0} className={inputCls} />
-                                </Field>
-                                <div className="flex flex-col gap-3 md:col-span-2">
-                                    <YesNoField label="Consentimento obtido" name="consentimento" value={data.consentimento ?? null} onSet={(v) => setData('consentimento', v)} error={errors.consentimento} />
-                                    <YesNoField label="Medicação suspensa" name="medicacao_suspensa" value={data.medicacao_suspensa ?? null} onSet={(v) => setData('medicacao_suspensa', v)} error={errors.medicacao_suspensa} />
-                                    <YesNoField label="Profilaxia" name="profilaxia" value={data.profilaxia ?? null} onSet={(v) => setData('profilaxia', v)} error={errors.profilaxia} />
-                                    <YesNoField label="Reserva activa" name="reserva_ativa" value={data.reserva_ativa ?? null} onSet={(v) => setData('reserva_ativa', v)} error={errors.reserva_ativa} />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <Field label="Antibiótico" error={errors.antibiotico}>
-                                        <input type="text" name="antibiotico" value={data.antibiotico} onChange={handleChange} className={inputCls} placeholder="Deixar vazio se não aplicável" />
-                                    </Field>
-                                </div>
+                            <div className="flex flex-col gap-2">
+
+                                {/* Consentimentos obtidos */}
+                                <PlanRow label="Consentimentos obtidos" error={errors.consentimento as string}>
+                                    <Btn3 active={data.consentimento === true}  onClick={() => setData('consentimento', true)}  color="green">Sim</Btn3>
+                                    <Btn3 active={data.consentimento === false} onClick={() => setData('consentimento', false)} color="red">Não</Btn3>
+                                </PlanRow>
+
+                                {/* Lateralidade */}
+                                <PlanRow label="Lateralidade" error={errors.lateralidade as string}>
+                                    <Btn3 active={data.lateralidade === 'Sim'} onClick={() => setData('lateralidade', 'Sim')} color="green">Sim</Btn3>
+                                    <Btn3 active={data.lateralidade === 'N/A'} onClick={() => { setData('lateralidade', 'N/A'); setData('lateralidade_lado', ''); setData('lateralidade_marcacao', null); }} color="slate">N/A</Btn3>
+                                </PlanRow>
+
+                                {data.lateralidade === 'Sim' && (
+                                    <SubRow label="Se sim: lado">
+                                        <Btn3 active={data.lateralidade_lado === 'Esquerda'}  onClick={() => setData('lateralidade_lado', 'Esquerda')}  color="blue">Esquerda</Btn3>
+                                        <Btn3 active={data.lateralidade_lado === 'Direita'}   onClick={() => setData('lateralidade_lado', 'Direita')}   color="blue">Direita</Btn3>
+                                        <Btn3 active={data.lateralidade_lado === 'Bilateral'} onClick={() => setData('lateralidade_lado', 'Bilateral')} color="blue">Bilateral</Btn3>
+                                    </SubRow>
+                                )}
+
+                                {data.lateralidade === 'Sim' && data.lateralidade_lado && (
+                                    <SubRow label="Marcação">
+                                        <Btn3 active={data.lateralidade_marcacao === true}  onClick={() => setData('lateralidade_marcacao', true)}  color="green">Sim</Btn3>
+                                        <Btn3 active={data.lateralidade_marcacao === false} onClick={() => setData('lateralidade_marcacao', false)} color="red">Não</Btn3>
+                                    </SubRow>
+                                )}
+
+                                {/* Medicação suspensa */}
+                                <PlanRow label="Medicação suspensa" error={errors.medicacao_suspensa as string}>
+                                    <Btn3 active={data.medicacao_suspensa === 'Sim'} onClick={() => setData('medicacao_suspensa', 'Sim')} color="green">Sim</Btn3>
+                                    <Btn3 active={data.medicacao_suspensa === 'Não'} onClick={() => setData('medicacao_suspensa', 'Não')} color="red">Não</Btn3>
+                                    <Btn3 active={data.medicacao_suspensa === 'N/A'} onClick={() => { setData('medicacao_suspensa', 'N/A'); setData('medicacao_qual', ''); }} color="slate">N/A</Btn3>
+                                </PlanRow>
+
+                                {data.medicacao_suspensa === 'Não' && (
+                                    <SubRow label="Se não: Qual?">
+                                        <input type="text" name="medicacao_qual" value={data.medicacao_qual ?? ''} onChange={handleChange} className={inputCls} placeholder="Nome da medicação…" />
+                                    </SubRow>
+                                )}
+
+                                {/* Antibioterapia necessária */}
+                                <PlanRow label="Antibioterapia necessária" error={errors.antibioterapia as string}>
+                                    <Btn3 active={data.antibioterapia === true}  onClick={() => setData('antibioterapia', true)}  color="green">Sim</Btn3>
+                                    <Btn3 active={data.antibioterapia === false} onClick={() => { setData('antibioterapia', false); setData('antibiotico', ''); }} color="slate">N/A</Btn3>
+                                </PlanRow>
+
+                                {data.antibioterapia === true && (
+                                    <SubRow label="Se sim: Qual?">
+                                        <input type="text" name="antibiotico" value={data.antibiotico ?? ''} onChange={handleChange} className={inputCls} placeholder="Nome do antibiótico…" />
+                                    </SubRow>
+                                )}
+
+                                {/* Profilaxia tromboembólica */}
+                                <PlanRow label="Profilaxia tromboembólica" error={errors.profilaxia as string}>
+                                    <Btn3 active={data.profilaxia === true}  onClick={() => setData('profilaxia', true)}  color="green">Sim</Btn3>
+                                    <Btn3 active={data.profilaxia === false} onClick={() => { setData('profilaxia', false); setData('profilaxia_tipo', ''); }} color="slate">N/A</Btn3>
+                                </PlanRow>
+
+                                {data.profilaxia === true && (
+                                    <SubRow label="Se sim: Qual?">
+                                        <Btn3 active={data.profilaxia_tipo === 'Farmacológica'} onClick={() => setData('profilaxia_tipo', 'Farmacológica')} color="blue">Farmacológica</Btn3>
+                                        <Btn3 active={data.profilaxia_tipo === 'Mecânica'}      onClick={() => setData('profilaxia_tipo', 'Mecânica')}      color="blue">Mecânica</Btn3>
+                                        <Btn3 active={data.profilaxia_tipo === 'Ambas'}      onClick={() => setData('profilaxia_tipo', 'Ambas')}      color="blue">Ambas</Btn3>
+                                    </SubRow>
+                                )}
+
+                                {/* Perdas estimadas */}
+                                <PlanRow label="Perdas estimadas" error={errors.perdas_estimadas as string}>
+                                    <div className="flex items-center gap-2">
+                                        <input type="number" name="perdas_estimadas" value={data.perdas_estimadas as string ?? ''} onChange={handleChange} min={0} className={inputCls + ' w-32'} placeholder="0" />
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">mL</span>
+                                    </div>
+                                </PlanRow>
+
+                                {/* Reserva de concentrado de eritrócitos */}
+                                <PlanRow label="Reserva de concentrado de eritrócitos" error={errors.reserva_estado as string}>
+                                    <Btn3 active={data.reserva_estado === 'Tem'}      onClick={() => setData('reserva_estado', 'Tem')}      color="green">Tem</Btn3>
+                                    <Btn3 active={data.reserva_estado === 'Necessita'} onClick={() => setData('reserva_estado', 'Necessita')} color="yellow">Necessita</Btn3>
+                                    <Btn3 active={data.reserva_estado === 'N/A'}      onClick={() => { setData('reserva_estado', 'N/A'); setData('reserva_unidades', ''); }} color="slate">N/A</Btn3>
+                                </PlanRow>
+
+                                {(data.reserva_estado === 'Tem' || data.reserva_estado === 'Necessita') && (
+                                    <SubRow label="N.º Unidades">
+                                        <input type="number" name="reserva_unidades" value={data.reserva_unidades as string ?? ''} onChange={handleChange} min={0} className={inputCls + ' w-32'} placeholder="0" />
+                                    </SubRow>
+                                )}
+
                             </div>
                         </SectionCard>
                     )}
@@ -789,10 +914,32 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                                 <div className="rounded-lg border border-yellow-100 p-4 dark:border-yellow-900">
                                     <h3 className="mb-3 font-semibold text-yellow-900 dark:text-yellow-200">Planeamento</h3>
                                     <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
-                                        <p><span className="font-medium">Lateralidade:</span> {data.lateralidade}</p>
-                                        <p><span className="font-medium">Perdas:</span> {data.perdas_estimadas} mL</p>
-                                        <p><span className="font-medium">Reserva:</span> {data.reserva_unidades || '—'}</p>
-                                        <p><span className="font-medium">Antibiótico:</span> {data.antibiotico || '—'}</p>
+                                        <p><span className="font-medium">Consentimentos:</span> {data.consentimento === true ? 'Sim' : data.consentimento === false ? 'Não' : '—'}</p>
+                                        <p>
+                                            <span className="font-medium">Lateralidade:</span>{' '}
+                                            {data.lateralidade === 'Sim'
+                                                ? `Sim — ${data.lateralidade_lado || '—'} (Marcação: ${data.lateralidade_marcacao === true ? 'Sim' : data.lateralidade_marcacao === false ? 'Não' : '—'})`
+                                                : 'N/A'}
+                                        </p>
+                                        <p>
+                                            <span className="font-medium">Medicação suspensa:</span>{' '}
+                                            {data.medicacao_suspensa || '—'}
+                                            {data.medicacao_suspensa === 'Não' && data.medicacao_qual ? ` — ${data.medicacao_qual}` : ''}
+                                        </p>
+                                        <p>
+                                            <span className="font-medium">Antibioterapia:</span>{' '}
+                                            {data.antibioterapia === true ? `Sim — ${data.antibiotico || '—'}` : data.antibioterapia === false ? 'N/A' : '—'}
+                                        </p>
+                                        <p>
+                                            <span className="font-medium">Profilaxia tromboembólica:</span>{' '}
+                                            {data.profilaxia === true ? `Sim — ${data.profilaxia_tipo || '—'}` : data.profilaxia === false ? 'N/A' : '—'}
+                                        </p>
+                                        <p><span className="font-medium">Perdas estimadas:</span> {data.perdas_estimadas ? `${data.perdas_estimadas} mL` : '—'}</p>
+                                        <p>
+                                            <span className="font-medium">Reserva eritrócitos:</span>{' '}
+                                            {data.reserva_estado || '—'}
+                                            {(data.reserva_estado === 'Tem' || data.reserva_estado === 'Necessita') && data.reserva_unidades ? ` — ${data.reserva_unidades} un.` : ''}
+                                        </p>
                                     </div>
                                 </div>
 
