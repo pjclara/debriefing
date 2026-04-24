@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FormRow, YesNo, inputCls, textareaCls } from '@/components/form-ui';
@@ -104,6 +105,8 @@ function YesNoField({ label, name, value, onSet, error }: {
 
 export default function DebriefingForm({ briefing, debriefing }: Props) {
     const isEdit = !!debriefing?.id;
+    const [showErrors, setShowErrors] = useState(false);
+    const [activeTab, setActiveTab] = useState('complicacoes');
 
     const { data, setData, post, put, processing, errors } = useForm<Debriefing>({
         complicacoes: debriefing?.complicacoes ?? null,
@@ -124,8 +127,41 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
         descricao_evento: debriefing?.descricao_evento ?? '',
     });
 
+    function validateForm(d: Debriefing): Record<string, string> {
+        const errs: Record<string, string> = {};
+        if (d.complicacoes === null || d.complicacoes === undefined)
+            errs.complicacoes = 'Resposta obrigatória';
+        if (d.falha_sistema === null || d.falha_sistema === undefined)
+            errs.falha_sistema = 'Resposta obrigatória';
+        if (d.falha_sistema === true) {
+            if (d.falha_solucionada === null || d.falha_solucionada === undefined)
+                errs.falha_solucionada = 'Resposta obrigatória';
+            if (d.falha_reportada === null || d.falha_reportada === undefined)
+                errs.falha_reportada = 'Resposta obrigatória';
+        }
+        if (d.inicio_a_horas === null || d.inicio_a_horas === undefined)
+            errs.inicio_a_horas = 'Resposta obrigatória';
+        if (d.fim_a_horas === null || d.fim_a_horas === undefined)
+            errs.fim_a_horas = 'Resposta obrigatória';
+        if (d.evento_adverso === null || d.evento_adverso === undefined)
+            errs.evento_adverso = 'Resposta obrigatória';
+        return errs;
+    }
+
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const errs = validateForm(data);
+        if (Object.keys(errs).length > 0) {
+            setShowErrors(true);
+            // navegar para o primeiro separador com erro
+            const firstErrTab =
+                (errs.complicacoes ? 'complicacoes' : null) ??
+                (errs.falha_sistema || errs.falha_solucionada || errs.falha_reportada ? 'falha' : null) ??
+                (errs.inicio_a_horas || errs.fim_a_horas ? 'lista' : null) ??
+                (errs.evento_adverso ? 'evento' : null);
+            if (firstErrTab) setActiveTab(firstErrTab);
+            return;
+        }
         if (isEdit) {
             put(`/briefings/${briefing.id}/debriefing`);
         } else {
@@ -160,14 +196,55 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                     {isEdit ? 'Editar Debriefing' : 'Registar Debriefing'}
                 </h1>
 
+                {showErrors && (() => {
+                    const errs = validateForm(data);
+                    return Object.keys(errs).length > 0 ? (
+                        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/20 dark:text-red-300">
+                            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                            <div>
+                                <p className="font-semibold">Preencha todas as respostas obrigatórias antes de gravar:</p>
+                                <ul className="mt-1 list-disc pl-4">
+                                    {errs.complicacoes && <li>Complicações intra-operatórias</li>}
+                                    {errs.falha_sistema && <li>Falhas no sistema Da Vinci Xi</li>}
+                                    {errs.falha_solucionada && <li>Falha solucionada?</li>}
+                                    {errs.falha_reportada && <li>Falha reportada?</li>}
+                                    {errs.inicio_a_horas && <li>Iniciou a horas?</li>}
+                                    {errs.fim_a_horas && <li>Finalizou a horas?</li>}
+                                    {errs.evento_adverso && <li>Incidente / evento adverso</li>}
+                                </ul>
+                            </div>
+                        </div>
+                    ) : null;
+                })()}
+
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                    <Tabs defaultValue="complicacoes">
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList className="mb-2 flex-wrap">
-                            <TabsTrigger value="complicacoes">Complicações</TabsTrigger>
-                            <TabsTrigger value="falha">Falha Sistema</TabsTrigger>
-                            <TabsTrigger value="lista">Lista Operatória</TabsTrigger>
+                            <TabsTrigger value="complicacoes" className="relative">
+                                Complicações
+                                {showErrors && validateForm(data).complicacoes && (
+                                    <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-red-500" />
+                                )}
+                            </TabsTrigger>
+                            <TabsTrigger value="falha" className="relative">
+                                Falha Sistema
+                                {showErrors && (validateForm(data).falha_sistema || validateForm(data).falha_solucionada || validateForm(data).falha_reportada) && (
+                                    <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-red-500" />
+                                )}
+                            </TabsTrigger>
+                            <TabsTrigger value="lista" className="relative">
+                                Lista Operatória
+                                {showErrors && (validateForm(data).inicio_a_horas || validateForm(data).fim_a_horas) && (
+                                    <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-red-500" />
+                                )}
+                            </TabsTrigger>
                             <TabsTrigger value="reflexao">Reflexão</TabsTrigger>
-                            <TabsTrigger value="evento">Evento Adverso</TabsTrigger>
+                            <TabsTrigger value="evento" className="relative">
+                                Evento Adverso
+                                {showErrors && validateForm(data).evento_adverso && (
+                                    <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-red-500" />
+                                )}
+                            </TabsTrigger>
                         </TabsList>
 
                         {/* ── COMPLICAÇÕES ── */}
@@ -178,7 +255,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                     name="complicacoes"
                                     value={data.complicacoes ?? null}
                                     onSet={(v) => setData('complicacoes', v)}
-                                    error={errors.complicacoes}
+                                    error={errors.complicacoes ?? (showErrors && (data.complicacoes === null || data.complicacoes === undefined) ? 'Resposta obrigatória' : undefined)}
                                 />
                                 {data.complicacoes === true && (
                                     <Field label="Quais as complicações?" error={errors.descricao_complicacoes} full>
@@ -202,7 +279,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                     name="falha_sistema"
                                     value={data.falha_sistema ?? null}
                                     onSet={(v) => setData('falha_sistema', v)}
-                                    error={errors.falha_sistema}
+                                    error={errors.falha_sistema ?? (showErrors && (data.falha_sistema === null || data.falha_sistema === undefined) ? 'Resposta obrigatória' : undefined)}
                                 />
                                 {data.falha_sistema === true && (
                                     <>
@@ -220,14 +297,14 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                             name="falha_solucionada"
                                             value={data.falha_solucionada ?? null}
                                             onSet={(v) => setData('falha_solucionada', v)}
-                                            error={errors.falha_solucionada}
+                                            error={errors.falha_solucionada ?? (showErrors && (data.falha_solucionada === null || data.falha_solucionada === undefined) ? 'Resposta obrigatória' : undefined)}
                                         />
                                         <YesNoField
                                             label="Falha reportada?"
                                             name="falha_reportada"
                                             value={data.falha_reportada ?? null}
                                             onSet={(v) => setData('falha_reportada', v)}
-                                            error={errors.falha_reportada}
+                                            error={errors.falha_reportada ?? (showErrors && (data.falha_reportada === null || data.falha_reportada === undefined) ? 'Resposta obrigatória' : undefined)}
                                         />
                                         {data.falha_reportada === true && (
                                             <Field label="Reportada a quem?" error={errors.falha_reportada_a_quem} full>
@@ -253,7 +330,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                     name="inicio_a_horas"
                                     value={data.inicio_a_horas ?? null}
                                     onSet={(v) => setData('inicio_a_horas', v)}
-                                    error={errors.inicio_a_horas}
+                                    error={errors.inicio_a_horas ?? (showErrors && (data.inicio_a_horas === null || data.inicio_a_horas === undefined) ? 'Resposta obrigatória' : undefined)}
                                 />
                                 {data.inicio_a_horas === false && (
                                     <Field label="Motivo do atraso no início" error={errors.descricao_inicio} full>
@@ -271,7 +348,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                     name="fim_a_horas"
                                     value={data.fim_a_horas ?? null}
                                     onSet={(v) => setData('fim_a_horas', v)}
-                                    error={errors.fim_a_horas}
+                                    error={errors.fim_a_horas ?? (showErrors && (data.fim_a_horas === null || data.fim_a_horas === undefined) ? 'Resposta obrigatória' : undefined)}
                                 />
                                 {data.fim_a_horas === false && (
                                     <Field label="Motivo do atraso no fim" error={errors.descricao_fim} full>
@@ -334,7 +411,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                     name="evento_adverso"
                                     value={data.evento_adverso ?? null}
                                     onSet={(v) => setData('evento_adverso', v)}
-                                    error={errors.evento_adverso}
+                                    error={errors.evento_adverso ?? (showErrors && (data.evento_adverso === null || data.evento_adverso === undefined) ? 'Resposta obrigatória' : undefined)}
                                 />
                                 {data.evento_adverso === true && (
                                     <Field label="Descrição do evento adverso" error={errors.descricao_evento} full>
@@ -352,18 +429,36 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                     </Tabs>
 
                     {/* ── AÇÕES ── */}
-                    <div className="flex items-center gap-4">
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-                        >
-                            {processing ? 'A guardar…' : isEdit ? 'Actualizar Debriefing' : 'Registar Debriefing'}
-                        </button>
-                        <Link href={`/briefings/${briefing.id}`} className="text-sm text-gray-500 hover:underline">
-                            Cancelar
-                        </Link>
-                    </div>
+                    {(() => {
+                        const tabs = ['complicacoes', 'falha', 'lista', 'reflexao', 'evento'] as const;
+                        const currentIndex = tabs.indexOf(activeTab as typeof tabs[number]);
+                        const isLast = currentIndex === tabs.length - 1;
+                        const nextTab = !isLast ? tabs[currentIndex + 1] : null;
+                        return (
+                            <div className="flex items-center gap-4">
+                                {isLast ? (
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                                    >
+                                        {processing ? 'A guardar…' : isEdit ? 'Actualizar Debriefing' : 'Registar Debriefing'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => nextTab && setActiveTab(nextTab)}
+                                        className="rounded-lg bg-gray-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gray-800"
+                                    >
+                                        Próximo
+                                    </button>
+                                )}
+                                <Link href={`/briefings/${briefing.id}`} className="text-sm text-gray-500 hover:underline">
+                                    Cancelar
+                                </Link>
+                            </div>
+                        );
+                    })()}
                 </form>
             </div>
         </AppLayout>
