@@ -19,6 +19,11 @@ interface Procedure {
     nome: string;
 }
 
+interface TrocarEntry {
+    n: string;
+    tamanho: string;
+}
+
 interface Surgery {
     id?: number;
     processo?: string;
@@ -52,6 +57,10 @@ interface Surgery {
     reserva_estado?: string | null;
     reserva_unidades?: number | string;
     trocares?: number | string;
+    trocares_roboticos?: number | string;
+    trocares_roboticos_tamanhos?: TrocarEntry[];
+    trocares_nao_roboticos?: number | string;
+    trocares_nao_roboticos_tamanhos?: TrocarEntry[];
     otica?: string;
     monopolar_coag_watts?: number | string;
     monopolar_coag_tipo?: string;
@@ -161,6 +170,67 @@ function Btn3({ active, onClick, color, children }: {
         <button type="button" onClick={onClick} className={`${base} ${colors[color]}`}>
             {children}
         </button>
+    );
+}
+
+// ─── TrocaresEditor ──────────────────────────────────────────────────────────
+
+function TrocaresEditor({ label, entries, onChange }: {
+    label: string;
+    entries: TrocarEntry[];
+    onChange: (entries: TrocarEntry[]) => void;
+}) {
+    function add() {
+        onChange([...entries, { n: '', tamanho: '' }]);
+    }
+    function remove(idx: number) {
+        onChange(entries.filter((_, i) => i !== idx));
+    }
+    function update(idx: number, field: keyof TrocarEntry, value: string) {
+        const next = entries.map((e, i) => i === idx ? { ...e, [field]: value } : e);
+        onChange(next);
+    }
+    return (
+        <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+            {entries.length === 0 && (
+                <p className="text-xs text-gray-400 dark:text-gray-500">Nenhum trócar adicionado.</p>
+            )}
+            {entries.map((entry, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                    <input
+                        type="number"
+                        value={entry.n}
+                        onChange={(e) => update(idx, 'n', e.target.value)}
+                        min={0}
+                        className={inputCls + ' w-10'}
+                        placeholder="N.º"
+                    />
+                    <input
+                        type="number"
+                        value={entry.tamanho}
+                        onChange={(e) => update(idx, 'tamanho', e.target.value)}
+                        className={inputCls + ' w-10'}
+                        placeholder="Tamanho (ex: 8 mm)"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => remove(idx)}
+                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 dark:border-red-800 dark:hover:bg-red-900/20"
+                        aria-label="Remover"
+                    >
+                        <X className="h-3.5 w-3.5" />
+                    </button>
+                </div>
+            ))}
+            <button
+                type="button"
+                onClick={add}
+                className="mt-1 self-start rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-500 hover:border-gray-400 hover:text-gray-700 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:text-gray-300"
+            >
+                + Adicionar tamanho
+            </button>
+        </div>
     );
 }
 
@@ -319,7 +389,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
         { id: 'clinicos', label: 'Elementos Clínicos', icon: FileText },
         { id: 'tempos', label: 'Tempos Operatórios Robóticos', icon: Clock },
         { id: 'planeamento', label: 'Planeamento', icon: FileText },
-        { id: 'robotico', label: 'Robótico', icon: Cpu },
+        { id: 'robotico', label: ' Elementos Robóticos', icon: Cpu },
         { id: 'review', label: 'Revisão', icon: Check },
     ];
 
@@ -359,6 +429,10 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
         reserva_unidades: surgery?.reserva_unidades ?? '',
 
         trocares: surgery?.trocares ?? '',
+        trocares_roboticos: surgery?.trocares_roboticos ?? '',
+        trocares_roboticos_tamanhos: Array.isArray(surgery?.trocares_roboticos_tamanhos) ? surgery.trocares_roboticos_tamanhos : [],
+        trocares_nao_roboticos: surgery?.trocares_nao_roboticos ?? '',
+        trocares_nao_roboticos_tamanhos: Array.isArray(surgery?.trocares_nao_roboticos_tamanhos) ? surgery.trocares_nao_roboticos_tamanhos : [],
         otica: surgery?.otica ?? '0',
         monopolar_coag_watts: surgery?.monopolar_coag_watts ?? '',
         monopolar_coag_tipo: surgery?.monopolar_coag_tipo ?? '',
@@ -763,9 +837,16 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                     {currentStep === 4 && (
                         <SectionCard color="border-purple-500" title="Robótico">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <Field label="Trócares" error={errors.trocares}>
-                                    <input type="number" name="trocares" value={data.trocares as string} onChange={handleChange} min={0} className={inputCls} />
-                                </Field>
+                                <TrocaresEditor
+                                    label="Trócares Robóticos"
+                                    entries={(data.trocares_roboticos_tamanhos as TrocarEntry[]) ?? []}
+                                    onChange={(entries) => setData('trocares_roboticos_tamanhos', entries)}
+                                />
+                                <TrocaresEditor
+                                    label="Trócares Não Robóticos"
+                                    entries={(data.trocares_nao_roboticos_tamanhos as TrocarEntry[]) ?? []}
+                                    onChange={(entries) => setData('trocares_nao_roboticos_tamanhos', entries)}
+                                />
                                 <Field label="Ótica" error={errors.otica}>
                                     <select name="otica" value={data.otica} onChange={handleChange} className={inputCls}>
                                         <option value="0">0°</option>
@@ -947,7 +1028,16 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                                 <div className="rounded-lg border border-pink-100 p-4 dark:border-pink-900 md:col-span-2">
                                     <h3 className="mb-3 font-semibold text-pink-900 dark:text-pink-200">Robótico</h3>
                                     <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 dark:text-gray-300">
-                                        <p><span className="font-medium">Trócares:</span> {data.trocares}</p>
+                                        <p><span className="font-medium">Trócares Robóticos:</span>{' '}
+                                            {Array.isArray(data.trocares_roboticos_tamanhos) && data.trocares_roboticos_tamanhos.length > 0
+                                                ? (data.trocares_roboticos_tamanhos as TrocarEntry[]).map((e, i) => <span key={i} className="mr-2">{e.n}×{e.tamanho}</span>)
+                                                : '—'}
+                                        </p>
+                                        <p><span className="font-medium">Trócares Não Robóticos:</span>{' '}
+                                            {Array.isArray(data.trocares_nao_roboticos_tamanhos) && data.trocares_nao_roboticos_tamanhos.length > 0
+                                                ? (data.trocares_nao_roboticos_tamanhos as TrocarEntry[]).map((e, i) => <span key={i} className="mr-2">{e.n}×{e.tamanho}</span>)
+                                                : '—'}
+                                        </p>
                                         <p><span className="font-medium">Ótica:</span> {data.otica}°</p>
                                         <p><span className="font-medium">Monopolar Coag:</span> {data.monopolar_coag_watts ? `${data.monopolar_coag_watts}W ${data.monopolar_coag_tipo || '—'}` : '—'}</p>
                                         <p><span className="font-medium">Monopolar Cut:</span> {data.monopolar_cut_watts ? `${data.monopolar_cut_watts}W ${data.monopolar_cut_tipo || '—'}` : '—'}</p>
