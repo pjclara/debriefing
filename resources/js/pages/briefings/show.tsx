@@ -139,18 +139,27 @@ function AssociarStockModal({
     onClose: () => void;
 }) {
     const [search, setSearch] = useState('');
-    const [selected, setSelected] = useState<Record<number, { quantidade: number; observacoes: string }>>({});
+    const [selected, setSelected] = useState<
+        Record<number, { quantidade: number; observacoes: string }>
+    >({});
     const [processing, setProcessing] = useState(false);
 
-    const filtered = stockMovimentos.filter((m) =>
-        (m.consumivel_tipo?.nome ?? '').toLowerCase().includes(search.toLowerCase()) ||
-        (m.referencia ?? '').toLowerCase().includes(search.toLowerCase()) ||
-        (m.codigo ?? '').toLowerCase().includes(search.toLowerCase())
+    const filtered = stockMovimentos.filter(
+        (m) =>
+            (m.consumivel_tipo?.nome ?? '')
+                .toLowerCase()
+                .includes(search.toLowerCase()) ||
+            (m.referencia ?? '').toLowerCase().includes(search.toLowerCase()) ||
+            (m.codigo ?? '').toLowerCase().includes(search.toLowerCase()),
     );
 
     const toggle = (id: number) => {
-        setSelected(prev => {
-            if (prev[id]) { const next = { ...prev }; delete next[id]; return next; }
+        setSelected((prev) => {
+            if (prev[id]) {
+                const next = { ...prev };
+                delete next[id];
+                return next;
+            }
             return { ...prev, [id]: { quantidade: 1, observacoes: '' } };
         });
     };
@@ -172,15 +181,17 @@ function AssociarStockModal({
                 onSuccess: () => onClose(),
                 onError: () => setProcessing(false),
                 onFinish: () => setProcessing(false),
-            }
+            },
         );
     }
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-            <div className="relative flex w-full max-w-2xl flex-col rounded-xl bg-white shadow-2xl dark:bg-gray-900" style={{ maxHeight: '85vh' }}>
-
+            <div
+                className="relative flex w-full max-w-2xl flex-col rounded-xl bg-white shadow-2xl dark:bg-gray-900"
+                style={{ maxHeight: '85vh' }}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -191,7 +202,11 @@ function AssociarStockModal({
                             </span>
                         )}
                     </h3>
-                    <button type="button" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
                         <X className="h-5 w-5 text-gray-500" />
                     </button>
                 </div>
@@ -206,10 +221,14 @@ function AssociarStockModal({
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Pesquisar por nome, referência ou código…"
-                            className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400 dark:text-gray-100"
+                            className="flex-1 bg-transparent text-sm placeholder-gray-400 outline-none dark:text-gray-100"
                         />
                         {search && (
-                            <button type="button" onClick={() => setSearch('')} className="text-gray-400 hover:text-gray-600">
+                            <button
+                                type="button"
+                                onClick={() => setSearch('')}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
                                 <X className="h-3.5 w-3.5" />
                             </button>
                         )}
@@ -219,12 +238,16 @@ function AssociarStockModal({
                 {/* Lista */}
                 <div className="flex-1 overflow-y-auto p-5">
                     {filtered.length === 0 ? (
-                        <p className="text-center text-sm text-gray-400">Sem resultados</p>
+                        <p className="text-center text-sm text-gray-400">
+                            Sem resultados
+                        </p>
                     ) : (
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {filtered.map((m) => {
                                 const checked = !!selected[m.id];
-                                const isVidas = m.consumivel_tipo?.categoria === 'robotico_vidas';
+                                const isVidas =
+                                    m.consumivel_tipo?.categoria ===
+                                    'robotico_vidas';
                                 return (
                                     <div
                                         key={m.id}
@@ -242,17 +265,36 @@ function AssociarStockModal({
                                                 className="mt-0.5 h-4 w-4 flex-shrink-0 accent-blue-600"
                                             />
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-sm font-medium leading-tight text-gray-900 dark:text-white">
-                                                    {m.consumivel_tipo?.nome ?? `Movimento #${m.id}`}
+                                                <p className="text-sm leading-tight font-medium text-gray-900 dark:text-white">
+                                                    {m.consumivel_tipo?.nome ??
+                                                        `Movimento #${m.id}`}
                                                 </p>
                                                 <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-gray-500 dark:text-gray-400">
-                                                    {m.referencia && <span>Ref: {m.referencia}</span>}
-                                                    {m.codigo && <span>Cód: {m.codigo}</span>}
-                                                    {isVidas && m.vidas_atual != null
-                                                        ? <span className="font-medium text-blue-600 dark:text-blue-400">Vidas: {m.vidas_atual}/{m.vidas_inicial}</span>
-                                                        : m.unidades_atual != null
-                                                            ? <span className="font-medium text-blue-600 dark:text-blue-400">Unid.: {m.unidades_atual}/{m.unidades_inicial}</span>
-                                                            : null}
+                                                    {m.referencia && (
+                                                        <span>
+                                                            Ref: {m.referencia}
+                                                        </span>
+                                                    )}
+                                                    {m.codigo && (
+                                                        <span>
+                                                            Cód: {m.codigo}
+                                                        </span>
+                                                    )}
+                                                    {isVidas &&
+                                                    m.vidas_atual != null ? (
+                                                        <span className="font-medium text-blue-600 dark:text-blue-400">
+                                                            Vidas:{' '}
+                                                            {m.vidas_atual}/
+                                                            {m.vidas_inicial}
+                                                        </span>
+                                                    ) : m.unidades_atual !=
+                                                      null ? (
+                                                        <span className="font-medium text-blue-600 dark:text-blue-400">
+                                                            Unid.:{' '}
+                                                            {m.unidades_atual}/
+                                                            {m.unidades_inicial}
+                                                        </span>
+                                                    ) : null}
                                                 </p>
                                             </div>
                                         </label>
@@ -260,25 +302,52 @@ function AssociarStockModal({
                                         {/* Quantidade + obs. — apenas quando selecionado */}
                                         {checked && (
                                             <div className="mt-2 flex items-center gap-2 pl-6">
-                                                <label className="text-xs text-gray-500 whitespace-nowrap">Qtd.</label>
+                                                <label className="text-xs whitespace-nowrap text-gray-500">
+                                                    Qtd.
+                                                </label>
                                                 <input
                                                     type="number"
                                                     min={1}
-                                                    value={selected[m.id].quantidade}
+                                                    value={
+                                                        selected[m.id]
+                                                            .quantidade
+                                                    }
                                                     onChange={(e) => {
-                                                        const qty = Math.max(1, parseInt(e.target.value) || 1);
-                                                        setSelected(prev => ({ ...prev, [m.id]: { ...prev[m.id], quantidade: qty } }));
+                                                        const qty = Math.max(
+                                                            1,
+                                                            parseInt(
+                                                                e.target.value,
+                                                            ) || 1,
+                                                        );
+                                                        setSelected((prev) => ({
+                                                            ...prev,
+                                                            [m.id]: {
+                                                                ...prev[m.id],
+                                                                quantidade: qty,
+                                                            },
+                                                        }));
                                                     }}
-                                                    className="w-16 rounded border border-gray-300 px-2 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                    className="w-16 rounded border border-gray-300 px-2 py-1 text-center text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                 />
                                                 <input
                                                     type="text"
                                                     placeholder="Obs. (opcional)"
-                                                    value={selected[m.id].observacoes}
+                                                    value={
+                                                        selected[m.id]
+                                                            .observacoes
+                                                    }
                                                     onChange={(e) => {
-                                                        setSelected(prev => ({ ...prev, [m.id]: { ...prev[m.id], observacoes: e.target.value } }));
+                                                        setSelected((prev) => ({
+                                                            ...prev,
+                                                            [m.id]: {
+                                                                ...prev[m.id],
+                                                                observacoes:
+                                                                    e.target
+                                                                        .value,
+                                                            },
+                                                        }));
                                                     }}
-                                                    className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                    className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                 />
                                             </div>
                                         )}
@@ -305,12 +374,14 @@ function AssociarStockModal({
                         className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                     >
                         <Check className="h-4 w-4" />
-                        {processing ? 'A associar…' : `Associar${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
+                        {processing
+                            ? 'A associar…'
+                            : `Associar${selectedCount > 0 ? ` (${selectedCount})` : ''}`}
                     </button>
                 </div>
             </div>
         </div>,
-        document.body
+        document.body,
     );
 }
 
@@ -359,21 +430,51 @@ function SurgeryStockPanel({
                     {consumos.map((c) => {
                         const mov = c.stock_movimento;
                         return (
-                            <div key={c.id} className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5 dark:bg-gray-800/50">
+                            <div
+                                key={c.id}
+                                className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5 dark:bg-gray-800/50"
+                            >
                                 <div className="min-w-0 flex-1">
                                     <span className="text-xs font-medium text-gray-800 dark:text-gray-200">
-                                        {mov?.consumivel_tipo?.nome ?? `Movimento #${c.stock_movimento_id}`}
+                                        {mov?.consumivel_tipo?.nome ??
+                                            `Movimento #${c.stock_movimento_id}`}
                                     </span>
                                     <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-gray-500">
-                                        <span className="font-semibold text-gray-700 dark:text-gray-300">Qtd: {c.quantidade}</span>
-                                        {mov?.consumivel_tipo?.categoria === 'robotico_vidas'
-                                            ? mov?.vidas_atual != null && <span>Vidas: {mov.vidas_atual}/{mov.vidas_inicial}</span>
-                                            : mov?.unidades_atual != null && <span>Unid.: {mov.unidades_atual}/{mov.unidades_inicial}</span>}
-                                        {mov?.consumivel_tipo?.categoria === 'robotico_vidas' && mov?.codigo && <span>Codigo: {mov.codigo}</span>}
-                                        {mov?.referencia && <span>Referencia: {mov.referencia}</span>}
+                                        <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                            Qtd: {c.quantidade}
+                                        </span>
+                                        {mov?.consumivel_tipo?.categoria ===
+                                        'robotico_vidas'
+                                            ? mov?.vidas_atual != null && (
+                                                  <span>
+                                                      Vidas: {mov.vidas_atual}/
+                                                      {mov.vidas_inicial}
+                                                  </span>
+                                              )
+                                            : mov?.unidades_atual != null && (
+                                                  <span>
+                                                      Unid.:{' '}
+                                                      {mov.unidades_atual}/
+                                                      {mov.unidades_inicial}
+                                                  </span>
+                                              )}
+                                        {mov?.consumivel_tipo?.categoria ===
+                                            'robotico_vidas' &&
+                                            mov?.codigo && (
+                                                <span>
+                                                    Codigo: {mov.codigo}
+                                                </span>
+                                            )}
+                                        {mov?.referencia && (
+                                            <span>
+                                                Referencia: {mov.referencia}
+                                            </span>
+                                        )}
                                     </div>
                                     {c.observacoes && (
-                                        <p className="mt-0.5 text-xs text-gray-400">{c.observacoes}</p>
+                                        <p className="mt-0.5 text-xs text-gray-400">
+                                            {c.observacoes}
+                                        </p>
                                     )}
                                 </div>
                                 <button
@@ -402,7 +503,11 @@ function SurgeryStockPanel({
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 
-export default function BriefingShow({ briefing, stockMovimentos, flash }: Props) {
+export default function BriefingShow({
+    briefing,
+    stockMovimentos,
+    flash,
+}: Props) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const isAdmin = auth.user?.role === 'admin';
 
@@ -547,34 +652,78 @@ export default function BriefingShow({ briefing, stockMovimentos, flash }: Props
                                             Proc. {s.processo} &middot;{' '}
                                             {s.destino}
                                         </p>
-
                                         {/* Indicadores clínicos */}
                                         {[
-                                            { flag: s.antecedentes_relevantes, label: 'Antecedentes', desc: s.descricao_antecedentes },
-                                            { flag: s.comorbidades,            label: 'Comorbidades',  desc: s.descricao_comorbidades },
-                                            { flag: s.variacoes_tecnicas,      label: 'Var. técnicas', desc: s.descricao_variacoes },
-                                            { flag: s.passos_criticos,         label: 'Passos críticos', desc: s.descricao_passos },
-                                        ].filter(f => f.flag).length > 0 && (
+                                            {
+                                                flag: s.antecedentes_relevantes,
+                                                label: 'Antecedentes',
+                                                desc: s.descricao_antecedentes,
+                                            },
+                                            {
+                                                flag: s.comorbidades,
+                                                label: 'Comorbidades',
+                                                desc: s.descricao_comorbidades,
+                                            },
+                                            {
+                                                flag: s.variacoes_tecnicas,
+                                                label: 'Var. técnicas',
+                                                desc: s.descricao_variacoes,
+                                            },
+                                            {
+                                                flag: s.passos_criticos,
+                                                label: 'Passos críticos',
+                                                desc: s.descricao_passos,
+                                            },
+                                        ].filter((f) => f.flag).length > 0 && (
                                             <div className="mt-2 flex flex-col gap-1">
                                                 {[
-                                                    { flag: s.antecedentes_relevantes, label: 'Antecedentes', desc: s.descricao_antecedentes },
-                                                    { flag: s.comorbidades,            label: 'Comorbidades',  desc: s.descricao_comorbidades },
-                                                    { flag: s.variacoes_tecnicas,      label: 'Var. técnicas', desc: s.descricao_variacoes },
-                                                    { flag: s.passos_criticos,         label: 'Passos críticos', desc: s.descricao_passos },
-                                                ].filter(f => f.flag).map(f => (
-                                                    <span
-                                                        key={f.label}
-                                                        className="inline-flex items-start gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
-                                                    >
-                                                        <span className="shrink-0">⚠</span>
-                                                        <span><strong>{f.label}</strong>{f.desc ? ': ' + f.desc : ''}</span>
-                                                    </span>
-                                                ))}
+                                                    {
+                                                        flag: s.antecedentes_relevantes,
+                                                        label: 'Antecedentes',
+                                                        desc: s.descricao_antecedentes,
+                                                    },
+                                                    {
+                                                        flag: s.comorbidades,
+                                                        label: 'Comorbidades',
+                                                        desc: s.descricao_comorbidades,
+                                                    },
+                                                    {
+                                                        flag: s.variacoes_tecnicas,
+                                                        label: 'Var. técnicas',
+                                                        desc: s.descricao_variacoes,
+                                                    },
+                                                    {
+                                                        flag: s.passos_criticos,
+                                                        label: 'Passos críticos',
+                                                        desc: s.descricao_passos,
+                                                    },
+                                                ]
+                                                    .filter((f) => f.flag)
+                                                    .map((f) => (
+                                                        <span
+                                                            key={f.label}
+                                                            className="inline-flex items-start gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                                                        >
+                                                            <span className="shrink-0">
+                                                                ⚠
+                                                            </span>
+                                                            <span>
+                                                                <strong>
+                                                                    {f.label}
+                                                                </strong>
+                                                                {f.desc
+                                                                    ? ': ' +
+                                                                      f.desc
+                                                                    : ''}
+                                                            </span>
+                                                        </span>
+                                                    ))}
                                             </div>
                                         )}
-
-                                        <SurgeryStockPanel surgery={s} stockMovimentos={stockMovimentos} />
-
+                                        <SurgeryStockPanel
+                                            surgery={s}
+                                            stockMovimentos={stockMovimentos}
+                                        />
                                         <div className="mt-3 flex items-center gap-3 border-t border-gray-100 pt-2 dark:border-gray-700">
                                             <Link
                                                 href={`/surgeries/${s.id}/edit`}
@@ -583,16 +732,19 @@ export default function BriefingShow({ briefing, stockMovimentos, flash }: Props
                                                 Editar
                                             </Link>
                                             {isAdmin && (
-                                            <button
-                                                onClick={() =>
-                                                    confirmDeleteSurgery(s.id)
-                                                }
-                                                className="text-xs text-red-500 hover:underline"
-                                            >
-                                                Eliminar
-                                            </button>
+                                                <button
+                                                    onClick={() =>
+                                                        confirmDeleteSurgery(
+                                                            s.id,
+                                                        )
+                                                    }
+                                                    className="text-xs text-red-500 hover:underline"
+                                                >
+                                                    Eliminar
+                                                </button>
                                             )}
-                                        </div>                                    </div>
+                                        </div>{' '}
+                                    </div>
                                 ))}
                             </div>
                         )}
@@ -645,6 +797,16 @@ export default function BriefingShow({ briefing, stockMovimentos, flash }: Props
                                     <Badge
                                         value={briefing.debriefing.fim_a_horas}
                                     />
+                                </Row>
+                                <Row label="Cirurgia correu bem">
+                                   {briefing.debriefing.correu_bem || 'Nenhum comentário.'}
+                                </Row>
+                                <Row label="Situações a melhorar">
+                                    {briefing.debriefing.melhorar ||
+                                        'Nenhum comentário.'}
+                                </Row>
+                                <Row label="Falha comunicação">
+                                    {briefing.debriefing.falha_comunicacao || 'Nenhum comentário.'}
                                 </Row>
                             </div>
                         ) : (
