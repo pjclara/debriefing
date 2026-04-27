@@ -53,6 +53,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('surgeries/{surgery}/consumos/{consumo}', [ConsumoController::class, 'destroy'])
         ->name('surgeries.consumos.destroy');
 
+    // ── Tempos operatórios (inline edit no show) ─────────────────────────────
+    Route::patch('surgeries/{surgery}/tempos', [SurgeryController::class, 'updateTempos'])
+        ->name('surgeries.tempos.update');
+
     // ── Debriefing ──────────────────────────────────────────────────────────
     Route::get('briefings/{briefing}/debriefing/create', [DebriefingController::class, 'create'])
         ->name('briefings.debriefing.create');

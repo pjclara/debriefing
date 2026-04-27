@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { createPortal } from 'react-dom';
 import AppLayout from '@/layouts/app-layout';
-import { Trash2, Plus, X, Check, Search } from 'lucide-react';
+import { Trash2, Plus, X, Check, Search, Pencil, Clock } from 'lucide-react';
 import type { Auth, BreadcrumbItem } from '@/types';
 
 interface ConsumivelTipo {
@@ -48,6 +48,11 @@ interface Surgery {
     descricao_variacoes?: string;
     passos_criticos: boolean;
     descricao_passos?: string;
+    prep_inicio?: string | null;
+    prep_fim?: string | null;
+    docking?: number | null;
+    consola_inicio?: string | null;
+    consola_fim?: string | null;
     consumos?: Consumo[];
 }
 
@@ -126,7 +131,165 @@ function Row({
         </div>
     );
 }
+// ─── Painel de Tempos Operatórios Robóticos ───────────────────────────────────────
 
+function toDatetimeLocal(dt: string | null | undefined): string {
+    if (!dt) return '';
+    // Normaliza 'YYYY-MM-DD HH:MM:SS' para 'YYYY-MM-DDTHH:MM'
+    return dt.substring(0, 16).replace(' ', 'T');
+}
+
+function formatTime(dt: string | null | undefined): string {
+    if (!dt) return '—';
+    return dt.substring(11, 16);
+}
+
+function diffMin(a: string | null | undefined, b: string | null | undefined): string {
+    if (!a || !b) return '';
+    const mins = Math.round((new Date(b.replace(' ', 'T')).getTime() - new Date(a.replace(' ', 'T')).getTime()) / 60000);
+    if (mins < 0) return '';
+    return `${mins} min`;
+}
+
+function SurgeryTemposPanel({ surgery }: { surgery: Surgery }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [form, setForm] = useState({
+        prep_inicio: toDatetimeLocal(surgery.prep_inicio),
+        prep_fim: toDatetimeLocal(surgery.prep_fim),
+        docking: surgery.docking != null ? String(surgery.docking) : '',
+        consola_inicio: toDatetimeLocal(surgery.consola_inicio),
+        consola_fim: toDatetimeLocal(surgery.consola_fim),
+    });
+    const [saving, setSaving] = useState(false);
+
+    const hasData = surgery.prep_inicio || surgery.consola_inicio || surgery.docking != null;
+
+    function handleSave() {
+        setSaving(true);
+        router.patch(
+            `/surgeries/${surgery.id}/tempos`,
+            {
+                prep_inicio: form.prep_inicio || null,
+                prep_fim: form.prep_fim || null,
+                docking: form.docking !== '' ? Number(form.docking) : null,
+                consola_inicio: form.consola_inicio || null,
+                consola_fim: form.consola_fim || null,
+            },
+            {
+                preserveState: true,
+                onSuccess: () => { setSaving(false); setIsEditing(false); },
+                onError: () => setSaving(false),
+            },
+        );
+    }
+
+    return (
+        <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-700 bg-gray-200 dark:bg-gray-800/50 rounded-lg p-3">
+            <div className="mb-2 flex items-center justify-between ">
+                <span className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                    <Clock className="h-3 w-3" />
+                    Tempos Robóticos
+                </span>
+                {!isEditing && (
+                    <button
+                        onClick={() => {
+                            setForm({
+                                prep_inicio: toDatetimeLocal(surgery.prep_inicio),
+                                prep_fim: toDatetimeLocal(surgery.prep_fim),
+                                docking: surgery.docking != null ? String(surgery.docking) : '',
+                                consola_inicio: toDatetimeLocal(surgery.consola_inicio),
+                                consola_fim: toDatetimeLocal(surgery.consola_fim),
+                            });
+                            setIsEditing(true);
+                        }}
+                        className="flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400"
+                    >
+                        <Pencil className="h-3 w-3 text-green-500" />
+                        {hasData ? 'Editar' : 'Registar'}
+                    </button>
+                )}
+            </div>
+
+            {/* View mode */}
+            {!isEditing && hasData && (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
+                    {(surgery.prep_inicio || surgery.prep_fim) && (
+                        <span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Prep:</span>{' '}
+                            {formatTime(surgery.prep_inicio)} → {formatTime(surgery.prep_fim)}
+                            {diffMin(surgery.prep_inicio, surgery.prep_fim) && (
+                                <span className="ml-1 text-gray-400">({diffMin(surgery.prep_inicio, surgery.prep_fim)})</span>
+                            )}
+                        </span>
+                    )}
+                    {surgery.docking != null && (
+                        <span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Docking:</span>{' '}
+                            {surgery.docking} min
+                        </span>
+                    )}
+                    {(surgery.consola_inicio || surgery.consola_fim) && (
+                        <span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Cons.:</span>{' '}
+                            {formatTime(surgery.consola_inicio)} → {formatTime(surgery.consola_fim)}
+                            {diffMin(surgery.consola_inicio, surgery.consola_fim) && (
+                                <span className="ml-1 text-gray-400">({diffMin(surgery.consola_inicio, surgery.consola_fim)})</span>
+                            )}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {/* Edit mode */}
+            {isEditing && (
+                <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <label className="mb-0.5 block text-xs text-gray-500">Prep início</label>
+                            <input type="datetime-local" value={form.prep_inicio}
+                                onChange={(e) => setForm((p) => ({ ...p, prep_inicio: e.target.value }))}
+                                className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                        </div>
+                        <div>
+                            <label className="mb-0.5 block text-xs text-gray-500">Prep fim</label>
+                            <input type="datetime-local" value={form.prep_fim}
+                                onChange={(e) => setForm((p) => ({ ...p, prep_fim: e.target.value }))}
+                                className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                        </div>
+                        <div>
+                            <label className="mb-0.5 block text-xs text-gray-500">Consola início</label>
+                            <input type="datetime-local" value={form.consola_inicio}
+                                onChange={(e) => setForm((p) => ({ ...p, consola_inicio: e.target.value }))}
+                                className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                        </div>
+                        <div>
+                            <label className="mb-0.5 block text-xs text-gray-500">Consola fim</label>
+                            <input type="datetime-local" value={form.consola_fim}
+                                onChange={(e) => setForm((p) => ({ ...p, consola_fim: e.target.value }))}
+                                className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs whitespace-nowrap text-gray-500">Docking (min)</label>
+                        <input type="number" min={0} value={form.docking}
+                            onChange={(e) => setForm((p) => ({ ...p, docking: e.target.value }))}
+                            className="w-20 rounded border border-gray-300 px-2 py-1 text-center text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                        <div className="flex-1" />
+                        <button onClick={handleSave} disabled={saving}
+                            className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
+                            <Check className="h-3 w-3" />
+                            {saving ? 'A guardar…' : 'Guardar'}
+                        </button>
+                        <button onClick={() => setIsEditing(false)}
+                            className="rounded-lg border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 // ─── Modal para associar StockMovimento a Surgery ────────────────────────────
 
 function AssociarStockModal({
@@ -395,8 +558,16 @@ function SurgeryStockPanel({
     stockMovimentos: StockMovimento[];
 }) {
     const [showAdd, setShowAdd] = useState(false);
+    const [editing, setEditing] = useState<Record<number, { quantidade: number; observacoes: string }>>({});
+    const [localConsumos, setLocalConsumos] = useState<Consumo[]>(surgery.consumos ?? []);
+    const [toast, setToast] = useState<string | null>(null);
+    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const consumos = surgery.consumos ?? [];
+    useEffect(() => {
+        setLocalConsumos(surgery.consumos ?? []);
+    }, [surgery.consumos]);
+
+    const consumos = localConsumos;
 
     // Filtrar movimentos já associados a esta cirurgia
     const associadosIds = new Set(consumos.map((c) => c.stock_movimento_id));
@@ -408,8 +579,44 @@ function SurgeryStockPanel({
         }
     }
 
+    function startEdit(c: Consumo) {
+        setEditing((prev) => ({
+            ...prev,
+            [c.id]: { quantidade: c.quantidade, observacoes: c.observacoes ?? '' },
+        }));
+    }
+
+    function cancelEdit(id: number) {
+        setEditing((prev) => { const next = { ...prev }; delete next[id]; return next; });
+    }
+
+    function saveEdit(consumoId: number) {
+        const vals = editing[consumoId];
+        if (!vals) return;
+        router.put(
+            `/surgeries/${surgery.id}/consumos/${consumoId}`,
+            { quantidade: vals.quantidade, observacoes: vals.observacoes || null },
+            {
+                preserveState: true,
+                onSuccess: () => {
+                    setLocalConsumos((prev) =>
+                        prev.map((c) =>
+                            c.id === consumoId
+                                ? { ...c, quantidade: vals.quantidade, observacoes: vals.observacoes || undefined }
+                                : c,
+                        ),
+                    );
+                    cancelEdit(consumoId);
+                    if (toastTimer.current) clearTimeout(toastTimer.current);
+                    setToast('Gravado');
+                    toastTimer.current = setTimeout(() => setToast(null), 2500);
+                },
+            },
+        );
+    }
+
     return (
-        <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-700">
+        <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-700 bg-gray-200 dark:bg-gray-800/50 rounded-lg p-3">
             <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                     Stock{consumos.length > 0 ? ` (${consumos.length})` : ''}
@@ -429,61 +636,108 @@ function SurgeryStockPanel({
                 <div className="mb-2 flex flex-col gap-1">
                     {consumos.map((c) => {
                         const mov = c.stock_movimento;
+                        const isEditing = !!editing[c.id];
                         return (
                             <div
                                 key={c.id}
-                                className="flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5 dark:bg-gray-800/50"
+                                className="rounded-lg bg-gray-50 px-2.5 py-1.5 dark:bg-gray-800/50"
                             >
-                                <div className="min-w-0 flex-1">
-                                    <span className="text-xs font-medium text-gray-800 dark:text-gray-200">
-                                        {mov?.consumivel_tipo?.nome ??
-                                            `Movimento #${c.stock_movimento_id}`}
-                                    </span>
-                                    <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-gray-500">
-                                        <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                            Qtd: {c.quantidade}
-                                        </span>
-                                        {mov?.consumivel_tipo?.categoria ===
-                                        'robotico_vidas'
-                                            ? mov?.vidas_atual != null && (
-                                                  <span>
-                                                      Vidas: {mov.vidas_atual}/
-                                                      {mov.vidas_inicial}
-                                                  </span>
-                                              )
-                                            : mov?.unidades_atual != null && (
-                                                  <span>
-                                                      Unid.:{' '}
-                                                      {mov.unidades_atual}/
-                                                      {mov.unidades_inicial}
-                                                  </span>
-                                              )}
-                                        {mov?.consumivel_tipo?.categoria ===
-                                            'robotico_vidas' &&
-                                            mov?.codigo && (
-                                                <span>
-                                                    Codigo: {mov.codigo}
-                                                </span>
-                                            )}
-                                        {mov?.referencia && (
-                                            <span>
-                                                Referencia: {mov.referencia}
+                                {/* View mode */}
+                                {!isEditing && (
+                                    <div className="flex items-center gap-2">
+                                        <div className="min-w-0 flex-1">
+                                            <span className="text-xs font-medium text-gray-800 dark:text-gray-200">
+                                                {mov?.consumivel_tipo?.nome ??
+                                                    `Movimento #${c.stock_movimento_id}`}
                                             </span>
+                                            <div className="mt-0.5 flex flex-wrap gap-2 text-xs text-gray-500">
+                                                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                                    Qtd: {c.quantidade}
+                                                </span>
+                                                {mov?.consumivel_tipo?.categoria === 'robotico_vidas'
+                                                    ? mov?.vidas_atual != null && (
+                                                          <span>Vidas: {mov.vidas_atual}/{mov.vidas_inicial}</span>
+                                                      )
+                                                    : mov?.unidades_atual != null && (
+                                                          <span>Unid.: {mov.unidades_atual}/{mov.unidades_inicial}</span>
+                                                      )}
+                                                {mov?.consumivel_tipo?.categoria === 'robotico_vidas' && mov?.codigo && (
+                                                    <span>Codigo: {mov.codigo}</span>
+                                                )}
+                                                {mov?.referencia && <span>Referencia: {mov.referencia}</span>}
+                                            </div>
+                                            {c.observacoes && (
+                                                <p className="mt-0.5 text-xs text-gray-400">{c.observacoes}</p>
+                                            )}
+                                        </div>
+                                        {mov?.consumivel_tipo?.categoria !== 'robotico_vidas' && (
+                                        <button
+                                            onClick={() => startEdit(c)}
+                                            className="rounded p-0.5 text-gray-400 hover:text-blue-600"
+                                            title="Editar"
+                                        >
+                                            <Pencil className="h-3 w-3" />
+                                        </button>
                                         )}
+                                        <button
+                                            onClick={() => handleDelete(c.id)}
+                                            className="rounded p-0.5 text-gray-400 hover:text-red-600"
+                                            title="Remover associação"
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </button>
                                     </div>
-                                    {c.observacoes && (
-                                        <p className="mt-0.5 text-xs text-gray-400">
-                                            {c.observacoes}
-                                        </p>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => handleDelete(c.id)}
-                                    className="rounded p-0.5 text-gray-400 hover:text-red-600"
-                                    title="Remover associação"
-                                >
-                                    <Trash2 className="h-3 w-3" />
-                                </button>
+                                )}
+
+                                {/* Edit mode */}
+                                {isEditing && (
+                                    <div className="flex flex-col gap-1.5">
+                                        <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
+                                            {mov?.consumivel_tipo?.nome ?? `Movimento #${c.stock_movimento_id}`}
+                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <label className="text-xs whitespace-nowrap text-gray-500">Qtd.</label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                value={editing[c.id].quantidade}
+                                                onChange={(e) =>
+                                                    setEditing((prev) => ({
+                                                        ...prev,
+                                                        [c.id]: { ...prev[c.id], quantidade: Math.max(1, parseInt(e.target.value) || 1) },
+                                                    }))
+                                                }
+                                                className="w-16 rounded border border-gray-300 px-2 py-1 text-center text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="Obs. (opcional)"
+                                                value={editing[c.id].observacoes}
+                                                onChange={(e) =>
+                                                    setEditing((prev) => ({
+                                                        ...prev,
+                                                        [c.id]: { ...prev[c.id], observacoes: e.target.value },
+                                                    }))
+                                                }
+                                                className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                            />
+                                            <button
+                                                onClick={() => saveEdit(c.id)}
+                                                className="rounded p-0.5 text-green-600 hover:text-green-700"
+                                                title="Guardar"
+                                            >
+                                                <Check className="h-3.5 w-3.5" />
+                                            </button>
+                                            <button
+                                                onClick={() => cancelEdit(c.id)}
+                                                className="rounded p-0.5 text-gray-400 hover:text-gray-600"
+                                                title="Cancelar"
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
@@ -496,6 +750,13 @@ function SurgeryStockPanel({
                     stockMovimentos={disponiveis}
                     onClose={() => setShowAdd(false)}
                 />
+            )}
+            {toast && createPortal(
+                <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-xl dark:bg-gray-700">
+                    <Check className="h-4 w-4 text-green-400" />
+                    {toast}
+                </div>,
+                document.body,
             )}
         </div>
     );
@@ -645,9 +906,35 @@ export default function BriefingShow({
                                         key={s.id}
                                         className="group rounded-2xl border border-gray-200 bg-white p-4 transition hover:shadow-md dark:border-gray-700 dark:bg-gray-900"
                                     >
-                                        <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white">
-                                            {s.procedimento}
-                                        </p>
+                                        <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white">
+                                            <div className="flex justify-between">
+                                                {/* Nome do procedimento */}
+                                                <div className='mt-1 flex items-center gap-3 border-t border-gray-100 pt-2 dark:border-gray-700'>{s.procedimento}</div>
+
+                                                {/* Ações (Editar / Eliminar) */}
+                                                <div className="mt-1 flex items-center gap-3 border-t border-gray-100 pt-2 dark:border-gray-700">
+                                                    <Link
+                                                        href={`/surgeries/${s.id}/edit`}
+                                                        className="text-xs text-blue-600 hover:underline"
+                                                    >
+                                                        Editar
+                                                    </Link>
+
+                                                    {isAdmin && (
+                                                        <button
+                                                            onClick={() =>
+                                                                confirmDeleteSurgery(
+                                                                    s.id,
+                                                                )
+                                                            }
+                                                            className="text-xs text-red-500 hover:underline"
+                                                        >
+                                                            Eliminar
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                         <p className="mt-0.5 text-xs text-gray-500">
                                             Proc. {s.processo} &middot;{' '}
                                             {s.destino}
@@ -720,30 +1007,11 @@ export default function BriefingShow({
                                                     ))}
                                             </div>
                                         )}
+                                        <SurgeryTemposPanel surgery={s} />
                                         <SurgeryStockPanel
                                             surgery={s}
                                             stockMovimentos={stockMovimentos}
                                         />
-                                        <div className="mt-3 flex items-center gap-3 border-t border-gray-100 pt-2 dark:border-gray-700">
-                                            <Link
-                                                href={`/surgeries/${s.id}/edit`}
-                                                className="text-xs text-blue-600 hover:underline"
-                                            >
-                                                Editar
-                                            </Link>
-                                            {isAdmin && (
-                                                <button
-                                                    onClick={() =>
-                                                        confirmDeleteSurgery(
-                                                            s.id,
-                                                        )
-                                                    }
-                                                    className="text-xs text-red-500 hover:underline"
-                                                >
-                                                    Eliminar
-                                                </button>
-                                            )}
-                                        </div>{' '}
                                     </div>
                                 ))}
                             </div>
@@ -799,14 +1067,16 @@ export default function BriefingShow({
                                     />
                                 </Row>
                                 <Row label="Cirurgia correu bem">
-                                   {briefing.debriefing.correu_bem || 'Nenhum comentário.'}
+                                    {briefing.debriefing.correu_bem ||
+                                        'Nenhum comentário.'}
                                 </Row>
                                 <Row label="Situações a melhorar">
                                     {briefing.debriefing.melhorar ||
                                         'Nenhum comentário.'}
                                 </Row>
                                 <Row label="Falha comunicação">
-                                    {briefing.debriefing.falha_comunicacao || 'Nenhum comentário.'}
+                                    {briefing.debriefing.falha_comunicacao ||
+                                        'Nenhum comentário.'}
                                 </Row>
                             </div>
                         ) : (

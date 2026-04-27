@@ -8,6 +8,7 @@ use App\Models\ConsumivelTipo;
 use App\Models\Department;
 use App\Models\Procedure;
 use App\Models\Surgery;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
@@ -81,6 +82,21 @@ class SurgeryController extends Controller
 
         return redirect()->route('briefings.show', $briefingId)
             ->with('success', 'Cirurgia eliminada.');
+    }
+
+    public function updateTempos(Request $request, Surgery $surgery): RedirectResponse
+    {
+        $validated = $request->validate([
+            'prep_inicio'    => ['nullable', 'date'],
+            'prep_fim'       => ['nullable', 'date'],
+            'docking'        => ['nullable', 'integer', 'min:0'],
+            'consola_inicio' => ['nullable', 'date'],
+            'consola_fim'    => ['nullable', 'date'],
+        ]);
+
+        $surgery->update($validated);
+
+        return back()->with('success', 'Tempos actualizados.');
     }
 }
 

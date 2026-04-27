@@ -84,7 +84,26 @@ class ConsumoController extends Controller
 
     public function update(ConsumoRequest $request, Surgery $surgery, Consumo $consumo): RedirectResponse
     {
-        $consumo->update($request->validated());
+        $validated  = $request->validated();
+        $novaQty    = (int) ($validated['quantidade'] ?? $consumo->quantidade);
+        $diff       = $novaQty - (int) $consumo->quantidade; // positivo = usou mais
+
+        if ($diff !== 0) {
+            $movimento = $consumo->stockMovimento()->with('consumivelTipo')->first();
+            if ($movimento) {
+                if ($movimento->consumivelTipo?->categoria === ConsumivelTipo::CAT_ROBOTICO_VIDAS) {
+                    DB::table('stock_movimentos')
+                        ->where('id', $movimento->id)
+                        ->update(['vidas_atual' => DB::raw('GREATEST(COALESCE(vidas_atual, 0) - ' . $diff . ', 0)')]);
+                } else {
+                    DB::table('stock_movimentos')
+                        ->where('id', $movimento->id)
+                        ->update(['unidades_atual' => DB::raw('GREATEST(COALESCE(unidades_atual, 0) - ' . $diff . ', 0)')]);
+                }
+            }
+        }
+
+        $consumo->update($validated);
 
         return redirect()->back()
             ->with('success', 'Consumo actualizado.');

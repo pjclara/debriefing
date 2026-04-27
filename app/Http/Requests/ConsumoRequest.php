@@ -13,8 +13,10 @@ class ConsumoRequest extends FormRequest
 
     public function rules(): array
     {
+        $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH');
+
         return [
-            'stock_movimento_id' => ['required', 'integer', 'exists:stock_movimentos,id'],
+            'stock_movimento_id' => $isUpdate ? ['sometimes', 'integer', 'exists:stock_movimentos,id'] : ['required', 'integer', 'exists:stock_movimentos,id'],
             'quantidade'         => ['sometimes', 'integer', 'min:1'],
             'observacoes'        => ['nullable', 'string'],
         ];
