@@ -122,6 +122,9 @@ export default function StockMovimentoForm({
 
         if (isEdit) {
             put(`/stock_movimentos/${movimento!.id}`, { data: submitData });
+
+            
+            
         } else {
             post('/stock_movimentos', { data: submitData });
         }
@@ -261,28 +264,6 @@ export default function StockMovimentoForm({
                             </FormRow>
                         )}
 
-                        {isEdit && !isRoboticoVidas && tipoSelecionado && (
-                            <FormRow
-                                label="Unidades Actuais"
-                                error={errors.unidades_atual}
-                            >
-                                <input
-                                    type="number"
-                                    value={data.unidades_atual}
-                                    onChange={(e) =>
-                                        setData(
-                                            'unidades_atual',
-                                            e.target.value
-                                                ? Number(e.target.value)
-                                                : '',
-                                        )
-                                    }
-                                    className={inputCls}
-                                    placeholder="Unidades após consumo"
-                                    min="0"
-                                />
-                            </FormRow>
-                        )}
 
                         {isRoboticoVidas && (
                             <FormRow
@@ -308,28 +289,7 @@ export default function StockMovimentoForm({
                             </FormRow>
                         )}
 
-                        {isEdit && isRoboticoVidas && (
-                            <FormRow
-                                label="Vidas Actuais"
-                                error={errors.vidas_atual}
-                            >
-                                <input
-                                    type="number"
-                                    value={data.vidas_atual}
-                                    onChange={(e) =>
-                                        setData(
-                                            'vidas_atual',
-                                            e.target.value
-                                                ? Number(e.target.value)
-                                                : '',
-                                        )
-                                    }
-                                    className={inputCls}
-                                    placeholder="Vidas após consumo"
-                                    min="0"
-                                />
-                            </FormRow>
-                        )}
+
 
                         <FormRow
                             label="Data de Entrada"
