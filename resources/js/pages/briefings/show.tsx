@@ -560,8 +560,6 @@ function SurgeryStockPanel({
     const [showAdd, setShowAdd] = useState(false);
     const [editing, setEditing] = useState<Record<number, { quantidade: number; observacoes: string }>>({});
     const [localConsumos, setLocalConsumos] = useState<Consumo[]>(surgery.consumos ?? []);
-    const [toast, setToast] = useState<string | null>(null);
-    const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         setLocalConsumos(surgery.consumos ?? []);
@@ -607,9 +605,6 @@ function SurgeryStockPanel({
                         ),
                     );
                     cancelEdit(consumoId);
-                    if (toastTimer.current) clearTimeout(toastTimer.current);
-                    setToast('Gravado');
-                    toastTimer.current = setTimeout(() => setToast(null), 2500);
                 },
             },
         );
@@ -751,13 +746,6 @@ function SurgeryStockPanel({
                     onClose={() => setShowAdd(false)}
                 />
             )}
-            {toast && createPortal(
-                <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-xl dark:bg-gray-700">
-                    <Check className="h-4 w-4 text-green-400" />
-                    {toast}
-                </div>,
-                document.body,
-            )}
         </div>
     );
 }
@@ -791,12 +779,6 @@ export default function BriefingShow({
             <Head title={`Briefing ${formatDate(briefing.data)}`} />
 
             <div className="w-full px-8 py-10">
-                {flash?.success && (
-                    <div className="mb-6 rounded-xl bg-green-50 p-4 text-sm text-green-700 ring-1 ring-green-200 dark:bg-green-900/20 dark:text-green-300 dark:ring-green-800">
-                        {flash.success}
-                    </div>
-                )}
-
                 {/* Cabeçalho */}
                 <div className="mb-8 flex items-start justify-between">
                     <div>

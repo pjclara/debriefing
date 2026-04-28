@@ -384,6 +384,16 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
     const [currentStep, setCurrentStep] = useState<number>(0);
     const [stepError, setStepError] = useState<string | null>(null);
 
+    // Normaliza datetime ISO/DB para 'YYYY-MM-DD HH:MM' esperado pelo input datetime-local e pelo backend
+    function normDt(dt: string | null | undefined, fallback: string): string {
+        if (!dt) return fallback;
+        // ISO 8601: "2026-04-27T10:00:00.000000Z" → "2026-04-27 10:00"
+        // DB format: "2026-04-27 10:00:00" → "2026-04-27 10:00"
+        return dt.substring(0, 16).replace('T', ' ');
+    }
+
+    const defaultDate = briefing.data.substring(0, 10) + ' 00:00';
+
     const steps: Step[] = [
         { id: 'identificacao', label: 'Identificação do utente', icon: User },
         { id: 'clinicos', label: 'Elementos Clínicos', icon: FileText },
@@ -398,11 +408,11 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
         procedimento: surgery?.procedimento ?? '',
         destino: surgery?.destino ?? '',
 
-        prep_inicio: surgery?.prep_inicio ?? (briefing.data.substring(0, 10) + ' 00:00'),
-        prep_fim: surgery?.prep_fim ?? (briefing.data.substring(0, 10) + ' 00:00'),
+        prep_inicio: normDt(surgery?.prep_inicio, defaultDate),
+        prep_fim: normDt(surgery?.prep_fim, defaultDate),
         docking: surgery?.docking ?? '',
-        consola_inicio: surgery?.consola_inicio ?? (briefing.data.substring(0, 10) + ' 00:00'),
-        consola_fim: surgery?.consola_fim ?? (briefing.data.substring(0, 10) + ' 00:00'),
+        consola_inicio: normDt(surgery?.consola_inicio, defaultDate),
+        consola_fim: normDt(surgery?.consola_fim, defaultDate),
 
         antecedentes_relevantes: surgery?.antecedentes_relevantes ?? null,
         descricao_antecedentes: surgery?.descricao_antecedentes ?? '',
