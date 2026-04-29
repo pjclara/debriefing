@@ -127,47 +127,11 @@ export default function BriefingForm({ briefing, departments }: Props) {
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        
-        // Debug: mostrar dados que estão a ser enviados
-        console.log('=== SUBMIT BRIEFING ===');
-        console.log('isEdit:', isEdit);
-        console.log('briefing ID:', briefing?.id);
-        console.log('data a enviar:', data);
-        console.log('=======================');
-        
-        // Proteção: se está em edição, o ID é obrigatório
-        if (isEdit && !briefing?.id) {
-            console.error('Erro: Modo de edição mas sem ID do briefing!');
-            alert('Erro: ID do briefing não encontrado. Recargue a página.');
-            return;
-        }
-        
-        const error = validateStep(steps[currentStep].id as StepName);
-        if (error) {
-            alert(error);
-            return;
-        }
-        
+        if (isEdit && !briefing?.id) return;
         if (isEdit) {
-            put(`/briefings/${briefing!.id}`, {
-                onError: (errors: any) => {
-                    console.error('Erro ao atualizar:', errors);
-                    alert('Erro ao guardar. Verifique os dados.\n\n' + JSON.stringify(errors));
-                },
-                onSuccess: () => {
-                    console.log('Briefing atualizado com sucesso!');
-                },
-            });
+            put(`/briefings/${briefing!.id}`);
         } else {
-            post('/briefings', {
-                onError: (errors: any) => {
-                    console.error('Erro ao criar:', errors);
-                    alert('Erro ao criar. Verifique os dados.\n\n' + JSON.stringify(errors));
-                },
-                onSuccess: () => {
-                    console.log('Briefing criado com sucesso!');
-                },
-            });
+            post('/briefings');
         }
     }
 

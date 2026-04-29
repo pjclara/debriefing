@@ -457,12 +457,40 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
         equipamento_extra: Array.isArray(surgery?.equipamento_extra) ? surgery.equipamento_extra : [],
     });
 
+    const stepErrorFields: Record<number, string[]> = {
+        0: ['processo', 'procedimento', 'destino'],
+        1: ['antecedentes_relevantes', 'comorbidades', 'variacoes_tecnicas', 'passos_criticos'],
+        2: ['prep_inicio', 'prep_fim', 'docking', 'consola_inicio', 'consola_fim'],
+        3: ['consentimento', 'lateralidade', 'lateralidade_lado', 'lateralidade_marcacao',
+            'medicacao_suspensa', 'medicacao_qual', 'antibiotico', 'antibioterapia',
+            'profilaxia', 'profilaxia_tipo', 'perdas_estimadas', 'reserva_ativa',
+            'reserva_estado', 'reserva_unidades'],
+        4: ['trocares', 'trocares_roboticos', 'trocares_roboticos_tamanhos',
+            'trocares_nao_roboticos', 'trocares_nao_roboticos_tamanhos', 'otica',
+            'monopolar_coag_watts', 'monopolar_coag_tipo', 'monopolar_cut_watts',
+            'monopolar_cut_tipo', 'bipolar_coag_watts', 'bipolar_coag_tipo',
+            'b1', 'b2', 'b3', 'b4', 'equipamento_extra'],
+    };
+
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        const opts = {
+            onError: (errs: Record<string, string>) => {
+                const errKeys = Object.keys(errs);
+                for (let step = 0; step < steps.length - 1; step++) {
+                    const fields = stepErrorFields[step] ?? [];
+                    if (fields.some((f) => errKeys.some((k) => k === f || k.startsWith(f + '.')))) {
+                        setStepError(null);
+                        setCurrentStep(step);
+                        return;
+                    }
+                }
+            },
+        };
         if (isEdit) {
-            put(`/surgeries/${surgery!.id}`);
+            put(`/surgeries/${surgery!.id}`, opts);
         } else {
-            post(`/briefings/${briefing.id}/surgeries`);
+            post(`/briefings/${briefing.id}/surgeries`, opts);
         }
     }
 
