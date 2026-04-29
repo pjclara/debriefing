@@ -150,6 +150,8 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        // Só submete se estiver no último separador (Evento Adverso)
+        if (activeTab !== 'evento') return;
         const errs = validateForm(data);
         if (Object.keys(errs).length > 0) {
             setShowErrors(true);
@@ -438,6 +440,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                             <div className="flex items-center gap-4">
                                 {isLast ? (
                                     <button
+                                        key="btn-submit"
                                         type="submit"
                                         disabled={processing}
                                         className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
@@ -446,6 +449,7 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                     </button>
                                 ) : (
                                     <button
+                                        key="btn-next"
                                         type="button"
                                         onClick={() => nextTab && setActiveTab(nextTab)}
                                         className="rounded-lg bg-gray-700 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gray-800"

@@ -127,6 +127,8 @@ export default function BriefingForm({ briefing, departments }: Props) {
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        // Só submete se estiver no último passo (Revisão)
+        if (currentStep !== steps.length - 1) return;
         if (isEdit && !briefing?.id) return;
         if (isEdit) {
             put(`/briefings/${briefing!.id}`);
@@ -356,6 +358,7 @@ export default function BriefingForm({ briefing, departments }: Props) {
 
                         {currentStep < steps.length - 1 ? (
                             <button
+                                key="btn-next"
                                 type="button"
                                 onClick={nextStep}
                                 className="flex h-12 flex-1 items-center justify-center rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-blue-700 disabled:opacity-60"
@@ -364,6 +367,7 @@ export default function BriefingForm({ briefing, departments }: Props) {
                             </button>
                         ) : (
                             <button
+                                key="btn-submit"
                                 type="submit"
                                 disabled={processing}
                                 className="flex h-12 flex-1 items-center justify-center rounded-xl bg-green-600 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-green-700 disabled:opacity-60"

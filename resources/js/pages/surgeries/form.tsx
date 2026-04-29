@@ -474,6 +474,8 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        // Só submete se estiver no último passo (Revisão)
+        if (currentStep !== steps.length - 1) return;
         const opts = {
             onError: (errs: Record<string, string>) => {
                 const errKeys = Object.keys(errs);
@@ -1105,6 +1107,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                         </Link>
                         {currentStep < 5 ? (
                             <button
+                                key="btn-next"
                                 type="button"
                                 onClick={nextStep}
                                 className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
@@ -1113,6 +1116,7 @@ export default function SurgeryForm({ briefing, surgery, procedures, consumivel_
                             </button>
                         ) : (
                             <button
+                                key="btn-submit"
                                 type="submit"
                                 disabled={processing}
                                 className="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
