@@ -759,6 +759,11 @@ export default function BriefingShow({
 }: Props) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const isAdmin = auth.user?.role === 'admin';
+    const [collapsedSurgeries, setCollapsedSurgeries] = useState<Record<number, boolean>>({});
+
+    function toggleSurgery(id: number) {
+        setCollapsedSurgeries((prev) => ({ ...prev, [id]: !prev[id] }));
+    }
 
     function confirmDeleteSurgery(id: number) {
         if (confirm('Eliminar esta cirurgia?')) {
@@ -888,39 +893,45 @@ export default function BriefingShow({
                                         key={s.id}
                                         className="group rounded-2xl border border-gray-200 bg-white p-4 transition hover:shadow-md dark:border-gray-700 dark:bg-gray-900"
                                     >
-                                        <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white">
-                                            <div className="flex justify-between">
-                                                {/* Nome do procedimento */}
-                                                <div className='mt-1 flex items-center gap-3 border-t border-gray-100 pt-2 dark:border-gray-700'>{s.procedimento}</div>
-
-                                                {/* Ações (Editar / Eliminar) */}
-                                                <div className="mt-1 flex items-center gap-3 border-t border-gray-100 pt-2 dark:border-gray-700">
-                                                    <Link
-                                                        href={`/surgeries/${s.id}/edit`}
-                                                        className="text-xs text-blue-600 hover:underline"
-                                                    >
-                                                        Editar
-                                                    </Link>
-
-                                                    {isAdmin && (
-                                                        <button
-                                                            onClick={() =>
-                                                                confirmDeleteSurgery(
-                                                                    s.id,
-                                                                )
-                                                            }
-                                                            className="text-xs text-red-500 hover:underline"
-                                                        >
-                                                            Eliminar
-                                                        </button>
-                                                    )}
+                                        {/* Cabeçalho clicável (colapsar/expandir) */}
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleSurgery(s.id)}
+                                            className="flex w-full items-center justify-between text-left"
+                                        >
+                                            <div>
+                                                <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white">
+                                                    {s.procedimento}
                                                 </div>
+                                                <p className="mt-0.5 text-xs text-gray-500">
+                                                    Proc. {s.processo} &middot;{' '}
+                                                    {s.destino}
+                                                </p>
                                             </div>
+                                            <span className="ml-2 shrink-0 text-xs text-gray-400">
+                                                {collapsedSurgeries[s.id] ? '▶' : '▼'}
+                                            </span>
+                                        </button>
+
+                                        {!collapsedSurgeries[s.id] && (
+                                        <div>
+                                        {/* Ações (Editar / Eliminar) */}
+                                        <div className="mt-2 flex items-center gap-3">
+                                            <Link
+                                                href={`/surgeries/${s.id}/edit`}
+                                                className="text-xs text-blue-600 hover:underline"
+                                            >
+                                                Editar
+                                            </Link>
+                                            {isAdmin && (
+                                                <button
+                                                    onClick={() => confirmDeleteSurgery(s.id)}
+                                                    className="text-xs text-red-500 hover:underline"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            )}
                                         </div>
-                                        <p className="mt-0.5 text-xs text-gray-500">
-                                            Proc. {s.processo} &middot;{' '}
-                                            {s.destino}
-                                        </p>
                                         {/* Indicadores clínicos */}
                                         {[
                                             {
@@ -994,6 +1005,8 @@ export default function BriefingShow({
                                             surgery={s}
                                             stockMovimentos={stockMovimentos}
                                         />
+                                        </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
