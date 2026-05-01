@@ -27,6 +27,7 @@ interface RecentBriefing {
 
 interface Stats {
     briefingsHoje: number;
+    briefingsSemana: number;
     briefingsMes: number;
     cirurgiasMes: number;
     debriefsEmFalta: number;
@@ -129,6 +130,12 @@ export default function Dashboard({ stats, stock, recentBriefings, proximosBrief
                         color="bg-blue-500"
                     />
                     <KpiCard
+                        label="Briefings esta semana"
+                        value={stats.briefingsSemana}
+                        icon={CalendarDays}
+                        color="bg-blue-500"
+                    />
+                    <KpiCard
                         label="Briefings este mês"
                         value={stats.briefingsMes}
                         sub={mesLabel}
@@ -150,22 +157,7 @@ export default function Dashboard({ stats, stock, recentBriefings, proximosBrief
                         color={stats.debriefsEmFalta > 0 ? 'bg-amber-500' : 'bg-gray-400'}
                         warn
                     />
-                    <KpiCard
-                        label="Complicações este mês"
-                        value={stats.complicacoesMes}
-                        sub={mesLabel}
-                        icon={AlertTriangle}
-                        color={stats.complicacoesMes > 0 ? 'bg-orange-500' : 'bg-gray-400'}
-                        warn
-                    />
-                    <KpiCard
-                        label="Eventos adversos este mês"
-                        value={stats.eventosAdversosMes}
-                        sub={mesLabel}
-                        icon={AlertOctagon}
-                        color={stats.eventosAdversosMes > 0 ? 'bg-red-500' : 'bg-gray-400'}
-                        warn
-                    />
+
                 </div>
 
                 <div className="grid gap-8 lg:grid-cols-2">

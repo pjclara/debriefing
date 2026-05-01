@@ -22,6 +22,8 @@ class DashboardController extends Controller
         // ── KPIs ─────────────────────────────────────────────────────────────
         $briefingsHoje = Briefing::whereDate('data', $hoje)->count();
 
+        $briefingsSemana = Briefing::whereBetween('data', [$hoje->copy()->startOfWeek(), $hoje->copy()->endOfWeek()])->count();
+
         $briefingsMes = Briefing::whereYear('data', $mes->year)
             ->whereMonth('data', $mes->month)
             ->count();
@@ -101,6 +103,7 @@ class DashboardController extends Controller
         return Inertia::render('dashboard', [
             'stats' => [
                 'briefingsHoje'      => $briefingsHoje,
+                'briefingsSemana'    => $briefingsSemana,
                 'briefingsMes'       => $briefingsMes,
                 'cirurgiasMes'       => $cirurgiasMes,
                 'debriefsEmFalta'    => $debriefsEmFalta,
