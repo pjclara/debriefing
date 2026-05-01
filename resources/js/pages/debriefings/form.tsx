@@ -5,6 +5,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FormRow, YesNo, inputCls, textareaCls } from '@/components/form-ui';
 import { AlertTriangle, Wrench, Clock, MessageSquare, AlertOctagon } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
+import { DictationTextarea } from '@/components/DictationButton';
+import { DictationInput } from '@/components/DictationButton';
 
 interface BriefingContext {
     id: number;
@@ -261,12 +263,13 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                 />
                                 {data.complicacoes === true && (
                                     <Field label="Quais as complicações?" error={errors.descricao_complicacoes} full>
-                                        <textarea
+                                        <DictationTextarea
                                             name="descricao_complicacoes"
                                             value={data.descricao_complicacoes}
-                                            onChange={handleChange}
-                                            rows={3}
-                                            className={inputCls}
+                                            onChange={(v) => setData('descricao_complicacoes', v)}
+                                            rows={4}
+                                            className={textareaCls}
+                                            placeholder="Descreva as complicações intra-operatórias ocorridas…"
                                         />
                                     </Field>
                                 )}
@@ -286,12 +289,13 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                 {data.falha_sistema === true && (
                                     <>
                                         <Field label="Descrição da falha" error={errors.descricao_falha_sistema} full>
-                                            <textarea
+                                            <DictationTextarea
                                                 name="descricao_falha_sistema"
                                                 value={data.descricao_falha_sistema}
-                                                onChange={handleChange}
-                                                rows={3}
-                                                className={inputCls}
+                                                onChange={(v) => setData('descricao_falha_sistema', v)}
+                                                rows={4}
+                                                className={textareaCls}
+                                                placeholder="Descreva a falha ocorrida no sistema Da Vinci Xi…"
                                             />
                                         </Field>
                                         <YesNoField
@@ -310,11 +314,11 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                         />
                                         {data.falha_reportada === true && (
                                             <Field label="Reportada a quem?" error={errors.falha_reportada_a_quem} full>
-                                                <input
+                                                <DictationInput
                                                     type="text"
                                                     name="falha_reportada_a_quem"
                                                     value={data.falha_reportada_a_quem}
-                                                    onChange={handleChange}
+                                                    onChange={(v) => setData('falha_reportada_a_quem', v)}
                                                     className={inputCls}
                                                 />
                                             </Field>
@@ -336,10 +340,10 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                 />
                                 {data.inicio_a_horas === false && (
                                     <Field label="Motivo do atraso no início" error={errors.descricao_inicio} full>
-                                        <textarea
+                                        <DictationTextarea
                                             name="descricao_inicio"
                                             value={data.descricao_inicio}
-                                            onChange={handleChange}
+                                            onChange={(v) => setData('descricao_inicio', v)}
                                             rows={2}
                                             className={inputCls}
                                         />
@@ -354,10 +358,10 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                 />
                                 {data.fim_a_horas === false && (
                                     <Field label="Motivo do atraso no fim" error={errors.descricao_fim} full>
-                                        <textarea
+                                        <DictationTextarea
                                             name="descricao_fim"
                                             value={data.descricao_fim}
-                                            onChange={handleChange}
+                                            onChange={(v) => setData('descricao_fim', v)}
                                             rows={2}
                                             className={inputCls}
                                         />
@@ -370,20 +374,20 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                         <TabsContent value="reflexao">
                             <SectionTab color="border-green-500" title="Reflexão da Sessão">
                                 <Field label="O que correu bem?" error={errors.correu_bem} full>
-                                    <textarea
+                                    <DictationTextarea
                                         name="correu_bem"
                                         value={data.correu_bem}
-                                        onChange={handleChange}
+                                        onChange={(v) => setData('correu_bem', v)}
                                         rows={3}
                                         className={inputCls}
                                         placeholder="Descreva o que correu bem nesta sessão…"
                                     />
                                 </Field>
                                 <Field label="O que podia ser melhorado?" error={errors.melhorar} full>
-                                    <textarea
+                                    <DictationTextarea
                                         name="melhorar"
                                         value={data.melhorar}
-                                        onChange={handleChange}
+                                        onChange={(v) => setData('melhorar', v)}
                                         rows={3}
                                         className={inputCls}
                                         placeholder="Sugestões de melhoria…"
@@ -394,10 +398,10 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                     error={errors.falha_comunicacao}
                                     full
                                 >
-                                    <textarea
+                                    <DictationTextarea
                                         name="falha_comunicacao"
                                         value={data.falha_comunicacao}
-                                        onChange={handleChange}
+                                        onChange={(v) => setData('falha_comunicacao', v)}
                                         rows={3}
                                         className={inputCls}
                                     />
@@ -417,10 +421,10 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                                 />
                                 {data.evento_adverso === true && (
                                     <Field label="Descrição do evento adverso" error={errors.descricao_evento} full>
-                                        <textarea
+                                        <DictationTextarea
                                             name="descricao_evento"
                                             value={data.descricao_evento}
-                                            onChange={handleChange}
+                                            onChange={(v) => setData('descricao_evento', v)}
                                             rows={3}
                                             className={inputCls}
                                         />

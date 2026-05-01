@@ -159,7 +159,9 @@ interface DictationInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEl
     value: string;
     onChange: (value: string) => void;
     lang?: string;
+    /** @deprecated use className instead */
     inputClassName?: string;
+    wrapperClassName?: string;
 }
 
 export function DictationInput({
@@ -167,19 +169,20 @@ export function DictationInput({
     onChange,
     lang = 'pt-PT',
     inputClassName = '',
+    wrapperClassName = '',
     className = '',
     ...inputProps
 }: DictationInputProps) {
+    const resolvedInputClass = inputClassName || className ||
+        'h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white';
+
     return (
-        <div className={`flex items-center gap-1.5 ${className}`}>
+        <div className={`flex items-center gap-1.5 ${wrapperClassName}`}>
             <input
                 {...inputProps}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className={
-                    inputClassName ||
-                    'h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white'
-                }
+                className={resolvedInputClass}
             />
             <DictationButton
                 lang={lang}
@@ -202,7 +205,9 @@ interface DictationTextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLT
     value: string;
     onChange: (value: string) => void;
     lang?: string;
+    /** @deprecated use className instead */
     textareaClassName?: string;
+    wrapperClassName?: string;
 }
 
 export function DictationTextarea({
@@ -210,19 +215,22 @@ export function DictationTextarea({
     onChange,
     lang = 'pt-PT',
     textareaClassName = '',
+    wrapperClassName = '',
     className = '',
     ...textareaProps
 }: DictationTextareaProps) {
+    // className vai para o textarea (comportamento natural)
+    // wrapperClassName vai para a div exterior
+    const resolvedTextareaClass = textareaClassName || className ||
+        'w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white';
+
     return (
-        <div className={`flex items-start gap-1.5 ${className}`}>
+        <div className={`flex items-start gap-1.5 ${wrapperClassName}`}>
             <textarea
                 {...textareaProps}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className={
-                    textareaClassName ||
-                    'w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white'
-                }
+                className={resolvedTextareaClass}
             />
             <DictationButton
                 lang={lang}

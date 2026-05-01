@@ -230,9 +230,9 @@ export default function BriefingForm({ briefing, departments }: Props) {
                                 <YesNo value={data.alteracao_equipa ?? null} onChange={toggle('alteracao_equipa')} />
                             </FormRow>
                             {data.alteracao_equipa === true && (
-                                <FormRow label="Descrição da alteração de equipa zxczxcz" error={errors.descricao_alteracao_equipa}>
+                                <FormRow label="Descrição da alteração de equipa" error={errors.descricao_alteracao_equipa}>
                                     <DictationTextarea
-                                        value={data.descricao_alteracao_equipa}
+                                        value={data.descricao_alteracao_equipa ?? ''}
                                         onChange={(value) => setData('descricao_alteracao_equipa', value)}
                                         rows={3}
                                         className={textareaCls}
@@ -252,7 +252,7 @@ export default function BriefingForm({ briefing, departments }: Props) {
                             {data.problemas_sala === true && (
                                 <FormRow label="Descrição dos problemas" error={errors.descricao_problemas}>
                                     <DictationTextarea
-                                        value={data.descricao_problemas}
+                                        value={data.descricao_problemas ?? ''}
                                         onChange={(value) => setData('descricao_problemas', value)}
                                         rows={3}
                                         className={textareaCls}
@@ -266,7 +266,7 @@ export default function BriefingForm({ briefing, departments }: Props) {
                             {data.equipamento_ok === false && (
                                 <FormRow label="O que não está disponível / funcionante?" error={errors.descricao_equipamento}>
                                     <DictationTextarea
-                                        value={data.descricao_equipamento}
+                                        value={data.descricao_equipamento ?? ''}
                                         onChange={(value) => setData('descricao_equipamento', value)}
                                         rows={3}
                                         className={textareaCls}
@@ -289,7 +289,7 @@ export default function BriefingForm({ briefing, departments }: Props) {
                             {data.ordem_mantida === false && (
                                 <FormRow label="Alterações à ordem de doentes" error={errors.descricao_ordem}>
                                     <DictationTextarea
-                                        value={data.descricao_ordem}
+                                        value={data.descricao_ordem ?? ''}
                                         onChange={(value) => setData('descricao_ordem', value)}
                                         rows={3}
                                         className={textareaCls}
