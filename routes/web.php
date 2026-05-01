@@ -21,7 +21,7 @@ Route::inertia('/', 'welcome', [
 Route::inertia('/guide', 'guide')->name('guide');
 
 Route::middleware(['auth'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', App\Http\Controllers\DashboardController::class)->name('dashboard');
 
     // ── Dark Mode ───────────────────────────────────────────────────────────
     Route::post('api/user/dark-mode', [DarkModeController::class, 'update'])
@@ -42,6 +42,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('consumos.historico');
     Route::get('consumos/historico/print', [ConsumoController::class, 'printHistorico'])
         ->name('consumos.historico.print');
+    Route::get('consumos/material-por-cirurgia', [ConsumoController::class, 'materialPorCirurgia'])
+        ->name('consumos.material-por-cirurgia');
     Route::get('surgeries/{surgery}/consumos', [ConsumoController::class, 'index'])
         ->name('surgeries.consumos.index');
     Route::post('surgeries/{surgery}/consumos', [ConsumoController::class, 'store'])

@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ClipboardList, History, LayoutGrid, Users, Building2, Wrench, Syringe, Boxes, TrendingDown } from 'lucide-react';
+import { ClipboardList, History, LayoutGrid, Users, Building2, Wrench, Syringe, Boxes, TrendingDown, PackageOpen } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -50,6 +50,11 @@ const allNavGroups: NavGroup[] = [
                 title: 'Histórico de Consumos',
                 href: '/consumos/historico',
                 icon: History,
+            },
+            {
+                title: 'Material por Cirurgia',
+                href: '/consumos/material-por-cirurgia',
+                icon: PackageOpen,
             },
         ],
     },

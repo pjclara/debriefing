@@ -30,6 +30,54 @@ class ConsumoController extends Controller
         ]);
     }
 
+    public function materialPorCirurgia(): Response
+    {
+        // Para cada procedimento distinto, lista os consumíveis usados
+        // com frequência (nº de cirurgias), total e média de quantidade.
+        $rows = DB::table('consumos')
+            ->join('surgeries', 'consumos.surgery_id', '=', 'surgeries.id')
+            ->join('stock_movimentos', 'consumos.stock_movimento_id', '=', 'stock_movimentos.id')
+            ->join('consumivel_tipos', 'stock_movimentos.consumivel_tipo_id', '=', 'consumivel_tipos.id')
+            ->select(
+                'surgeries.procedimento',
+                'consumivel_tipos.id as consumivel_id',
+                'consumivel_tipos.nome',
+                'consumivel_tipos.categoria',
+                DB::raw('COUNT(DISTINCT consumos.surgery_id) as num_cirurgias'),
+                DB::raw('SUM(consumos.quantidade) as total_quantidade'),
+                DB::raw('ROUND(AVG(consumos.quantidade), 1) as media_quantidade'),
+            )
+            ->groupBy(
+                'surgeries.procedimento',
+                'consumivel_tipos.id',
+                'consumivel_tipos.nome',
+                'consumivel_tipos.categoria',
+            )
+            ->orderBy('surgeries.procedimento')
+            ->orderByDesc('num_cirurgias')
+            ->orderByDesc('total_quantidade')
+            ->get();
+
+        // Contar nº total de cirurgias distintas por procedimento
+        $totalCirurgias = DB::table('surgeries')
+            ->select('procedimento', DB::raw('COUNT(*) as total'))
+            ->groupBy('procedimento')
+            ->pluck('total', 'procedimento');
+
+        // Agrupar por procedimento
+        $porProcedimento = $rows->groupBy('procedimento')->map(function ($items, $procedimento) use ($totalCirurgias) {
+            return [
+                'procedimento'   => $procedimento,
+                'num_cirurgias'  => $totalCirurgias[$procedimento] ?? 0,
+                'materiais'      => $items->values(),
+            ];
+        })->values();
+
+        return Inertia::render('consumos/material-por-cirurgia', [
+            'porProcedimento' => $porProcedimento,
+        ]);
+    }
+
     public function historico(): Response
     {
         $consumos = Consumo::with([
