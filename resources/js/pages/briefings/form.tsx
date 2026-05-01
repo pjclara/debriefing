@@ -4,6 +4,7 @@ import { SectionCard, FormRow, YesNo, inputCls, textareaCls } from '@/components
 import { Calendar, Users, ClipboardCheck, ListChecks, Check, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import type { BreadcrumbItem } from '@/types';
+import { DictationTextarea } from '@/components/DictationButton';
 
 interface BriefingData {
     id?: number;
@@ -229,8 +230,14 @@ export default function BriefingForm({ briefing, departments }: Props) {
                                 <YesNo value={data.alteracao_equipa ?? null} onChange={toggle('alteracao_equipa')} />
                             </FormRow>
                             {data.alteracao_equipa === true && (
-                                <FormRow label="Descrição da alteração de equipa" error={errors.descricao_alteracao_equipa}>
-                                    <textarea name="descricao_alteracao_equipa" value={data.descricao_alteracao_equipa} onChange={handleChange} rows={3} className={textareaCls} placeholder="Descreva as alterações…" />
+                                <FormRow label="Descrição da alteração de equipa zxczxcz" error={errors.descricao_alteracao_equipa}>
+                                    <DictationTextarea
+                                        value={data.descricao_alteracao_equipa}
+                                        onChange={(value) => setData('descricao_alteracao_equipa', value)}
+                                        rows={3}
+                                        className={textareaCls}
+                                        placeholder="Descreva as alterações…"
+                                    />
                                 </FormRow>
                             )}
                         </SectionCard>
@@ -244,7 +251,13 @@ export default function BriefingForm({ briefing, departments }: Props) {
                             </FormRow>
                             {data.problemas_sala === true && (
                                 <FormRow label="Descrição dos problemas" error={errors.descricao_problemas}>
-                                    <textarea name="descricao_problemas" value={data.descricao_problemas} onChange={handleChange} rows={3} className={textareaCls} placeholder="Descreva os problemas…" />
+                                    <DictationTextarea
+                                        value={data.descricao_problemas}
+                                        onChange={(value) => setData('descricao_problemas', value)}
+                                        rows={3}
+                                        className={textareaCls}
+                                        placeholder="Descreva os problemas…"
+                                    />
                                 </FormRow>
                             )}
                             <FormRow label="Equipamento, instrumental e consumíveis disponíveis e funcionantes?">
@@ -252,7 +265,13 @@ export default function BriefingForm({ briefing, departments }: Props) {
                             </FormRow>
                             {data.equipamento_ok === false && (
                                 <FormRow label="O que não está disponível / funcionante?" error={errors.descricao_equipamento}>
-                                    <textarea name="descricao_equipamento" value={data.descricao_equipamento} onChange={handleChange} rows={3} className={textareaCls} placeholder="Indique o que não está disponível…" />
+                                    <DictationTextarea
+                                        value={data.descricao_equipamento}
+                                        onChange={(value) => setData('descricao_equipamento', value)}
+                                        rows={3}
+                                        className={textareaCls}
+                                        placeholder="Indique o que não está disponível…"
+                                    />
                                 </FormRow>
                             )}
                             <FormRow label="Mesa operatória emparelhada?">
@@ -269,7 +288,13 @@ export default function BriefingForm({ briefing, departments }: Props) {
                             </FormRow>
                             {data.ordem_mantida === false && (
                                 <FormRow label="Alterações à ordem de doentes" error={errors.descricao_ordem}>
-                                    <textarea name="descricao_ordem" value={data.descricao_ordem} onChange={handleChange} rows={3} className={textareaCls} placeholder="Descreva as alterações…" />
+                                    <DictationTextarea
+                                        value={data.descricao_ordem}
+                                        onChange={(value) => setData('descricao_ordem', value)}
+                                        rows={3}
+                                        className={textareaCls}
+                                        placeholder="Descreva as alterações…"
+                                    />
                                 </FormRow>
                             )}
                         </SectionCard>
