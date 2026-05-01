@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $mes  = Carbon::now();
 
         // ── KPIs ─────────────────────────────────────────────────────────────
-        $briefingsHoje = Briefing::whereDate('data', $hoje)->count();
+        $briefingsTotal = Briefing::count();
 
         $briefingsSemana = Briefing::whereBetween('data', [$hoje->copy()->startOfWeek(), $hoje->copy()->endOfWeek()])->count();
 
@@ -28,6 +28,12 @@ class DashboardController extends Controller
             ->whereMonth('data', $mes->month)
             ->count();
 
+        $cirurgiasTotal = Surgery::count();
+
+        $cirurgiasSemana = Surgery::whereHas('briefing', function ($q) use ($hoje) {
+            $q->whereBetween('data', [$hoje->copy()->startOfWeek(), $hoje->copy()->endOfWeek()]);
+        })->count();
+        
         $cirurgiasMes = Surgery::whereHas('briefing', function ($q) use ($mes) {
             $q->whereYear('data', $mes->year)->whereMonth('data', $mes->month);
         })->count();
@@ -102,9 +108,11 @@ class DashboardController extends Controller
 
         return Inertia::render('dashboard', [
             'stats' => [
-                'briefingsHoje'      => $briefingsHoje,
+                'briefingsTotal'      => $briefingsTotal,
                 'briefingsSemana'    => $briefingsSemana,
                 'briefingsMes'       => $briefingsMes,
+                'cirurgiasTotal'     => $cirurgiasTotal,
+                'cirurgiasSemana'    => $cirurgiasSemana,
                 'cirurgiasMes'       => $cirurgiasMes,
                 'debriefsEmFalta'    => $debriefsEmFalta,
                 'complicacoesMes'    => $complicacoesMes,
