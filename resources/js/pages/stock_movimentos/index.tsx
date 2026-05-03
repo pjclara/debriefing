@@ -1,6 +1,14 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { Plus, Pencil, Trash2, TrendingUp, Search, X, FileDown } from 'lucide-react';
+import {
+    Plus,
+    Pencil,
+    Trash2,
+    TrendingUp,
+    Search,
+    X,
+    FileDown,
+} from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 import { useState, useCallback } from 'react';
 
@@ -55,7 +63,11 @@ const tiposMovIcons: Record<string, string> = {
     devolucao: '↺',
 };
 
-export default function StockMovimentosIndex({ movimentos, tiposMovLabel, filters }: Props) {
+export default function StockMovimentosIndex({
+    movimentos,
+    tiposMovLabel,
+    filters,
+}: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Catálogo', href: '#' },
         { title: 'Movimentos de Stock', href: '/stock_movimentos' },
@@ -66,25 +78,51 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel, filter
     const [dataDE, setDataDE] = useState(filters.data_de ?? '');
     const [dataATE, setDataATE] = useState(filters.data_ate ?? '');
 
-    const applyFilters = useCallback((overrides: Record<string, string> = {}) => {
-        const params: Record<string, string> = {};
-        const merged = { q, tipo, data_de: dataDE, data_ate: dataATE, ...overrides };
-        Object.entries(merged).forEach(([k, v]) => { if (v) params[k] = v; });
-        router.get('/stock_movimentos', params, { preserveState: true, replace: true });
-    }, [q, tipo, dataDE, dataATE]);
+    const applyFilters = useCallback(
+        (overrides: Record<string, string> = {}) => {
+            const params: Record<string, string> = {};
+            const merged = {
+                q,
+                tipo,
+                data_de: dataDE,
+                data_ate: dataATE,
+                ...overrides,
+            };
+            Object.entries(merged).forEach(([k, v]) => {
+                if (v) params[k] = v;
+            });
+            router.get('/stock_movimentos', params, {
+                preserveState: true,
+                replace: true,
+            });
+        },
+        [q, tipo, dataDE, dataATE],
+    );
 
     const clearFilters = () => {
-        setQ(''); setTipo(''); setDataDE(''); setDataATE('');
-        router.get('/stock_movimentos', {}, { preserveState: false, replace: true });
+        setQ('');
+        setTipo('');
+        setDataDE('');
+        setDataATE('');
+        router.get(
+            '/stock_movimentos',
+            {},
+            { preserveState: false, replace: true },
+        );
     };
 
-    const hasFilters = !!(filters.q || filters.tipo || filters.data_de || filters.data_ate);
+    const hasFilters = !!(
+        filters.q ||
+        filters.tipo ||
+        filters.data_de ||
+        filters.data_ate
+    );
 
     const printUrl = () => {
         const params = new URLSearchParams();
-        if (filters.q)       params.set('q', filters.q);
-        if (filters.tipo)    params.set('tipo', filters.tipo);
-        if (filters.data_de)  params.set('data_de', filters.data_de);
+        if (filters.q) params.set('q', filters.q);
+        if (filters.tipo) params.set('tipo', filters.tipo);
+        if (filters.data_de) params.set('data_de', filters.data_de);
         if (filters.data_ate) params.set('data_ate', filters.data_ate);
         const qs = params.toString();
         return `/stock_movimentos/print${qs ? '?' + qs : ''}`;
@@ -116,7 +154,10 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel, filter
                             <FileDown size={16} />
                             PDF
                         </a>
-                        <Link href="/stock_movimentos/create" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
+                        <Link
+                            href="/stock_movimentos/create"
+                            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                        >
                             <Plus size={18} />
                             Novo Movimento
                         </Link>
@@ -127,48 +168,68 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel, filter
                 <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-white p-4">
                     {/* Pesquisa livre */}
                     <div className="relative min-w-[220px] flex-1">
-                        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Search
+                            size={15}
+                            className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+                        />
                         <input
                             type="text"
                             placeholder="Designação, referência, código…"
                             value={q}
-                            onChange={e => setQ(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && applyFilters()}
-                            className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:outline-none"
+                            onChange={(e) => setQ(e.target.value)}
+                            onKeyDown={(e) =>
+                                e.key === 'Enter' && applyFilters()
+                            }
+                            className="w-full rounded-lg border border-gray-300 py-2 pr-3 pl-9 text-sm focus:border-blue-500 focus:outline-none"
                         />
                     </div>
 
                     {/* Tipo de movimento */}
                     <select
                         value={tipo}
-                        onChange={e => { setTipo(e.target.value); applyFilters({ tipo: e.target.value }); }}
-                        className="rounded-lg border border-gray-300 py-2 pl-3 pr-8 text-sm focus:border-blue-500 focus:outline-none"
+                        onChange={(e) => {
+                            setTipo(e.target.value);
+                            applyFilters({ tipo: e.target.value });
+                        }}
+                        className="rounded-lg border border-gray-300 py-2 pr-8 pl-3 text-sm focus:border-blue-500 focus:outline-none"
                     >
                         <option value="">Todos os tipos</option>
                         {Object.entries(tiposMovLabel).map(([k, v]) => (
-                            <option key={k} value={k}>{v}</option>
+                            <option key={k} value={k}>
+                                {v}
+                            </option>
                         ))}
                     </select>
 
                     {/* Data de */}
                     <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-gray-500 whitespace-nowrap">De</span>
+                        <span className="text-xs whitespace-nowrap text-gray-500">
+                            De
+                        </span>
                         <input
                             type="date"
                             value={dataDE}
-                            onChange={e => { setDataDE(e.target.value); applyFilters({ data_de: e.target.value }); }}
-                            className="rounded-lg border border-gray-300 py-2 px-3 text-sm focus:border-blue-500 focus:outline-none"
+                            onChange={(e) => {
+                                setDataDE(e.target.value);
+                                applyFilters({ data_de: e.target.value });
+                            }}
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                         />
                     </div>
 
                     {/* Data até */}
                     <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-gray-500 whitespace-nowrap">Até</span>
+                        <span className="text-xs whitespace-nowrap text-gray-500">
+                            Até
+                        </span>
                         <input
                             type="date"
                             value={dataATE}
-                            onChange={e => { setDataATE(e.target.value); applyFilters({ data_ate: e.target.value }); }}
-                            className="rounded-lg border border-gray-300 py-2 px-3 text-sm focus:border-blue-500 focus:outline-none"
+                            onChange={(e) => {
+                                setDataATE(e.target.value);
+                                applyFilters({ data_ate: e.target.value });
+                            }}
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                         />
                     </div>
 
@@ -192,43 +253,90 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel, filter
                 {movimentos.data.length > 0 ? (
                     <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b border-gray-200">
+                            <thead className="border-b border-gray-200 bg-gray-50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Tipo</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Descrição</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Referência</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Código</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Qtd.</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Data</th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">Acções</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                                        Tipo
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                                        Descrição
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                                        Referência
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                                        Código
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                                        Qtd.
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">
+                                        Data
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">
+                                        Acções
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {movimentos.data.map((mov) => (
-                                    <tr key={mov.id} className="hover:bg-gray-50">
+                                    <tr
+                                        key={mov.id}
+                                        className="hover:bg-gray-50"
+                                    >
                                         <td className="px-4 py-3">
-                                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${tiposMovColors[mov.tipo_mov]}`}>
-                                                <span>{tiposMovIcons[mov.tipo_mov]}</span>
+                                            <span
+                                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${tiposMovColors[mov.tipo_mov]}`}
+                                            >
+                                                <span>
+                                                    {
+                                                        tiposMovIcons[
+                                                            mov.tipo_mov
+                                                        ]
+                                                    }
+                                                </span>
                                                 {tiposMovLabel[mov.tipo_mov]}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900">{mov.consumivel_tipo?.nome ?? '—'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{mov.referencia || '—'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">
-                                            {mov.consumivel_tipo?.categoria === 'robotico_vidas' ? (mov.codigo || '—') : '—'}
+                                        <td className="px-4 py-3 text-sm text-gray-900">
+                                            {mov.consumivel_tipo?.nome ?? '—'}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-600">
-                                            {mov.consumivel_tipo?.categoria === 'robotico_vidas'
-                                                ? (mov.vidas_atual !== null ? `${mov.vidas_atual}/${mov.vidas_inicial}x` : '—')
-                                                : (mov.unidades_atual !== null ? `${mov.unidades_atual}/${mov.unidades_inicial} un.` : '—')}
+                                            {mov.referencia || '—'}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{formatData(mov.data_entrada)}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                            {mov.consumivel_tipo?.categoria ===
+                                            'robotico_vidas'
+                                                ? mov.codigo || '—'
+                                                : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                            {mov.consumivel_tipo?.categoria ===
+                                            'robotico_vidas'
+                                                ? mov.vidas_atual !== null
+                                                    ? `${mov.vidas_atual}/${mov.vidas_inicial}x`
+                                                    : '—'
+                                                : mov.unidades_atual !== null
+                                                  ? `${mov.unidades_atual}/${mov.unidades_inicial} un.`
+                                                  : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                            {formatData(mov.data_entrada)}
+                                        </td>
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <Link href={`/stock_movimentos/${mov.id}/edit`} className="rounded-lg p-2 text-blue-600 hover:bg-blue-50">
+                                                <Link
+                                                    href={`/stock_movimentos/${mov.id}/edit`}
+                                                    className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"
+                                                >
                                                     <Pencil size={18} />
                                                 </Link>
-                                                <button onClick={() => handleDelete(mov.id)} className="rounded-lg p-2 text-red-600 hover:bg-red-50">
+                                                <button
+                                                    onClick={() =>
+                                                        handleDelete(mov.id)
+                                                    }
+                                                    className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                                                >
                                                     <Trash2 size={18} />
                                                 </button>
                                             </div>
@@ -237,12 +345,47 @@ export default function StockMovimentosIndex({ movimentos, tiposMovLabel, filter
                                 ))}
                             </tbody>
                         </table>
+                        <div className="mt-4 flex items-center justify-end space-x-2">
+                            {movimentos.links.map(
+                                (link: any, index: number) => (
+                                    <button
+                                        key={index}
+                                        onClick={() =>
+                                            link.url &&
+                                            router.get(
+                                                link.url,
+                                                {},
+                                                {
+                                                    preserveState: true,
+                                                    replace: true,
+                                                },
+                                            )
+                                        }
+                                        disabled={!link.url}
+                                        className={`rounded-md px-3 py-1 text-sm ${link.active ? 'bg-blue-600 text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'} ${!link.url && 'cursor-not-allowed opacity-50'}`}
+                                    >
+                                        {link.label.replace(
+                                            /&laquo;|&raquo;|&lsaquo;|&rsaquo;/g,
+                                            '',
+                                        )}
+                                    </button>
+                                ),
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-                        <TrendingUp size={48} className="mx-auto mb-4 text-gray-400" />
-                        <p className="text-gray-600">Nenhum movimento de stock registado.</p>
-                        <Link href="/stock_movimentos/create" className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                        <TrendingUp
+                            size={48}
+                            className="mx-auto mb-4 text-gray-400"
+                        />
+                        <p className="text-gray-600">
+                            Nenhum movimento de stock registado.
+                        </p>
+                        <Link
+                            href="/stock_movimentos/create"
+                            className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                        >
                             Registar Primeiro Movimento
                         </Link>
                     </div>

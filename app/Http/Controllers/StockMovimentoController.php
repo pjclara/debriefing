@@ -31,7 +31,7 @@ class StockMovimentoController extends Controller
             ->when($dataDE, fn($query) => $query->whereDate('data_entrada', '>=', $dataDE))
             ->when($dataATE, fn($query) => $query->whereDate('data_entrada', '<=', $dataATE))
             ->orderByDesc('data_entrada')
-            ->paginate(50)
+            ->paginate(15)
             ->withQueryString();
 
         return Inertia::render('stock_movimentos/index', [
