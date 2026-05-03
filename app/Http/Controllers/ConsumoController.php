@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ConsumoRequest;
 use App\Models\Consumo;
 use App\Models\ConsumivelTipo;
+use App\Models\Stock;
 use App\Models\StockMovimento;
 use App\Models\Surgery;
 use Illuminate\Http\Request;
@@ -19,14 +20,14 @@ class ConsumoController extends Controller
     {
         $surgery->load(['briefing', 'consumos.stockMovimento.consumivelTipo']);
 
-        $stockMovimentos = StockMovimento::with('consumivelTipo:id,nome,categoria')
-            ->orderByDesc('data_entrada')
-            ->get(['id', 'consumivel_tipo_id', 'tipo_mov', 'referencia', 'codigo', 'vidas_inicial', 'vidas_atual', 'unidades_inicial', 'unidades_atual', 'observacoes']);
+        $stockItems = Stock::orderBy('consumivel_nome')
+            ->orderBy('codigo')
+            ->get();
 
         return Inertia::render('consumos/index', [
-            'surgery'          => $surgery,
-            'consumos'         => $surgery->consumos,
-            'stockMovimentos'  => $stockMovimentos,
+            'surgery'    => $surgery,
+            'consumos'   => $surgery->consumos,
+            'stockItems' => $stockItems,
         ]);
     }
 
@@ -108,23 +109,38 @@ class ConsumoController extends Controller
 
     public function store(ConsumoRequest $request, Surgery $surgery): RedirectResponse
     {
-        $validated = $request->validated();
-        $quantidade = $validated['quantidade'] ?? 1;
+        $validated  = $request->validated();
+        $quantidade = (int) ($validated['quantidade'] ?? 1);
 
-        $movimento = StockMovimento::with('consumivelTipo')->findOrFail($validated['stock_movimento_id']);
+        DB::transaction(function () use ($validated, $quantidade, $surgery) {
+            if (!empty($validated['stock_movimento_id'])) {
+                // Vidas: decremento directo com lock
+                $movimento = StockMovimento::with('consumivelTipo')
+                    ->lockForUpdate()
+                    ->findOrFail($validated['stock_movimento_id']);
 
-        // Abater stock
-        if ($movimento->consumivelTipo?->categoria === ConsumivelTipo::CAT_ROBOTICO_VIDAS) {
-            DB::table('stock_movimentos')
-                ->where('id', $movimento->id)
-                ->update(['vidas_atual' => DB::raw('GREATEST(COALESCE(vidas_atual, 0) - ' . (int)$quantidade . ', 0)')]);
-        } else {
-            DB::table('stock_movimentos')
-                ->where('id', $movimento->id)
-                ->update(['unidades_atual' => DB::raw('GREATEST(COALESCE(unidades_atual, 0) - ' . (int)$quantidade . ', 0)')]);
-        }
+                if ($movimento->consumivelTipo?->categoria === ConsumivelTipo::CAT_ROBOTICO_VIDAS) {
+                    $movimento->decrement('vidas_atual', $quantidade);
+                } else {
+                    $movimento->decrement('unidades_atual', $quantidade);
+                }
 
-        $surgery->consumos()->create($validated);
+                $surgery->consumos()->create([
+                    'stock_movimento_id' => $movimento->id,
+                    'quantidade'         => $quantidade,
+                    'observacoes'        => $validated['observacoes'] ?? null,
+                ]);
+            } else {
+                // Agrupado: FIFO automático
+                $this->consumirFifo(
+                    $surgery,
+                    (int) $validated['consumivel_tipo_id'],
+                    $validated['referencia'] ?? null,
+                    $quantidade,
+                    $validated['observacoes'] ?? null
+                );
+            }
+        });
 
         return redirect()->back()
             ->with('success', 'Consumo adicionado.');
@@ -182,37 +198,76 @@ class ConsumoController extends Controller
     public function storeBatch(Request $request, Surgery $surgery): RedirectResponse
     {
         $request->validate([
-            'items'                       => ['required', 'array', 'min:1'],
-            'items.*.stock_movimento_id'  => ['required', 'integer', 'exists:stock_movimentos,id'],
-            'items.*.quantidade'          => ['required', 'integer', 'min:1'],
-            'items.*.observacoes'         => ['nullable', 'string', 'max:255'],
+            'items'                      => ['required', 'array', 'min:1'],
+            'items.*.stock_movimento_id' => ['nullable', 'integer', 'exists:stock_movimentos,id'],
+            'items.*.consumivel_tipo_id' => ['nullable', 'integer', 'exists:consumivel_tipos,id'],
+            'items.*.referencia'         => ['nullable', 'string', 'max:255'],
+            'items.*.quantidade'         => ['required', 'integer', 'min:1'],
+            'items.*.observacoes'        => ['nullable', 'string', 'max:255'],
         ]);
 
         DB::transaction(function () use ($request, $surgery) {
             foreach ($request->input('items') as $item) {
                 $quantidade = (int) $item['quantidade'];
-                $movimento  = StockMovimento::with('consumivelTipo')->findOrFail($item['stock_movimento_id']);
 
-                if ($movimento->consumivelTipo?->categoria === ConsumivelTipo::CAT_ROBOTICO_VIDAS) {
-                    DB::table('stock_movimentos')
-                        ->where('id', $movimento->id)
-                        ->update(['vidas_atual' => DB::raw('GREATEST(COALESCE(vidas_atual, 0) - ' . $quantidade . ', 0)')]);
+                if (!empty($item['stock_movimento_id'])) {
+                    // Vidas: decremento directo com lock
+                    $movimento = StockMovimento::lockForUpdate()->findOrFail($item['stock_movimento_id']);
+                    $movimento->decrement('vidas_atual', $quantidade);
+
+                    $surgery->consumos()->create([
+                        'stock_movimento_id' => $movimento->id,
+                        'quantidade'         => $quantidade,
+                        'observacoes'        => $item['observacoes'] ?? null,
+                    ]);
                 } else {
-                    DB::table('stock_movimentos')
-                        ->where('id', $movimento->id)
-                        ->update(['unidades_atual' => DB::raw('GREATEST(COALESCE(unidades_atual, 0) - ' . $quantidade . ', 0)')]);
+                    // Agrupado: FIFO automático
+                    $this->consumirFifo(
+                        $surgery,
+                        (int) $item['consumivel_tipo_id'],
+                        $item['referencia'] ?? null,
+                        $quantidade,
+                        $item['observacoes'] ?? null
+                    );
                 }
-
-                $surgery->consumos()->create([
-                    'stock_movimento_id' => $item['stock_movimento_id'],
-                    'quantidade'         => $quantidade,
-                    'observacoes'        => $item['observacoes'] ?? null,
-                ]);
             }
         });
 
         $n = count($request->input('items'));
         return redirect()->back()
             ->with('success', $n . ' consumo' . ($n !== 1 ? 's' : '') . ' adicionado' . ($n !== 1 ? 's' : '') . '.');
+    }
+
+    /**
+     * Distribui o consumo de material agrupado por FIFO (data_entrada ASC).
+     * Cria um registo de Consumo por cada StockMovimento necessário.
+     * Deve ser chamado dentro de DB::transaction.
+     */
+    private function consumirFifo(
+        Surgery $surgery,
+        int $consumivelTipoId,
+        ?string $referencia,
+        int $quantidade,
+        ?string $observacoes
+    ): void {
+        $movimentos = StockMovimento::where('consumivel_tipo_id', $consumivelTipoId)
+            ->where('referencia', $referencia)
+            ->where('unidades_atual', '>', 0)
+            ->orderBy('data_entrada')
+            ->lockForUpdate()
+            ->get();
+
+        $restante = $quantidade;
+        foreach ($movimentos as $mov) {
+            if ($restante <= 0) break;
+            $usar = min($restante, (int) $mov->unidades_atual);
+            $mov->decrement('unidades_atual', $usar);
+            $surgery->consumos()->create([
+                'stock_movimento_id' => $mov->id,
+                'quantidade'         => $usar,
+                'observacoes'        => $observacoes,
+            ]);
+            $restante -= $usar;
+        }
     }
 }

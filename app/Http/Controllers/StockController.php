@@ -2,51 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StockMovimentoRequest;
-use App\Models\Consumivel;
-use App\Models\StockMovimento;
+use App\Models\Stock;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class StockController extends Controller
 {
-    public function index(Consumivel $consumivel): Response
+    public function index(): Response
     {
+        $items = Stock::orderBy('consumivel_nome')
+            ->orderBy('codigo')
+            ->get();
+
+        $vidas    = $items->where('tipo', 'vidas')->values();
+        $unidades = $items->where('tipo', 'unidade')->values();
+
         return Inertia::render('stock/index', [
-            'consumivel'  => $consumivel,
-            'movimentos'  => $consumivel->stockMovimentos()
-                                ->orderByDesc('data_entrada')
-                                ->orderByDesc('id')
-                                ->get(),
-            'tiposMovLabel'  => [
-                'entrada' => 'Entrada',
-                'saida' => 'Saída',
-                'ajuste' => 'Ajuste',
-                'encomenda' => 'Encomenda',
-                'devolucao' => 'Devolução',
-            ],
+            'vidasItems'    => $vidas,
+            'unidadeItems'  => $unidades,
         ]);
     }
-
-    public function store(StockMovimentoRequest $request, Consumivel $consumivel): RedirectResponse
-    {
-        $movimento = $consumivel->stockMovimentos()->create(
-            array_merge($request->validated(), ['consumivel_id' => $consumivel->id])
-        );
-
-        $consumivel->recalcularStock();
-
-        return redirect()->route('consumiveis.stock.index', $consumivel)
-            ->with('success', 'Movimento registado.');
-    }
-
-    public function destroy(Consumivel $consumivel, StockMovimento $movimento): RedirectResponse
-    {
-        $movimento->delete();
-        $consumivel->recalcularStock();
-
-        return redirect()->route('consumiveis.stock.index', $consumivel)
-            ->with('success', 'Movimento eliminado.');
-    }
 }
+

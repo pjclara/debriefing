@@ -1,90 +1,190 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { ArrowLeft, Plus, Trash2, PackageOpen, AlertTriangle, TrendingUp, TrendingDown, RefreshCw, ShoppingCart, RotateCcw } from 'lucide-react';
+import { Boxes, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import type { BreadcrumbItem } from '@/types';
-import { inputCls, selectCls, textareaCls, SectionCard } from '@/components/form-ui';
-import { FormEvent, useState } from 'react';
 
-interface Consumivel {
-    id: number;
-    designacao: string;
-    categoria: string;
-    unidade: string;
-    stock_atual: number;
-    stock_minimo: number;
-}
-
-interface StockMovimento {
-    id: number;
-    tipo: 'entrada' | 'saida' | 'ajuste' | 'encomenda' | 'devolucao';
-    quantidade: number;
-    stock_apos?: number;
-    referencia_doc?: string;
-    fornecedor?: string;
-    data_movimento: string;
-    observacoes?: string;
+interface StockItem {
+    stock_key: string;
+    stock_movimento_id: number | null;
+    consumivel_tipo_id: number;
+    consumivel_nome: string;
+    categoria: 'robotico_vidas' | 'robotico_descartavel' | 'extra';
+    referencia?: string | null;
+    codigo?: string | null;
+    quantidade_disponivel: number;
+    quantidade_inicial: number;
+    tipo: 'vidas' | 'unidade';
 }
 
 interface Props {
-    consumivel: Consumivel;
-    movimentos: StockMovimento[];
-    tiposLabel: Record<string, string>;
+    vidasItems: StockItem[];
+    unidadeItems: StockItem[];
     flash?: { success?: string };
 }
 
-const TIPO_STYLES: Record<string, { bg: string; text: string; icon: React.ElementType }> = {
-    entrada:   { bg: 'bg-green-100 dark:bg-green-900/30',  text: 'text-green-700 dark:text-green-300',  icon: TrendingUp },
-    saida:     { bg: 'bg-red-100 dark:bg-red-900/30',     text: 'text-red-700 dark:text-red-300',       icon: TrendingDown },
-    ajuste:    { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-300', icon: RefreshCw },
-    encomenda: { bg: 'bg-blue-100 dark:bg-blue-900/30',   text: 'text-blue-700 dark:text-blue-300',    icon: ShoppingCart },
-    devolucao: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-300', icon: RotateCcw },
-};
+const PAGE_SIZE = 10;
 
-function formatDate(dateStr: string): string {
-    const d = dateStr.substring(0, 10).split('-');
-    return `${d[2]}/${d[1]}/${d[0]}`;
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Stock Disponível', href: '/stock' },
+];
+
+function VidasRow({ item }: { item: StockItem }) {
+    const pct = item.quantidade_inicial > 0 ? (item.quantidade_disponivel / item.quantidade_inicial) * 100 : 0;
+    const low = pct <= 30;
+    return (
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-100 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+            <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{item.consumivel_nome}</p>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {item.codigo && <span className="mr-2 font-mono">{item.codigo}</span>}
+                    {item.referencia && <span>Ref: {item.referencia}</span>}
+                </p>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+                <span className={`text-sm font-semibold ${low ? 'text-orange-500' : 'text-green-600 dark:text-green-400'}`}>
+                    {item.quantidade_disponivel}/{item.quantidade_inicial} vidas
+                </span>
+                <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                    <div
+                        className={`h-full rounded-full transition-all ${low ? 'bg-orange-400' : 'bg-green-500'}`}
+                        style={{ width: `${Math.max(pct, 2)}%` }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
 }
 
-export default function StockIndex({ consumivel, movimentos, tiposLabel, flash }: Props) {
-    const [adding, setAdding] = useState(false);
+function UnidadeRow({ item }: { item: StockItem }) {
+    return (
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-100 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+            <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{item.consumivel_nome}</p>
+                {item.referencia && (
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Ref: {item.referencia}</p>
+                )}
+            </div>
+            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                {item.quantidade_disponivel} un.
+            </span>
+        </div>
+    );
+}
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        tipo: 'entrada',
-        quantidade: '',
-        data_movimento: new Date().toISOString().substring(0, 10),
-        referencia_doc: '',
-        fornecedor: '',
-        observacoes: '',
-    });
+function Pagination({
+    page,
+    total,
+    pageSize,
+    onChange,
+}: {
+    page: number;
+    total: number;
+    pageSize: number;
+    onChange: (p: number) => void;
+}) {
+    const pages = Math.ceil(total / pageSize);
+    if (pages <= 1) return null;
+    return (
+        <div className="mt-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <span>
+                {total} itens &middot; página {page}/{pages}
+            </span>
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={() => onChange(page - 1)}
+                    disabled={page === 1}
+                    className="rounded p-1 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-700"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </button>
+                {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                    <button
+                        key={p}
+                        onClick={() => onChange(p)}
+                        className={`h-6 w-6 rounded text-xs font-medium transition-colors ${
+                            p === page
+                                ? 'bg-blue-600 text-white'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                    >
+                        {p}
+                    </button>
+                ))}
+                <button
+                    onClick={() => onChange(page + 1)}
+                    disabled={page === pages}
+                    className="rounded p-1 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-700"
+                >
+                    <ChevronRight className="h-4 w-4" />
+                </button>
+            </div>
+        </div>
+    );
+}
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Catálogo de Consumíveis', href: '/consumiveis' },
-        { title: consumivel.designacao, href: `/consumiveis/${consumivel.id}/stock` },
+type Categoria = 'all' | 'vidas' | 'unidade';
+
+export default function StockIndex({ vidasItems, unidadeItems, flash }: Props) {
+    const [search, setSearch] = useState('');
+    const [categoria, setCategoria] = useState<Categoria>('vidas');
+    const [pageVidas, setPageVidas] = useState(1);
+    const [pageUnidade, setPageUnidade] = useState(1);
+
+    const lc = (s: string) => s.toLowerCase();
+
+    const filteredVidas = useMemo(() => {
+        if (categoria === 'unidade') return [];
+        if (!search) return vidasItems;
+        const q = lc(search);
+        return vidasItems.filter(
+            (i) =>
+                lc(i.consumivel_nome).includes(q) ||
+                lc(i.referencia ?? '').includes(q) ||
+                lc(i.codigo ?? '').includes(q),
+        );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [vidasItems, search, categoria]);
+
+    const filteredUnidade = useMemo(() => {
+        if (categoria === 'vidas') return [];
+        if (!search) return unidadeItems;
+        const q = lc(search);
+        return unidadeItems.filter(
+            (i) =>
+                lc(i.consumivel_nome).includes(q) ||
+                lc(i.referencia ?? '').includes(q),
+        );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [unidadeItems, search, categoria]);
+
+    function handleSearch(v: string) {
+        setSearch(v);
+        setPageVidas(1);
+        setPageUnidade(1);
+    }
+    function handleCategoria(v: Categoria) {
+        setCategoria(v);
+        setPageVidas(1);
+        setPageUnidade(1);
+    }
+
+    const pagedVidas = filteredVidas.slice((pageVidas - 1) * PAGE_SIZE, pageVidas * PAGE_SIZE);
+    const pagedUnidade = filteredUnidade.slice((pageUnidade - 1) * PAGE_SIZE, pageUnidade * PAGE_SIZE);
+
+    const total = filteredVidas.length + filteredUnidade.length;
+    const totalGlobal = vidasItems.length + unidadeItems.length;
+
+    const tabs: { label: string; value: Categoria }[] = [
+        //{ label: 'Todos', value: 'all' },
+        { label: 'Instrumentos Robóticos', value: 'vidas' },
+        { label: 'Descartável / Extra', value: 'unidade' },
     ];
-
-    function handleSubmit(e: FormEvent) {
-        e.preventDefault();
-        post(`/consumiveis/${consumivel.id}/stock`, {
-            onSuccess: () => {
-                reset();
-                setAdding(false);
-            },
-        });
-    }
-
-    function confirmDelete(m: StockMovimento) {
-        if (confirm(`Eliminar este movimento de ${tiposLabel[m.tipo] ?? m.tipo}?`)) {
-            router.delete(`/consumiveis/${consumivel.id}/stock/${m.id}`);
-        }
-    }
-
-    const stockBaixo = consumivel.stock_atual <= consumivel.stock_minimo;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Stock — ${consumivel.designacao}`} />
-            <div className="mx-auto max-w-4xl p-6">
-
+            <Head title="Stock Disponível" />
+            <div className="mx-auto w-[80%] p-6">
                 {flash?.success && (
                     <div className="mb-4 rounded-lg bg-green-100 p-3 text-sm text-green-800 dark:bg-green-900/30 dark:text-green-300">
                         {flash.success}
@@ -92,217 +192,117 @@ export default function StockIndex({ consumivel, movimentos, tiposLabel, flash }
                 )}
 
                 {/* Cabeçalho */}
-                <div className="mb-6">
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Stock Disponível</h1>
+                        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                            {totalGlobal} {totalGlobal === 1 ? 'item' : 'itens'} com stock
+                        </p>
+                    </div>
                     <Link
-                        href="/consumiveis"
-                        className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        href="/stock_movimentos"
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
                     >
-                        <ArrowLeft size={15} />
-                        Voltar ao catálogo
+                        Ver movimentos →
                     </Link>
+                </div>
 
-                    <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{consumivel.designacao}</h1>
-                            <p className="mt-0.5 text-sm text-gray-500">Gestão de stock</p>
-                        </div>
+                {/* Filtros */}
+                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="flex flex-1 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-800">
+                        <Search className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            placeholder="Pesquisar por nome, referência ou código…"
+                            className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400 dark:text-gray-100"
+                        />
+                        {search && (
+                            <button
+                                type="button"
+                                onClick={() => handleSearch('')}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
 
-                        {/* Card de stock */}
-                        <div className={`flex items-center gap-3 rounded-xl border px-5 py-3 ${stockBaixo ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20' : 'border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/20'}`}>
-                            {stockBaixo && <AlertTriangle size={18} className="shrink-0 text-red-500" />}
-                            <div>
-                                <p className={`text-2xl font-bold ${stockBaixo ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
-                                    {consumivel.stock_atual} <span className="text-base font-normal text-gray-500">{consumivel.unidade}</span>
-                                </p>
-                                <p className="text-xs text-gray-500">Mínimo: {consumivel.stock_minimo} {consumivel.unidade}</p>
-                            </div>
-                        </div>
+                    <div className="flex shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.value}
+                                type="button"
+                                onClick={() => handleCategoria(tab.value)}
+                                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                                    categoria === tab.value
+                                        ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
+                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                {/* Botão adicionar */}
-                {!adding && (
-                    <button
-                        onClick={() => setAdding(true)}
-                        className="mb-6 flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
-                    >
-                        <Plus size={16} />
-                        Registar movimento
-                    </button>
+                {/* Vazio */}
+                {total === 0 && (
+                    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-gray-300 py-14 text-center dark:border-gray-600">
+                        <Boxes className="h-10 w-10 text-gray-300 dark:text-gray-600" />
+                        <p className="text-sm text-gray-400">
+                            {search || categoria !== 'all'
+                                ? 'Sem resultados para os filtros aplicados.'
+                                : 'Sem stock disponível de momento.'}
+                        </p>
+                        {!search && categoria === 'all' && (
+                            <Link href="/stock_movimentos/create" className="text-sm text-blue-600 hover:underline">
+                                Registar entrada de stock
+                            </Link>
+                        )}
+                    </div>
                 )}
 
-                {/* Formulário inline */}
-                {adding && (
-                    <form
-                        onSubmit={handleSubmit}
-                        className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-800 dark:bg-blue-900/10"
-                    >
-                        <h2 className="mb-4 text-sm font-semibold text-blue-700 dark:text-blue-300">Novo Movimento</h2>
-
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Tipo *</label>
-                                <select
-                                    value={data.tipo}
-                                    onChange={(e) => setData('tipo', e.target.value)}
-                                    className={selectCls}
-                                >
-                                    {Object.entries(tiposLabel).map(([val, label]) => (
-                                        <option key={val} value={val}>{label}</option>
-                                    ))}
-                                </select>
-                                {errors.tipo && <p className="mt-1 text-xs text-red-500">{errors.tipo}</p>}
-                            </div>
-
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                                    Quantidade ({consumivel.unidade}) *
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0.01"
-                                    value={data.quantidade}
-                                    onChange={(e) => setData('quantidade', e.target.value)}
-                                    className={inputCls}
-                                    placeholder="0"
-                                />
-                                {errors.quantidade && <p className="mt-1 text-xs text-red-500">{errors.quantidade}</p>}
-                            </div>
-
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Data *</label>
-                                <input
-                                    type="date"
-                                    value={data.data_movimento}
-                                    onChange={(e) => setData('data_movimento', e.target.value)}
-                                    className={inputCls}
-                                />
-                                {errors.data_movimento && <p className="mt-1 text-xs text-red-500">{errors.data_movimento}</p>}
-                            </div>
-
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Referência doc.</label>
-                                <input
-                                    type="text"
-                                    value={data.referencia_doc}
-                                    onChange={(e) => setData('referencia_doc', e.target.value)}
-                                    className={inputCls}
-                                    placeholder="Nº guia, fatura..."
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Fornecedor</label>
-                                <input
-                                    type="text"
-                                    value={data.fornecedor}
-                                    onChange={(e) => setData('fornecedor', e.target.value)}
-                                    className={inputCls}
-                                    placeholder="Nome do fornecedor"
-                                />
-                            </div>
+                {/* Instrumentos Robóticos */}
+                {pagedVidas.length > 0 && (
+                    <section className="mb-8">
+                        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                            Instrumentos Robóticos
+                        </h2>
+                        <div className="flex flex-col gap-2">
+                            {pagedVidas.map((item) => (
+                                <VidasRow key={item.stock_key} item={item} />
+                            ))}
                         </div>
-
-                        <div className="mt-4">
-                            <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Observações</label>
-                            <textarea
-                                value={data.observacoes}
-                                onChange={(e) => setData('observacoes', e.target.value)}
-                                rows={2}
-                                className={textareaCls}
-                                placeholder="Notas adicionais..."
-                            />
-                        </div>
-
-                        <div className="mt-4 flex gap-3">
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                Guardar
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => { setAdding(false); reset(); }}
-                                className="rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-                            >
-                                Cancelar
-                            </button>
-                        </div>
-                    </form>
+                        <Pagination
+                            page={pageVidas}
+                            total={filteredVidas.length}
+                            pageSize={PAGE_SIZE}
+                            onChange={setPageVidas}
+                        />
+                    </section>
                 )}
 
-                {/* Tabela de movimentos */}
-                <SectionCard icon={PackageOpen} title="Histórico de movimentos" description={`${movimentos.length} registo${movimentos.length !== 1 ? 's' : ''}`}>
-                    {movimentos.length === 0 ? (
-                        <p className="py-4 text-center text-sm text-gray-400">Sem movimentos registados.</p>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:border-gray-700">
-                                        <th className="pb-2 pr-4">Data</th>
-                                        <th className="pb-2 pr-4">Tipo</th>
-                                        <th className="pb-2 pr-4 text-right">Qtd.</th>
-                                        <th className="pb-2 pr-4 text-right">Stock após</th>
-                                        <th className="pb-2 pr-4">Referência</th>
-                                        <th className="pb-2 pr-4">Fornecedor</th>
-                                        <th className="pb-2"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                                    {movimentos.map((m) => {
-                                        const style = TIPO_STYLES[m.tipo] ?? TIPO_STYLES['ajuste'];
-                                        const Icon = style.icon;
-                                        return (
-                                            <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                                <td className="py-3 pr-4 font-mono text-xs text-gray-600 dark:text-gray-400">
-                                                    {formatDate(m.data_movimento)}
-                                                </td>
-                                                <td className="py-3 pr-4">
-                                                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${style.bg} ${style.text}`}>
-                                                        <Icon size={11} />
-                                                        {tiposLabel[m.tipo] ?? m.tipo}
-                                                    </span>
-                                                </td>
-                                                <td className="py-3 pr-4 text-right font-medium">
-                                                    {m.tipo === 'saida' || m.tipo === 'ajuste' ? (
-                                                        <span className="text-red-600 dark:text-red-400">−{m.quantidade}</span>
-                                                    ) : m.tipo === 'encomenda' ? (
-                                                        <span className="text-blue-600 dark:text-blue-400">{m.quantidade}</span>
-                                                    ) : (
-                                                        <span className="text-green-600 dark:text-green-400">+{m.quantidade}</span>
-                                                    )}
-                                                    <span className="ml-1 text-xs text-gray-400">{consumivel.unidade}</span>
-                                                </td>
-                                                <td className="py-3 pr-4 text-right text-gray-500">
-                                                    {m.stock_apos != null ? `${m.stock_apos} ${consumivel.unidade}` : '—'}
-                                                </td>
-                                                <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">
-                                                    {m.referencia_doc || <span className="text-gray-300">—</span>}
-                                                </td>
-                                                <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">
-                                                    {m.fornecedor || <span className="text-gray-300">—</span>}
-                                                </td>
-                                                <td className="py-3">
-                                                    <button
-                                                        onClick={() => confirmDelete(m)}
-                                                        className="rounded p-1 text-gray-300 hover:bg-white hover:text-red-500 dark:hover:bg-gray-700"
-                                                        title="Eliminar"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                {/* Material Descartável / Extra */}
+                {pagedUnidade.length > 0 && (
+                    <section>
+                        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                            Material Descartável / Extra
+                        </h2>
+                        <div className="flex flex-col gap-2">
+                            {pagedUnidade.map((item) => (
+                                <UnidadeRow key={item.stock_key} item={item} />
+                            ))}
                         </div>
-                    )}
-                </SectionCard>
+                        <Pagination
+                            page={pageUnidade}
+                            total={filteredUnidade.length}
+                            pageSize={PAGE_SIZE}
+                            onChange={setPageUnidade}
+                        />
+                    </section>
+                )}
             </div>
         </AppLayout>
     );

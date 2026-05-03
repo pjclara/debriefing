@@ -25,6 +25,19 @@ interface StockMovimento {
     observacoes?: string;
 }
 
+interface StockItem {
+    stock_key: string;
+    stock_movimento_id: number | null;
+    consumivel_tipo_id: number;
+    consumivel_nome: string;
+    categoria: 'robotico_vidas' | 'robotico_descartavel' | 'extra';
+    referencia?: string | null;
+    codigo?: string | null;
+    quantidade_disponivel: number;
+    quantidade_inicial: number;
+    tipo: 'vidas' | 'unidade';
+}
+
 interface Consumo {
     id: number;
     stock_movimento_id: number;
@@ -51,7 +64,7 @@ interface SurgeryContext {
 interface Props {
     surgery: SurgeryContext;
     consumos: Consumo[];
-    stockMovimentos: StockMovimento[];
+    stockItems: StockItem[];
     flash?: { success?: string };
 }
 
@@ -74,50 +87,72 @@ function formatDate(dateStr: string) {
 // ─── StockModal ───────────────────────────────────────────────────────────────
 
 interface SelectedItem {
-    stock_movimento_id: number;
+    stock_key: string;
+    stock_movimento_id?: number;
+    consumivel_tipo_id?: number;
+    referencia?: string | null;
     quantidade: number;
     observacoes: string;
 }
 
+function itemQtdLabel(item: StockItem): string {
+    return item.tipo === 'vidas'
+        ? `${item.quantidade_disponivel}/${item.quantidade_inicial} vidas`
+        : `${item.quantidade_disponivel} un.`;
+}
+
 function StockModal({
     surgeryId,
-    stockMovimentos,
+    stockItems,
     onClose,
 }: {
     surgeryId: number;
-    stockMovimentos: StockMovimento[];
+    stockItems: StockItem[];
     onClose: () => void;
 }) {
     const [search, setSearch] = useState('');
-    const [selected, setSelected] = useState<Record<number, SelectedItem>>({});
+    const [selected, setSelected] = useState<Record<string, SelectedItem>>({});
     const [processing, setProcessing] = useState(false);
 
-    const filtered = stockMovimentos.filter((m) =>
-        (m.consumivel_tipo?.nome ?? '').toLowerCase().includes(search.toLowerCase()) ||
-        (m.referencia ?? '').toLowerCase().includes(search.toLowerCase())
+    const lc = (s: string) => s.toLowerCase();
+    const filtered = stockItems.filter((item) =>
+        lc(item.consumivel_nome).includes(lc(search)) ||
+        lc(item.referencia ?? '').includes(lc(search)) ||
+        lc(item.codigo ?? '').includes(lc(search))
     );
 
-    function toggle(m: StockMovimento) {
+    const vidasItems   = filtered.filter((i) => i.tipo === 'vidas');
+    const unidadeItems = filtered.filter((i) => i.tipo === 'unidade');
+
+    function toggle(item: StockItem) {
         setSelected((prev) => {
-            if (prev[m.id]) {
+            if (prev[item.stock_key]) {
                 const next = { ...prev };
-                delete next[m.id];
+                delete next[item.stock_key];
                 return next;
             }
-            return { ...prev, [m.id]: { stock_movimento_id: m.id, quantidade: 1, observacoes: '' } };
+            const entry: SelectedItem = { stock_key: item.stock_key, quantidade: 1, observacoes: '' };
+            if (item.tipo === 'vidas' && item.stock_movimento_id != null) {
+                entry.stock_movimento_id = item.stock_movimento_id;
+            } else {
+                entry.consumivel_tipo_id = item.consumivel_tipo_id;
+                entry.referencia = item.referencia ?? null;
+            }
+            return { ...prev, [item.stock_key]: entry };
         });
     }
 
-    function setQty(id: number, qty: number) {
-        setSelected((prev) => ({ ...prev, [id]: { ...prev[id], quantidade: Math.max(1, qty) } }));
+    function setQty(key: string, qty: number) {
+        setSelected((prev) => ({ ...prev, [key]: { ...prev[key], quantidade: Math.max(1, qty) } }));
     }
 
-    function setObs(id: number, obs: string) {
-        setSelected((prev) => ({ ...prev, [id]: { ...prev[id], observacoes: obs } }));
+    function setObs(key: string, obs: string) {
+        setSelected((prev) => ({ ...prev, [key]: { ...prev[key], observacoes: obs } }));
     }
 
     function handleConfirm() {
-        const items = Object.values(selected);
+        // Omit the internal stock_key before sending
+        const items = Object.values(selected).map(({ stock_key: _k, ...rest }) => rest);
         if (items.length === 0) return;
         setProcessing(true);
         router.post(
@@ -132,6 +167,69 @@ function StockModal({
     }
 
     const count = Object.keys(selected).length;
+
+    function renderItem(item: StockItem) {
+        const checked = !!selected[item.stock_key];
+        const entry   = selected[item.stock_key];
+        return (
+            <div
+                key={item.stock_key}
+                className={`flex flex-col gap-2 rounded-lg border p-3 transition-colors ${
+                    checked
+                        ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20'
+                        : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800'
+                }`}
+            >
+                <label className="flex cursor-pointer items-start gap-2.5">
+                    <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggle(item)}
+                        className="mt-0.5 h-4 w-4 flex-shrink-0 accent-blue-600"
+                    />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium leading-tight text-gray-900 dark:text-white">
+                            {item.consumivel_nome}
+                        </p>
+                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                            {item.tipo === 'vidas' && item.codigo && (
+                                <span className="mr-1.5 font-mono">{item.codigo}</span>
+                            )}
+                            {item.referencia && <span className="mr-1.5">Ref: {item.referencia}</span>}
+                            <span className="font-medium text-blue-600 dark:text-blue-400">
+                                {itemQtdLabel(item)}
+                            </span>
+                        </p>
+                    </div>
+                </label>
+
+                {checked && (
+                    <div className="flex gap-2 pl-6">
+                        <div className="flex flex-col gap-0.5">
+                            <label className="text-xs text-gray-500">Qtd.</label>
+                            <input
+                                type="number"
+                                min={1}
+                                value={entry.quantidade}
+                                onChange={(e) => setQty(item.stock_key, parseInt(e.target.value) || 1)}
+                                className="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                            />
+                        </div>
+                        <div className="flex flex-1 flex-col gap-0.5">
+                            <label className="text-xs text-gray-500">Observações</label>
+                            <input
+                                type="text"
+                                value={entry.observacoes}
+                                onChange={(e) => setObs(item.stock_key, e.target.value)}
+                                placeholder="Opcional"
+                                className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -166,74 +264,33 @@ function StockModal({
                     </div>
                 </div>
 
-                {/* Grid */}
-                <div className="flex-1 overflow-y-auto p-5">
+                {/* Listas por secção */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-5">
                     {filtered.length === 0 ? (
                         <p className="text-center text-sm text-gray-400">Sem resultados</p>
                     ) : (
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {filtered.map((m) => {
-                                const checked = !!selected[m.id];
-                                const item = selected[m.id];
-                                const qtdInfo = movQtd(m);
-                                return (
-                                    <div
-                                        key={m.id}
-                                        className={`flex flex-col gap-2 rounded-lg border p-3 transition-colors ${
-                                            checked
-                                                ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20'
-                                                : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750'
-                                        }`}
-                                    >
-                                        {/* Linha principal: checkbox + nome */}
-                                        <label className="flex cursor-pointer items-start gap-2.5">
-                                            <input
-                                                type="checkbox"
-                                                checked={checked}
-                                                onChange={() => toggle(m)}
-                                                className="mt-0.5 h-4 w-4 flex-shrink-0 accent-blue-600"
-                                            />
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-sm font-medium leading-tight text-gray-900 dark:text-white">
-                                                    {m.consumivel_tipo?.nome ?? `Movimento #${m.id}`}
-                                                </p>
-                                                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                                                    {m.tipo_mov}
-                                                    {m.referencia && <span className="ml-1.5">· Ref: {m.referencia}</span>}
-                                                    {qtdInfo && <span className="ml-1.5 font-medium text-blue-600 dark:text-blue-400">· {qtdInfo}</span>}
-                                                </p>
-                                            </div>
-                                        </label>
-
-                                        {/* Campos de detalhe quando seleccionado */}
-                                        {checked && (
-                                            <div className="flex gap-2 pl-6">
-                                                <div className="flex flex-col gap-0.5">
-                                                    <label className="text-xs text-gray-500">Qtd.</label>
-                                                    <input
-                                                        type="number"
-                                                        min={1}
-                                                        value={item.quantidade}
-                                                        onChange={(e) => setQty(m.id, parseInt(e.target.value) || 1)}
-                                                        className="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                                                    />
-                                                </div>
-                                                <div className="flex flex-1 flex-col gap-0.5">
-                                                    <label className="text-xs text-gray-500">Observações</label>
-                                                    <input
-                                                        type="text"
-                                                        value={item.observacoes}
-                                                        onChange={(e) => setObs(m.id, e.target.value)}
-                                                        placeholder="Opcional"
-                                                        className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
+                        <>
+                            {vidasItems.length > 0 && (
+                                <div>
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                                        Instrumentos Robóticos
+                                    </p>
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        {vidasItems.map(renderItem)}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                </div>
+                            )}
+                            {unidadeItems.length > 0 && (
+                                <div>
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                                        Material Descartável / Extra
+                                    </p>
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        {unidadeItems.map(renderItem)}
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
 
@@ -269,7 +326,7 @@ function StockModal({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function ConsumosIndex({ surgery, consumos, stockMovimentos, flash }: Props) {
+export default function ConsumosIndex({ surgery, consumos, stockItems, flash }: Props) {
     const [adding, setAdding] = useState(false);
 
     const briefing = surgery.briefing;
@@ -281,8 +338,18 @@ export default function ConsumosIndex({ surgery, consumos, stockMovimentos, flas
         { title: 'Consumos', href: '#' },
     ];
 
-    const associadosIds = new Set(consumos.map((c) => c.stock_movimento_id));
-    const disponiveis = stockMovimentos.filter((m) => !associadosIds.has(m.id));
+    // Instrumentos com vidas já consumidos nesta cirurgia não voltam a aparecer
+    const vidasConsumidas = new Set(
+        consumos
+            .filter((c) => c.stock_movimento?.consumivel_tipo?.categoria === 'robotico_vidas')
+            .map((c) => c.stock_movimento_id)
+    );
+    const stockDisponivel = stockItems.filter((item) => {
+        if (item.tipo === 'vidas' && item.stock_movimento_id != null) {
+            return !vidasConsumidas.has(item.stock_movimento_id);
+        }
+        return true;
+    });
 
     function confirmDelete(consumo: Consumo) {
         const label = consumo.stock_movimento ? movLabel(consumo.stock_movimento) : `Consumo #${consumo.id}`;
@@ -310,7 +377,7 @@ export default function ConsumosIndex({ surgery, consumos, stockMovimentos, flas
 
                 <SectionCard icon={PackageOpen} title="Consumos Intra-operatórios" description="Registo de material consumido durante a cirurgia">
 
-                    {!adding && disponiveis.length > 0 && (
+                    {!adding && stockDisponivel.length > 0 && (
                         <button
                             onClick={() => setAdding(true)}
                             className="flex items-center gap-2 self-start rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
@@ -323,7 +390,7 @@ export default function ConsumosIndex({ surgery, consumos, stockMovimentos, flas
                     {adding && (
                         <StockModal
                             surgeryId={surgery.id}
-                            stockMovimentos={disponiveis}
+                            stockItems={stockDisponivel}
                             onClose={() => setAdding(false)}
                         />
                     )}

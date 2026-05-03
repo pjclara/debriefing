@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ClipboardList, History, LayoutGrid, Users, Building2, Wrench, Syringe, Boxes, TrendingDown, PackageOpen } from 'lucide-react';
+import { ClipboardList, History, LayoutGrid, Users, Building2, Wrench, Syringe, Boxes, TrendingDown, PackageOpen, LayoutList } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -34,6 +34,11 @@ const allNavGroups: NavGroup[] = [
     {
         label: 'Consumíveis & Stock',
         items: [
+            {
+                title: 'Stock Disponível',
+                href: '/stock',
+                icon: LayoutList,
+            },
             {
                 title: 'Tipos de Consumíveis',
                 href: '/consumivel_tipos',

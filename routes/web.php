@@ -7,6 +7,7 @@ use App\Http\Controllers\DebriefingController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ProcedureController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\StockController;
 use App\Http\Controllers\StockMovimentoController;
 use App\Http\Controllers\SurgeryController;
 use App\Http\Controllers\UserController;
@@ -36,6 +37,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('briefings.surgeries', SurgeryController::class)
         ->shallow()
         ->except(['index', 'show', 'destroy']);
+
+    // ── Stock (visão agregada) ──────────────────────────────────────────────
+    Route::get('stock', [StockController::class, 'index'])->name('stock.index');
 
     // ── Consumos por cirurgia ───────────────────────────────────────────────
     Route::get('consumos/historico', [ConsumoController::class, 'historico'])

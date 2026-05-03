@@ -6,7 +6,7 @@ use App\Http\Requests\BriefingRequest;
 use App\Models\Briefing;
 use App\Models\ConsumivelTipo;
 use App\Models\Department;
-use App\Models\StockMovimento;
+use App\Models\Stock;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
@@ -47,14 +47,13 @@ class BriefingController extends Controller
             'debriefing',
         ]);
 
-        // Stock movimentos disponíveis para associar a cirurgias
-        $stockMovimentos = StockMovimento::with('consumivelTipo:id,nome,categoria')
-            ->orderByDesc('data_entrada')
-            ->get(['id', 'consumivel_tipo_id', 'tipo_mov', 'referencia', 'codigo', 'vidas_inicial', 'vidas_atual', 'unidades_inicial', 'unidades_atual', 'data_entrada', 'observacoes']);
+        $stockItems = Stock::orderBy('consumivel_nome')
+            ->orderBy('codigo')
+            ->get();
 
         return Inertia::render('briefings/show', [
-            'briefing' => $briefing,
-            'stockMovimentos' => $stockMovimentos,
+            'briefing'   => $briefing,
+            'stockItems' => $stockItems,
         ]);
     }
 
