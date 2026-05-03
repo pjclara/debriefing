@@ -19,7 +19,10 @@ import {
     Search,
 } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
-import { DictationInput, DictationTextarea } from '@/components/DictationButton';
+import {
+    DictationInput,
+    DictationTextarea,
+} from '@/components/DictationButton';
 
 interface BriefingContext {
     id: number;
@@ -88,6 +91,9 @@ interface Surgery {
     b3?: number[];
     b4?: number[];
     equipamento_extra?: number[];
+    posicionamento?: string;
+    docking_lado?: string;
+    co2_parametros?: number | string;
 }
 
 interface Props {
@@ -107,6 +113,7 @@ type StepName =
     | 'identificacao'
     | 'clinicos'
     | 'planeamento'
+    | 'setup'
     | 'robotico'
     | 'review';
 
@@ -544,7 +551,8 @@ export default function SurgeryForm({
         { id: 'identificacao', label: 'Identificação do utente', icon: User },
         { id: 'clinicos', label: 'Elementos Clínicos', icon: FileText },
         { id: 'planeamento', label: 'Planeamento', icon: FileText },
-        { id: 'robotico', label: ' Elementos Robóticos', icon: Cpu },
+        { id: 'setup', label: 'Configuração Cirúrgica', icon: Cpu },
+        { id: 'robotico', label: 'Elementos Robóticos', icon: Cpu },
         { id: 'review', label: 'Revisão', icon: Check },
     ];
 
@@ -600,6 +608,9 @@ export default function SurgeryForm({
             ? surgery.trocares_nao_roboticos_tamanhos
             : [],
         otica: surgery?.otica ?? '0',
+        posicionamento: surgery?.posicionamento ?? '',
+        docking_lado: surgery?.docking_lado ?? '',
+        co2_parametros: surgery?.co2_parametros ?? '',
         monopolar_coag_watts: surgery?.monopolar_coag_watts ?? '',
         monopolar_coag_tipo: surgery?.monopolar_coag_tipo ?? '',
         monopolar_cut_watts: surgery?.monopolar_cut_watts ?? '',
@@ -646,7 +657,8 @@ export default function SurgeryForm({
             'reserva_estado',
             'reserva_unidades',
         ],
-        4: [
+        4: ['posicionamento', 'docking_lado', 'co2_parametros'],
+        5: [
             'trocares',
             'trocares_roboticos',
             'trocares_roboticos_tamanhos',
@@ -1214,7 +1226,9 @@ export default function SurgeryForm({
                                             type="text"
                                             name="medicacao_qual"
                                             value={data.medicacao_qual ?? ''}
-                                            onChange={(v) => setData('medicacao_qual', v)}
+                                            onChange={(v) =>
+                                                setData('medicacao_qual', v)
+                                            }
                                             className={inputCls}
                                             placeholder="Nome da medicação…"
                                         />
@@ -1253,7 +1267,9 @@ export default function SurgeryForm({
                                             type="text"
                                             name="antibiotico"
                                             value={data.antibiotico ?? ''}
-                                            onChange={(v) => setData('antibiotico', v)}
+                                            onChange={(v) =>
+                                                setData('antibiotico', v)
+                                            }
                                             className={inputCls}
                                             placeholder="Nome do antibiótico…"
                                         />
@@ -1348,7 +1364,9 @@ export default function SurgeryForm({
                                                 (data.perdas_estimadas as string) ??
                                                 ''
                                             }
-                                            onChange={(v) => setData('perdas_estimadas', v)}
+                                            onChange={(v) =>
+                                                setData('perdas_estimadas', v)
+                                            }
                                             min={0}
                                             className={inputCls + ' w-32'}
                                             placeholder="0"
@@ -1409,7 +1427,9 @@ export default function SurgeryForm({
                                                 (data.reserva_unidades as string) ??
                                                 ''
                                             }
-                                            onChange={(v) => setData('reserva_unidades', v)}
+                                            onChange={(v) =>
+                                                setData('reserva_unidades', v)
+                                            }
                                             min={0}
                                             className={inputCls + ' w-32'}
                                             placeholder="0"
@@ -1420,8 +1440,126 @@ export default function SurgeryForm({
                         </SectionCard>
                     )}
 
-                    {/* ── STEP 4: ROBÓTICO ── */}
+                    {/* ── STEP 4: CONFIGURAÇÃO CIRÚRGICA ── */}
                     {currentStep === 3 && (
+                        <SectionCard
+                            color="border-teal-500"
+                            title="Configuração Cirúrgica"
+                        >
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                {/* Posicionamento */}
+                                <Field
+                                    label="Posicionamento do doente"
+                                    error={errors.posicionamento}
+                                >
+                                    <select
+                                        name="posicionamento"
+                                        value={data.posicionamento}
+                                        onChange={handleChange}
+                                        className={selectCls}
+                                    >
+                                        <option value="">Selecione…</option>
+                                        <option value="Trendelenburg">
+                                            Trendelenburg
+                                        </option>
+                                        <option value="Proclive">
+                                            Proclive
+                                        </option>
+                                        <option value="Jack-knife">
+                                            Jack-knife
+                                        </option>
+                                        <option value="Litotomia">
+                                            Litotomia
+                                        </option>
+                                        <option value="Decúbito Lateral Direito">
+                                            Decúbito lateral direito
+                                        </option>
+                                        <option value="Decúbito Lateral Esquerdo">
+                                            Decúbito lateral esquerdo
+                                        </option>
+                                    </select>
+                                </Field>
+
+                                {/* Docking robótico */}
+                                <div className="flex flex-col gap-1">
+                                    <PlanRow
+                                        label="Lado do docking robótico"
+                                        error={errors.docking_lado as string}
+                                    >
+                                        <Btn3
+                                            active={
+                                                data.docking_lado === 'Direito'
+                                            }
+                                            onClick={() =>
+                                                setData(
+                                                    'docking_lado',
+                                                    'Direito',
+                                                )
+                                            }
+                                            color="blue"
+                                        >
+                                            Direito
+                                        </Btn3>
+                                        <Btn3
+                                            active={
+                                                data.docking_lado === 'Esquerdo'
+                                            }
+                                            onClick={() =>
+                                                setData(
+                                                    'docking_lado',
+                                                    'Esquerdo',
+                                                )
+                                            }
+                                            color="blue"
+                                        >
+                                            Esquerdo
+                                        </Btn3>
+                                        <Btn3
+                                            active={
+                                                data.docking_lado === 'Caudal'
+                                            }
+                                            onClick={() =>
+                                                setData(
+                                                    'docking_lado',
+                                                    'Caudal',
+                                                )
+                                            }
+                                            color="blue"
+                                        >
+                                            Caudal
+                                        </Btn3>
+                                    </PlanRow>
+                                </div>
+
+                                {/* Parâmetros de CO2 */}
+                                <Field
+                                    label="Pressão de insuflação (CO₂)"
+                                    error={errors.co2_parametros as string}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            name="co2_parametros"
+                                            value={
+                                                (data.co2_parametros as string) ??
+                                                ''
+                                            }
+                                            onChange={handleChange}
+                                            min={0}
+                                            className={inputCls + ' w-32'}
+                                            placeholder="Ex: 12"
+                                        />
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                                            mmHg
+                                        </span>
+                                    </div>
+                                </Field>
+                            </div>
+                        </SectionCard>
+                    )}
+
+                    {/* ── STEP 5: ROBÓTICO ── */}
+                    {currentStep === 4 && (
                         <SectionCard color="border-purple-500" title="Robótico">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <TrocaresEditor
@@ -1462,118 +1600,7 @@ export default function SurgeryForm({
                                     </select>
                                 </Field>
 
-                                {/* Monopolar Coag */}
-                                <div className="grid grid-cols-2 gap-4 rounded-lg border border-blue-100 bg-blue-50/50 p-4 md:col-span-2 dark:border-blue-900 dark:bg-blue-900/10">
-                                    <Field
-                                        label="Monopolar Coag - Potência (W)"
-                                        error={errors.monopolar_coag_watts}
-                                    >
-                                        <input
-                                            type="number"
-                                            name="monopolar_coag_watts"
-                                            value={
-                                                data.monopolar_coag_watts as string
-                                            }
-                                            onChange={handleChange}
-                                            min={0}
-                                            className={inputCls}
-                                        />
-                                    </Field>
-                                    <Field
-                                        label="Monopolar Coag - Tipo"
-                                        error={errors.monopolar_coag_tipo}
-                                    >
-                                        <select
-                                            name="monopolar_coag_tipo"
-                                            value={data.monopolar_coag_tipo}
-                                            onChange={handleChange}
-                                            className={selectCls}
-                                        >
-                                            <option value="">Selecione…</option>
-                                            <option value="pure">Pure</option>
-                                            <option value="flugurate">
-                                                Flugurate
-                                            </option>
-                                            <option value="soft">Soft</option>
-                                        </select>
-                                    </Field>
-                                </div>
-
-                                {/* Monopolar Cut */}
-                                <div className="grid grid-cols-2 gap-4 rounded-lg border border-green-100 bg-green-50/50 p-4 md:col-span-2 dark:border-green-900 dark:bg-green-900/10">
-                                    <Field
-                                        label="Monopolar Cut - Potência (W)"
-                                        error={errors.monopolar_cut_watts}
-                                    >
-                                        <input
-                                            type="number"
-                                            name="monopolar_cut_watts"
-                                            value={
-                                                data.monopolar_cut_watts as string
-                                            }
-                                            onChange={handleChange}
-                                            min={0}
-                                            className={inputCls}
-                                        />
-                                    </Field>
-                                    <Field
-                                        label="Monopolar Cut - Tipo"
-                                        error={errors.monopolar_cut_tipo}
-                                    >
-                                        <select
-                                            name="monopolar_cut_tipo"
-                                            value={data.monopolar_cut_tipo}
-                                            onChange={handleChange}
-                                            className={selectCls}
-                                        >
-                                            <option value="">Selecione…</option>
-                                            <option value="pure">Pure</option>
-                                            <option value="flugurate">
-                                                Flugurate
-                                            </option>
-                                            <option value="soft">Soft</option>
-                                        </select>
-                                    </Field>
-                                </div>
-
-                                {/* Bipolar Coag */}
-                                <div className="grid grid-cols-2 gap-4 rounded-lg border border-orange-100 bg-orange-50/50 p-4 md:col-span-2 dark:border-orange-900 dark:bg-orange-900/10">
-                                    <Field
-                                        label="Bipolar Coag - Potência (W)"
-                                        error={errors.bipolar_coag_watts}
-                                    >
-                                        <DictationInput
-                                            type="number"
-                                            name="bipolar_coag_watts"
-                                            value={
-                                                data.bipolar_coag_watts as string
-                                            }
-                                            onChange={(v) => setData('bipolar_coag_watts', v)}
-                                            min={0}
-                                            className={inputCls}
-                                        />
-                                    </Field>
-                                    <Field
-                                        label="Bipolar Coag - Tipo"
-                                        error={errors.bipolar_coag_tipo}
-                                    >
-                                        <select
-                                            name="bipolar_coag_tipo"
-                                            value={data.bipolar_coag_tipo}
-                                            onChange={handleChange}
-                                            className={selectCls}
-                                        >
-                                            <option value="">Selecione…</option>
-                                            <option value="pure">Pure</option>
-                                            <option value="flugurate">
-                                                Flugurate
-                                            </option>
-                                            <option value="soft">Soft</option>
-                                        </select>
-                                    </Field>
-                                </div>
-
-                                <Field
+                                 <Field
                                     label="B1 - Pinças"
                                     error={errors.b1 as string}
                                 >
@@ -1663,12 +1690,128 @@ export default function SurgeryForm({
                                         />
                                     </Field>
                                 </div>
+
+                                {/* Monopolar Coag */}
+                                <div className="grid grid-cols-2 gap-4 rounded-lg border border-blue-100 bg-blue-50/50 p-4 md:col-span-2 dark:border-blue-900 dark:bg-blue-900/10">
+                                    <Field
+                                        label="Monopolar Coag - Potência (W)"
+                                        error={errors.monopolar_coag_watts}
+                                    >
+                                        <input
+                                            type="number"
+                                            name="monopolar_coag_watts"
+                                            value={
+                                                data.monopolar_coag_watts as string
+                                            }
+                                            onChange={handleChange}
+                                            min={0}
+                                            className={inputCls}
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="Monopolar Coag - Tipo"
+                                        error={errors.monopolar_coag_tipo}
+                                    >
+                                        <select
+                                            name="monopolar_coag_tipo"
+                                            value={data.monopolar_coag_tipo}
+                                            onChange={handleChange}
+                                            className={selectCls}
+                                        >
+                                            <option value="">Selecione…</option>
+                                            <option value="precise">Precise</option>
+                                            <option value="flugurate">
+                                                Flugurate
+                                            </option>
+                                            <option value="spray">Spray</option>
+                                            <option value="low">Low</option>
+                                        </select>
+                                    </Field>
+                                </div>
+
+                                {/* Monopolar Cut */}
+                                <div className="grid grid-cols-2 gap-4 rounded-lg border border-green-100 bg-green-50/50 p-4 md:col-span-2 dark:border-green-900 dark:bg-green-900/10">
+                                    <Field
+                                        label="Monopolar Cut - Potência (W)"
+                                        error={errors.monopolar_cut_watts}
+                                    >
+                                        <input
+                                            type="number"
+                                            name="monopolar_cut_watts"
+                                            value={
+                                                data.monopolar_cut_watts as string
+                                            }
+                                            onChange={handleChange}
+                                            min={0}
+                                            className={inputCls}
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="Monopolar Cut - Tipo"
+                                        error={errors.monopolar_cut_tipo}
+                                    >
+                                        <select
+                                            name="monopolar_cut_tipo"
+                                            value={data.monopolar_cut_tipo}
+                                            onChange={handleChange}
+                                            className={selectCls}
+                                        >
+                                            <option value="">Selecione…</option>
+                                            <option value="pure">Pure</option>
+                                            <option value="blend">Blend</option>
+                                        </select>
+                                    </Field>
+                                </div>
+
+                                {/* Bipolar Coag */}
+                                <div className="grid grid-cols-2 gap-4 rounded-lg border border-orange-100 bg-orange-50/50 p-4 md:col-span-2 dark:border-orange-900 dark:bg-orange-900/10">
+                                    <Field
+                                        label="Bipolar Coag - Potência (W)"
+                                        error={errors.bipolar_coag_watts}
+                                    >
+                                        <DictationInput
+                                            type="number"
+                                            name="bipolar_coag_watts"
+                                            value={
+                                                data.bipolar_coag_watts as string
+                                            }
+                                            onChange={(v) =>
+                                                setData('bipolar_coag_watts', v)
+                                            }
+                                            min={0}
+                                            className={inputCls}
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="Bipolar Coag - Tipo"
+                                        error={errors.bipolar_coag_tipo}
+                                    >
+                                        <select
+                                            name="bipolar_coag_tipo"
+                                            value={data.bipolar_coag_tipo}
+                                            onChange={handleChange}
+                                            className={selectCls}
+                                        >
+                                            <option value="">Selecione…</option>
+                                            <option value="low_with_autostop">
+                                                Low with autostop
+                                            </option>
+                                            <option value="low">Low</option>
+                                            <option value="standard">
+                                                Standard
+                                            </option>
+                                            <option value="macro">Macro</option>
+                                        </select>
+                                    </Field>
+                                </div>
+
+                               
                             </div>
                         </SectionCard>
                     )}
 
-                    {/* ── STEP 5: REVISÃO ── */}
-                    {currentStep === 4 && (
+                    {/* ── STEP 6: REVISÃO ── */}
+                    {currentStep === 5 && (
                         <div className="space-y-4">
                             <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
                                 <p className="text-sm font-semibold text-green-900 dark:text-green-200">
@@ -1923,11 +2066,32 @@ export default function SurgeryForm({
                                                   ))
                                                 : '—'}
                                         </p>
+                                        
                                         <p>
                                             <span className="font-medium">
                                                 Ótica:
                                             </span>{' '}
                                             {data.otica}°
+                                        </p>
+                                        <p>
+                                            <span className="font-medium">
+                                                Posicionamento:
+                                            </span>{' '}
+                                            {data.posicionamento || '—'}
+                                        </p>
+                                        <p>
+                                            <span className="font-medium">
+                                                Docking robótico:
+                                            </span>{' '}
+                                            {data.docking_lado || '—'}
+                                        </p>
+                                        <p>
+                                            <span className="font-medium">
+                                                CO2:
+                                            </span>{' '}
+                                            {data.co2_parametros
+                                                ? `${data.co2_parametros} mmHg`
+                                                : '—'}
                                         </p>
                                         <p>
                                             <span className="font-medium">
@@ -2039,7 +2203,7 @@ export default function SurgeryForm({
                         >
                             Cancelar
                         </Link>
-                        {currentStep < 4 ? (
+                        {currentStep < steps.length - 1 ? (
                             <button
                                 key="btn-next"
                                 type="button"

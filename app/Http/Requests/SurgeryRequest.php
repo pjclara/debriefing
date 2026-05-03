@@ -58,12 +58,15 @@ class SurgeryRequest extends FormRequest
             'trocares_nao_roboticos_tamanhos.*.n'      => ['required', 'integer', 'min:0'],
             'trocares_nao_roboticos_tamanhos.*.tamanho'=> ['required', 'string', 'max:50'],
             'otica'                  => ['required', 'in:0,30'],
+            'posicionamento'         => ['nullable', 'in:Trendelenburg,Proclive,Jack-knife,Litotomia,Decúbito Lateral Direito,Decúbito Lateral Esquerdo'],
+            'docking_lado'           => ['nullable', 'in:Direito,Esquerda,Caudal'],
+            'co2_parametros'         => ['nullable', 'numeric', 'min:0'],
             'monopolar_coag_watts'   => ['nullable', 'integer', 'min:0'],
-            'monopolar_coag_tipo'    => ['nullable', 'in:pure,flugurate,soft'],
+            'monopolar_coag_tipo'    => ['nullable', 'in:precise,flugurate,spray,low'],
             'monopolar_cut_watts'    => ['nullable', 'integer', 'min:0'],
-            'monopolar_cut_tipo'     => ['nullable', 'in:pure,flugurate,soft'],
+            'monopolar_cut_tipo'     => ['nullable', 'in:pure,blend'],
             'bipolar_coag_watts'     => ['nullable', 'integer', 'min:0'],
-            'bipolar_coag_tipo'      => ['nullable', 'in:pure,flugurate,soft'],
+            'bipolar_coag_tipo'      => ['nullable', 'in:low_with_autostop,low,standard,macro'],
             'b1'                     => ['nullable', 'array'],
             'b1.*'                   => ['integer'],
             'b2'                     => ['nullable', 'array'],
@@ -94,6 +97,7 @@ class SurgeryRequest extends FormRequest
             'docking', 'perdas_estimadas', 'reserva_unidades', 'trocares',
             'trocares_roboticos', 'trocares_nao_roboticos',
             'monopolar_coag_watts', 'monopolar_cut_watts', 'bipolar_coag_watts',
+            'co2_parametros',
         ];
 
         $nullableFields = [

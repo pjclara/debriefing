@@ -614,7 +614,7 @@ function SurgeryStockPanel({
         <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-700 bg-gray-200 dark:bg-gray-800/50 rounded-lg p-3">
             <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Stock{consumos.length > 0 ? ` (${consumos.length})` : ''}
+                    Consumíveis Utilizados{consumos.length > 0 ? ` (${consumos.length})` : ''}
                 </span>
                 {!showAdd && disponiveis.length > 0 && (
                     <button
