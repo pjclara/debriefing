@@ -10,17 +10,38 @@ use App\Models\Stock;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class BriefingController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $search     = $request->input('search');
+        $dataInicio = $request->input('data_inicio');
+        $dataFim    = $request->input('data_fim');
+
         $briefings = Briefing::withCount('surgeries')
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($q2) use ($search) {
+                    $q2->where('especialidade', 'like', "%{$search}%")
+                       ->orWhere('sala', 'like', "%{$search}%");
+                });
+            })
+            ->when($dataInicio, fn($q) => $q->whereDate('data', '>=', $dataInicio))
+            ->when($dataFim,    fn($q) => $q->whereDate('data', '<=', $dataFim))
             ->orderByDesc('data')
             ->orderByDesc('hora')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
-        return Inertia::render('briefings/index', ['briefings' => $briefings]);
+        return Inertia::render('briefings/index', [
+            'briefings' => $briefings,
+            'filters'   => [
+                'search'      => $search ?? '',
+                'data_inicio' => $dataInicio ?? '',
+                'data_fim'    => $dataFim ?? '',
+            ],
+        ]);
     }
 
     public function create(): Response
