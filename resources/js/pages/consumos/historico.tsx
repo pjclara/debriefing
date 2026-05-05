@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { History, FileDown } from 'lucide-react';
+import { History, FileDown, Search, X } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
 interface ConsumivelTipo {
@@ -47,8 +48,16 @@ interface PaginatedConsumos {
     total: number;
 }
 
+interface Filters {
+    search: string;
+    categoria: string;
+    data_inicio: string;
+    data_fim: string;
+}
+
 interface Props {
     consumos: PaginatedConsumos;
+    filters: Filters;
 }
 
 function formatDate(dateStr: string) {
@@ -73,10 +82,45 @@ const categoriaCls: Record<string, string> = {
     extra:                'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
 };
 
-export default function HistoricoConsumos({ consumos }: Props) {
+export default function HistoricoConsumos({ consumos, filters }: Props) {
+    const [search, setSearch]         = useState(filters.search);
+    const [categoria, setCategoria]   = useState(filters.categoria);
+    const [dataInicio, setDataInicio] = useState(filters.data_inicio);
+    const [dataFim, setDataFim]       = useState(filters.data_fim);
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Histórico de Consumos', href: '/consumos/historico' },
     ];
+
+    function applyFilters(overrides: Partial<Filters> = {}) {
+        const params: Record<string, string> = {};
+        const f = { search, categoria, data_inicio: dataInicio, data_fim: dataFim, ...overrides };
+        if (f.search)      params.search      = f.search;
+        if (f.categoria)   params.categoria   = f.categoria;
+        if (f.data_inicio) params.data_inicio = f.data_inicio;
+        if (f.data_fim)    params.data_fim    = f.data_fim;
+        router.get('/consumos/historico', params, { preserveState: true, replace: true });
+    }
+
+    function clearFilters() {
+        setSearch('');
+        setCategoria('');
+        setDataInicio('');
+        setDataFim('');
+        router.get('/consumos/historico', {}, { preserveState: false, replace: true });
+    }
+
+    const hasFilters = !!(filters.search || filters.categoria || filters.data_inicio || filters.data_fim);
+
+    const inputCls = 'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white';
+
+    // Build print URL preserving active filters
+    const printParams = new URLSearchParams();
+    if (filters.search)      printParams.set('search',      filters.search);
+    if (filters.categoria)   printParams.set('categoria',   filters.categoria);
+    if (filters.data_inicio) printParams.set('data_inicio', filters.data_inicio);
+    if (filters.data_fim)    printParams.set('data_fim',    filters.data_fim);
+    const printUrl = '/consumos/historico/print' + (printParams.toString() ? '?' + printParams.toString() : '');
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -93,7 +137,7 @@ export default function HistoricoConsumos({ consumos }: Props) {
                         </div>
                     </div>
                     <a
-                        href="/consumos/historico/print"
+                        href={printUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
@@ -101,6 +145,77 @@ export default function HistoricoConsumos({ consumos }: Props) {
                         <FileDown size={16} />
                         PDF
                     </a>
+                </div>
+
+                {/* ── Filtros ── */}
+                <div className="mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                    {/* Pesquisa texto */}
+                    <div className="relative min-w-[200px] flex-1">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Pesquisar processo, procedimento, consumível…"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && applyFilters({ search })}
+                            className={inputCls + ' pl-9 w-full'}
+                        />
+                    </div>
+
+                    {/* Categoria */}
+                    <select
+                        value={categoria}
+                        onChange={(e) => { setCategoria(e.target.value); applyFilters({ categoria: e.target.value }); }}
+                        className={inputCls}
+                    >
+                        <option value="">Todas as categorias</option>
+                        <option value="robotico_vidas">Robótico (vidas)</option>
+                        <option value="robotico_descartavel">Robótico (descartável)</option>
+                        <option value="extra">Extra</option>
+                    </select>
+
+                    {/* Data início */}
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-500 dark:text-gray-400">De</label>
+                        <input
+                            type="date"
+                            value={dataInicio}
+                            onChange={(e) => setDataInicio(e.target.value)}
+                            onBlur={() => applyFilters({ data_inicio: dataInicio })}
+                            className={inputCls}
+                        />
+                    </div>
+
+                    {/* Data fim */}
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-500 dark:text-gray-400">Até</label>
+                        <input
+                            type="date"
+                            value={dataFim}
+                            onChange={(e) => setDataFim(e.target.value)}
+                            onBlur={() => applyFilters({ data_fim: dataFim })}
+                            className={inputCls}
+                        />
+                    </div>
+
+                    {/* Aplicar */}
+                    <button
+                        onClick={() => applyFilters()}
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                    >
+                        Filtrar
+                    </button>
+
+                    {/* Limpar */}
+                    {hasFilters && (
+                        <button
+                            onClick={clearFilters}
+                            className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                        >
+                            <X size={14} />
+                            Limpar
+                        </button>
+                    )}
                 </div>
 
                 {consumos.data.length === 0 ? (

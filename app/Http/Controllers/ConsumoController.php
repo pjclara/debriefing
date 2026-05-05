@@ -79,28 +79,98 @@ class ConsumoController extends Controller
         ]);
     }
 
-    public function historico(): Response
+    public function historico(Request $request): Response
     {
-        $consumos = Consumo::with([
+        $search     = $request->input('search');
+        $categoria  = $request->input('categoria');
+        $dataInicio = $request->input('data_inicio');
+        $dataFim    = $request->input('data_fim');
+
+        $query = Consumo::with([
             'surgery.briefing',
             'stockMovimento.consumivelTipo',
-        ])
-        ->orderByDesc('created_at')
-        ->paginate(50);
+        ]);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('surgery', function ($q2) use ($search) {
+                    $q2->where('processo', 'like', "%{$search}%")
+                       ->orWhere('procedimento', 'like', "%{$search}%");
+                })->orWhereHas('stockMovimento.consumivelTipo', function ($q2) use ($search) {
+                    $q2->where('nome', 'like', "%{$search}%");
+                })->orWhereHas('stockMovimento', function ($q2) use ($search) {
+                    $q2->where('referencia', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        if ($categoria) {
+            $query->whereHas('stockMovimento.consumivelTipo', function ($q) use ($categoria) {
+                $q->where('categoria', $categoria);
+            });
+        }
+
+        if ($dataInicio) {
+            $query->whereDate('created_at', '>=', $dataInicio);
+        }
+
+        if ($dataFim) {
+            $query->whereDate('created_at', '<=', $dataFim);
+        }
+
+        $consumos = $query->orderByDesc('created_at')->paginate(50)->withQueryString();
 
         return Inertia::render('consumos/historico', [
             'consumos' => $consumos,
+            'filters'  => [
+                'search'      => $search ?? '',
+                'categoria'   => $categoria ?? '',
+                'data_inicio' => $dataInicio ?? '',
+                'data_fim'    => $dataFim ?? '',
+            ],
         ]);
     }
 
-    public function printHistorico(): Response
+    public function printHistorico(Request $request): Response
     {
-        $consumos = Consumo::with([
+        $search     = $request->input('search');
+        $categoria  = $request->input('categoria');
+        $dataInicio = $request->input('data_inicio');
+        $dataFim    = $request->input('data_fim');
+
+        $query = Consumo::with([
             'surgery.briefing',
             'stockMovimento.consumivelTipo',
-        ])
-        ->orderByDesc('created_at')
-        ->get();
+        ]);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('surgery', function ($q2) use ($search) {
+                    $q2->where('processo', 'like', "%{$search}%")
+                       ->orWhere('procedimento', 'like', "%{$search}%");
+                })->orWhereHas('stockMovimento.consumivelTipo', function ($q2) use ($search) {
+                    $q2->where('nome', 'like', "%{$search}%");
+                })->orWhereHas('stockMovimento', function ($q2) use ($search) {
+                    $q2->where('referencia', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        if ($categoria) {
+            $query->whereHas('stockMovimento.consumivelTipo', function ($q) use ($categoria) {
+                $q->where('categoria', $categoria);
+            });
+        }
+
+        if ($dataInicio) {
+            $query->whereDate('created_at', '>=', $dataInicio);
+        }
+
+        if ($dataFim) {
+            $query->whereDate('created_at', '<=', $dataFim);
+        }
+
+        $consumos = $query->orderByDesc('created_at')->get();
 
         return Inertia::render('consumos/print', [
             'consumos' => $consumos,

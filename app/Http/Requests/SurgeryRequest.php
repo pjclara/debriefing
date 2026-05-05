@@ -35,7 +35,7 @@ class SurgeryRequest extends FormRequest
 
             'consentimento'            => ['required', 'boolean'],
             'lateralidade'             => ['required', 'in:N/A,Sim'],
-            'lateralidade_lado'        => ['nullable', 'in:Esquerdo,Direito,Bilateral'],
+            'lateralidade_lado'        => ['nullable', 'in:Esquerda,Direita,Bilateral'],
             'lateralidade_marcacao'    => ['nullable', 'boolean'],
             'medicacao_suspensa'       => ['nullable', 'in:Sim,Não,N/A'],
             'medicacao_qual'           => ['nullable', 'string', 'max:255'],
