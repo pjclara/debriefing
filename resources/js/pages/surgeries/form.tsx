@@ -731,13 +731,6 @@ export default function SurgeryForm({
             'passos_criticos',
         ],
         2: [
-            'prep_inicio',
-            'prep_fim',
-            'docking',
-            'consola_inicio',
-            'consola_fim',
-        ],
-        3: [
             'consentimento',
             'lateralidade',
             'lateralidade_lado',
@@ -753,8 +746,8 @@ export default function SurgeryForm({
             'reserva_estado',
             'reserva_unidades',
         ],
-        4: ['posicionamento', 'posicionamento.*.tipo', 'posicionamento.*.graus', 'docking_lado', 'co2_parametros'],
-        5: [
+        3: ['posicionamento', 'posicionamento.*.tipo', 'posicionamento.*.graus', 'docking_lado', 'co2_parametros'],
+        4: [
             'trocares',
             'trocares_roboticos',
             'trocares_roboticos_tamanhos',
@@ -1128,10 +1121,16 @@ export default function SurgeryForm({
                                         label: 'Passos críticos identificados',
                                     },
                                 ] as const
-                            ).map(({ flag, desc, label }) => (
+                            ).map(({ flag, desc, label }) => {
+                                const fieldError = errors[flag] as string | undefined;
+                                return (
                                 <div
                                     key={flag}
-                                    className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800"
+                                    className={`flex flex-col gap-2 rounded-xl border p-4 ${
+                                        fieldError
+                                            ? 'border-red-400 bg-red-50 dark:border-red-600 dark:bg-red-900/20'
+                                            : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+                                    }`}
                                 >
                                     <div className="flex items-center justify-between gap-4">
                                         <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
@@ -1181,8 +1180,15 @@ export default function SurgeryForm({
                                             textareaClassName={textareaCls}
                                         />
                                     )}
+
+                                    {fieldError && (
+                                        <p className="text-xs text-red-600 dark:text-red-400">
+                                            {fieldError}
+                                        </p>
+                                    )}
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
 
