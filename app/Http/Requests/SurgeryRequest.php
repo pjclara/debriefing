@@ -35,7 +35,7 @@ class SurgeryRequest extends FormRequest
 
             'consentimento'            => ['required', 'boolean'],
             'lateralidade'             => ['required', 'in:N/A,Sim'],
-            'lateralidade_lado'        => ['nullable', 'in:Esquerda,Direita,Bilateral'],
+            'lateralidade_lado'        => ['nullable', 'in:Esquerdo,Direito,Bilateral'],
             'lateralidade_marcacao'    => ['nullable', 'boolean'],
             'medicacao_suspensa'       => ['nullable', 'in:Sim,Não,N/A'],
             'medicacao_qual'           => ['nullable', 'string', 'max:255'],
@@ -59,7 +59,7 @@ class SurgeryRequest extends FormRequest
             'trocares_nao_roboticos_tamanhos.*.tamanho'=> ['required', 'string', 'max:50'],
             'otica'                  => ['required', 'in:0,30'],
             'posicionamento'         => ['nullable', 'in:Trendelenburg,Proclive,Jack-knife,Litotomia,Decúbito Lateral Direito,Decúbito Lateral Esquerdo'],
-            'docking_lado'           => ['nullable', 'in:Direito,Esquerda,Caudal'],
+            'docking_lado'           => ['nullable', 'in:Direito,Esquerdo,Caudal'],
             'co2_parametros'         => ['nullable', 'numeric', 'min:0'],
             'monopolar_coag_watts'   => ['nullable', 'integer', 'min:0'],
             'monopolar_coag_tipo'    => ['nullable', 'in:precise,flugurate,spray,low'],
