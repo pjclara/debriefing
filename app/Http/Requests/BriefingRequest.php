@@ -17,7 +17,7 @@ class BriefingRequest extends FormRequest
             'data'                        => ['required', 'date'],
             'hora'                        => ['required', 'date_format:H:i'],
             'especialidade'               => ['required', 'string', 'max:255'],
-            'sala'                        => ['required', 'string', 'max:255'],
+            'sala'                        => ['required', 'string', 'max:2'],
 
             'equipa_segura'               => ['required', 'boolean'],
             'alteracao_equipa'            => ['required', 'boolean'],

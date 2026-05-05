@@ -60,7 +60,7 @@ class SurgeryRequest extends FormRequest
             'otica'                  => ['required', 'in:0,30'],
             'posicionamento'              => ['nullable', 'array'],
             'posicionamento.*.tipo'       => ['required', 'string', 'in:Trendelenburg,Proclive,Jack-knife,Litotomia,Decúbito Lateral Direito,Decúbito Lateral Esquerdo'],
-            'posicionamento.*.graus'      => ['nullable', 'numeric'],
+            'posicionamento.*.graus'      => ['required', 'numeric'],
             'docking_lado'           => ['nullable', 'in:Direito,Esquerdo,Caudal'],
             'co2_parametros'         => ['nullable', 'numeric', 'min:0'],
             'monopolar_coag_watts'   => ['nullable', 'integer', 'min:0'],
@@ -124,6 +124,88 @@ class SurgeryRequest extends FormRequest
                 $this->merge([$field => []]);
             }
         }
+    }
+
+    public function messages(): array
+    {
+        return [
+            // Identificação
+            'processo.required'                => 'O número de processo é obrigatório.',
+            'processo.max'                     => 'O número de processo não pode exceder 255 caracteres.',
+            'procedimento.required'            => 'O procedimento cirúrgico é obrigatório.',
+            'procedimento.max'                 => 'O procedimento não pode exceder 255 caracteres.',
+            'destino.required'                 => 'O destino pós-operatório é obrigatório.',
+            'destino.in'                       => 'O destino deve ser UCPA, Enfermaria, SMI ou Outro.',
+
+            // Tempos
+            'prep_inicio.date_format'          => 'A data de início de preparação tem formato inválido.',
+            'prep_fim.date_format'             => 'A data de fim de preparação tem formato inválido.',
+            'docking.integer'                  => 'O tempo de docking deve ser um número inteiro.',
+            'docking.min'                      => 'O tempo de docking não pode ser negativo.',
+            'consola_inicio.date_format'       => 'A data de início de consola tem formato inválido.',
+            'consola_fim.date_format'          => 'A data de fim de consola tem formato inválido.',
+
+            // Clínicos
+            'antecedentes_relevantes.required' => 'Indique se existem antecedentes de relevo.',
+            'antecedentes_relevantes.boolean'  => 'O campo de antecedentes deve ser Sim ou Não.',
+            'comorbidades.required'            => 'Indique se existem comorbidades.',
+            'comorbidades.boolean'             => 'O campo de comorbidades deve ser Sim ou Não.',
+            'variacoes_tecnicas.required'      => 'Indique se existem variações técnicas.',
+            'variacoes_tecnicas.boolean'       => 'O campo de variações técnicas deve ser Sim ou Não.',
+            'passos_criticos.required'         => 'Indique se existem passos críticos.',
+            'passos_criticos.boolean'          => 'O campo de passos críticos deve ser Sim ou Não.',
+
+            // Planeamento
+            'consentimento.required'           => 'Indique se os consentimentos foram obtidos.',
+            'consentimento.boolean'            => 'O campo de consentimento deve ser Sim ou Não.',
+            'lateralidade.required'            => 'Indique a lateralidade da cirurgia.',
+            'lateralidade.in'                  => 'A lateralidade deve ser N/A ou Sim.',
+            'lateralidade_lado.in'             => 'O lado da lateralidade deve ser Esquerda, Direita ou Bilateral.',
+            'medicacao_suspensa.in'            => 'A medicação suspensa deve ser Sim, Não ou N/A.',
+            'antibioterapia.boolean'           => 'O campo de antibioterapia deve ser Sim ou Não.',
+            'profilaxia.boolean'               => 'O campo de profilaxia deve ser Sim ou Não.',
+            'perdas_estimadas.integer'         => 'As perdas estimadas devem ser um número inteiro.',
+            'perdas_estimadas.min'             => 'As perdas estimadas não podem ser negativas.',
+            'reserva_estado.in'                => 'O estado da reserva deve ser Tem, Necessita ou N/A.',
+            'reserva_unidades.integer'         => 'As unidades de reserva devem ser um número inteiro.',
+            'reserva_unidades.min'             => 'As unidades de reserva não podem ser negativas.',
+
+            // Configuração cirúrgica
+            'posicionamento.array'                 => 'O campo de posicionamento deve ser uma lista.',
+            'posicionamento.*.tipo.required'       => 'Selecione o tipo de posicionamento.',
+            'posicionamento.*.tipo.in'             => 'O tipo de posicionamento selecionado é inválido.',
+            'posicionamento.*.graus.numeric'       => 'Os graus de inclinação devem ser um número.',
+            'docking_lado.in'                      => 'O lado de docking deve ser Direito, Esquerdo ou Caudal.',
+            'co2_parametros.numeric'               => 'Os parâmetros de CO₂ devem ser um número.',
+            'co2_parametros.min'                   => 'Os parâmetros de CO₂ não podem ser negativos.',
+
+            // Elementos robóticos
+            'trocares.integer'                         => 'O número de trócares deve ser um inteiro.',
+            'trocares.min'                             => 'O número de trócares não pode ser negativo.',
+            'trocares_roboticos.integer'               => 'O número de trócares robóticos deve ser um inteiro.',
+            'trocares_roboticos_tamanhos.*.n.required' => 'Indique o número do trócar robótico.',
+            'trocares_roboticos_tamanhos.*.n.integer'  => 'O número do trócar robótico deve ser um inteiro.',
+            'trocares_roboticos_tamanhos.*.tamanho.required' => 'Indique o tamanho do trócar robótico.',
+            'trocares_nao_roboticos.integer'           => 'O número de trócares não robóticos deve ser um inteiro.',
+            'trocares_nao_roboticos_tamanhos.*.n.required'      => 'Indique o número do trócar não robótico.',
+            'trocares_nao_roboticos_tamanhos.*.tamanho.required' => 'Indique o tamanho do trócar não robótico.',
+            'otica.required'                           => 'O campo de ótica é obrigatório.',
+            'otica.in'                                 => 'A ótica deve ser 0° ou 30°.',
+            'monopolar_coag_watts.integer'             => 'A potência monopolar coag deve ser um inteiro.',
+            'monopolar_coag_watts.min'                 => 'A potência monopolar coag não pode ser negativa.',
+            'monopolar_coag_tipo.in'                   => 'O tipo monopolar coag é inválido.',
+            'monopolar_cut_watts.integer'              => 'A potência monopolar cut deve ser um inteiro.',
+            'monopolar_cut_watts.min'                  => 'A potência monopolar cut não pode ser negativa.',
+            'monopolar_cut_tipo.in'                    => 'O tipo monopolar cut é inválido.',
+            'bipolar_coag_watts.integer'               => 'A potência bipolar coag deve ser um inteiro.',
+            'bipolar_coag_watts.min'                   => 'A potência bipolar coag não pode ser negativa.',
+            'bipolar_coag_tipo.in'                     => 'O tipo bipolar coag é inválido.',
+            'b1.*.integer'                             => 'Os instrumentos do braço B1 são inválidos.',
+            'b2.*.integer'                             => 'Os instrumentos do braço B2 são inválidos.',
+            'b3.*.integer'                             => 'Os instrumentos do braço B3 são inválidos.',
+            'b4.*.integer'                             => 'Os instrumentos do braço B4 são inválidos.',
+            'equipamento_extra.*.integer'              => 'Os itens de equipamento extra são inválidos.',
+        ];
     }
 }
 
