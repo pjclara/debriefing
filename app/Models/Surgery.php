@@ -79,6 +79,7 @@ class Surgery extends Model
         'equipamento_extra'       => 'array',
         'trocares_roboticos_tamanhos'    => 'array',
         'trocares_nao_roboticos_tamanhos' => 'array',
+        'posicionamento'                  => 'array',
         'antecedentes_relevantes' => 'boolean',
         'comorbidades'            => 'boolean',
         'variacoes_tecnicas'      => 'boolean',

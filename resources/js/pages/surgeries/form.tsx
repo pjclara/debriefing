@@ -42,6 +42,11 @@ interface TrocarEntry {
     tamanho: string;
 }
 
+interface PosicionamentoEntry {
+    tipo: string;
+    graus: string | number | null;
+}
+
 interface Surgery {
     id?: number;
     processo?: string;
@@ -91,7 +96,7 @@ interface Surgery {
     b3?: number[];
     b4?: number[];
     equipamento_extra?: number[];
-    posicionamento?: string;
+    posicionamento?: PosicionamentoEntry[];
     docking_lado?: string;
     co2_parametros?: number | string;
 }
@@ -336,6 +341,96 @@ function TrocaresEditor({
                 className="mt-1 self-start rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-500 hover:border-gray-400 hover:text-gray-700 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:text-gray-300"
             >
                 + Adicionar tamanho
+            </button>
+        </div>
+    );
+}
+
+// ─── PosicionamentoEditor ─────────────────────────────────────────────────────
+
+const POSICIONAMENTO_TIPOS = [
+    'Trendelenburg',
+    'Proclive',
+    'Jack-knife',
+    'Litotomia',
+    'Decúbito Lateral Direito',
+    'Decúbito Lateral Esquerdo',
+];
+
+function PosicionamentoEditor({
+    entries,
+    onChange,
+    error,
+}: {
+    entries: PosicionamentoEntry[];
+    onChange: (entries: PosicionamentoEntry[]) => void;
+    error?: string;
+}) {
+    function add() {
+        onChange([...entries, { tipo: '', graus: '' }]);
+    }
+    function remove(idx: number) {
+        onChange(entries.filter((_, i) => i !== idx));
+    }
+    function update(idx: number, field: keyof PosicionamentoEntry, value: string) {
+        const next = entries.map((e, i) =>
+            i === idx ? { ...e, [field]: value } : e,
+        );
+        onChange(next);
+    }
+    return (
+        <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Posicionamento do doente
+            </span>
+            {error && (
+                <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+            )}
+            {entries.length === 0 && (
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Nenhum posicionamento adicionado.
+                </p>
+            )}
+            {entries.map((entry, idx) => (
+                <div key={idx} className="flex flex-wrap items-center gap-2">
+                    <select
+                        value={entry.tipo}
+                        onChange={(e) => update(idx, 'tipo', e.target.value)}
+                        className={selectCls + ' flex-1 min-w-[180px]'}
+                    >
+                        <option value="">Selecione…</option>
+                        {POSICIONAMENTO_TIPOS.map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                        ))}
+                    </select>
+                    <div className="flex items-center gap-1">
+                        <input
+                            type="number"
+                            value={entry.graus ?? ''}
+                            onChange={(e) => update(idx, 'graus', e.target.value)}
+                            className={inputCls + ' w-20'}
+                            placeholder="Graus"
+                            min={0}
+                            max={90}
+                        />
+                        <span className="text-sm text-gray-500 dark:text-gray-400">°</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => remove(idx)}
+                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 dark:border-red-800 dark:hover:bg-red-900/20"
+                        aria-label="Remover posicionamento"
+                    >
+                        <X className="h-3.5 w-3.5" />
+                    </button>
+                </div>
+            ))}
+            <button
+                type="button"
+                onClick={add}
+                className="mt-1 self-start rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-500 hover:border-gray-400 hover:text-gray-700 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:text-gray-300"
+            >
+                + Adicionar posicionamento
             </button>
         </div>
     );
@@ -608,7 +703,7 @@ export default function SurgeryForm({
             ? surgery.trocares_nao_roboticos_tamanhos
             : [],
         otica: surgery?.otica ?? '0',
-        posicionamento: surgery?.posicionamento ?? '',
+        posicionamento: Array.isArray(surgery?.posicionamento) ? surgery.posicionamento : [],
         docking_lado: surgery?.docking_lado ?? '',
         co2_parametros: surgery?.co2_parametros ?? '',
         monopolar_coag_watts: surgery?.monopolar_coag_watts ?? '',
@@ -657,7 +752,7 @@ export default function SurgeryForm({
             'reserva_estado',
             'reserva_unidades',
         ],
-        4: ['posicionamento', 'docking_lado', 'co2_parametros'],
+        4: ['posicionamento', 'posicionamento.*.tipo', 'posicionamento.*.graus', 'docking_lado', 'co2_parametros'],
         5: [
             'trocares',
             'trocares_roboticos',
@@ -1448,37 +1543,13 @@ export default function SurgeryForm({
                         >
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 {/* Posicionamento */}
-                                <Field
-                                    label="Posicionamento do doente"
-                                    error={errors.posicionamento}
-                                >
-                                    <select
-                                        name="posicionamento"
-                                        value={data.posicionamento}
-                                        onChange={handleChange}
-                                        className={selectCls}
-                                    >
-                                        <option value="">Selecione…</option>
-                                        <option value="Trendelenburg">
-                                            Trendelenburg
-                                        </option>
-                                        <option value="Proclive">
-                                            Proclive
-                                        </option>
-                                        <option value="Jack-knife">
-                                            Jack-knife
-                                        </option>
-                                        <option value="Litotomia">
-                                            Litotomia
-                                        </option>
-                                        <option value="Decúbito Lateral Direito">
-                                            Decúbito lateral direito
-                                        </option>
-                                        <option value="Decúbito Lateral Esquerdo">
-                                            Decúbito lateral esquerdo
-                                        </option>
-                                    </select>
-                                </Field>
+                                <div className="md:col-span-2">
+                                    <PosicionamentoEditor
+                                        entries={(data.posicionamento as PosicionamentoEntry[]) ?? []}
+                                        onChange={(entries) => setData('posicionamento', entries)}
+                                        error={errors['posicionamento'] as string}
+                                    />
+                                </div>
 
                                 {/* Docking robótico */}
                                 <div className="flex flex-col gap-1">
@@ -2077,7 +2148,11 @@ export default function SurgeryForm({
                                             <span className="font-medium">
                                                 Posicionamento:
                                             </span>{' '}
-                                            {data.posicionamento || '—'}
+                                            {Array.isArray(data.posicionamento) && (data.posicionamento as PosicionamentoEntry[]).length > 0
+                                                ? (data.posicionamento as PosicionamentoEntry[])
+                                                      .map((p) => p.graus != null && p.graus !== '' ? `${p.tipo} ${p.graus}°` : p.tipo)
+                                                      .join(', ')
+                                                : '—'}
                                         </p>
                                         <p>
                                             <span className="font-medium">
