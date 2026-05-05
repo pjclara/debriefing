@@ -21,6 +21,7 @@ class BriefingController extends Controller
         $dataFim    = $request->input('data_fim');
 
         $briefings = Briefing::withCount('surgeries')
+            ->with('debriefing')
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($q2) use ($search) {
                     $q2->where('especialidade', 'like', "%{$search}%")
@@ -33,6 +34,8 @@ class BriefingController extends Controller
             ->orderByDesc('hora')
             ->paginate(10)
             ->withQueryString();
+
+        $briefings->each(fn($b) => $b->append('is_completo'));
 
         return Inertia::render('briefings/index', [
             'briefings' => $briefings,

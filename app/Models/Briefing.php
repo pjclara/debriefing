@@ -49,4 +49,23 @@ class Briefing extends Model
     {
         return $this->hasOne(Debriefing::class);
     }
+
+    /**
+     * Indica se o briefing tem todos os campos de checklist preenchidos
+     * e pelo menos uma cirurgia associada.
+     */
+    public function getIsCompletoAttribute(): bool
+    {
+        // Pelo menos uma cirurgia associada
+        if ($this->surgeries_count < 1) {
+            return false;
+        }
+
+        // Debriefing existente
+        if ($this->debriefing === null) {
+            return false;
+        }
+
+        return true;
+    }
 }

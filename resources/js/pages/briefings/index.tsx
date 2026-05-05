@@ -2,7 +2,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import type { Auth, BreadcrumbItem } from '@/types';
-import { Search, X } from 'lucide-react';
+import { Search, X, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface Filters {
     search: string;
@@ -17,6 +17,7 @@ interface Briefing {
     especialidade: string;
     sala: string;
     surgeries_count: number;
+    is_completo: boolean;
 }
 
 interface PaginatedBriefings {
@@ -170,7 +171,7 @@ export default function BriefingsIndex({ briefings, filters, flash }: Props) {
                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gray-50 dark:bg-gray-800">
                                 <tr>
-                                    {['Data', 'Hora', 'Sala', 'Especialidade', 'Cirurgias', ''].map((h) => (
+                                    {['Data', 'Hora', 'Sala', 'Especialidade', 'Cirurgias', 'Estado', ''].map((h) => (
                                         <th
                                             key={h}
                                             className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300"
@@ -191,6 +192,19 @@ export default function BriefingsIndex({ briefings, filters, flash }: Props) {
                                             <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                                                 {b.surgeries_count}
                                             </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm">
+                                            {b.is_completo ? (
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                                    Completo
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                                    <AlertCircle className="h-3.5 w-3.5" />
+                                                    Incompleto
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-right text-sm">
                                             <Link
