@@ -640,7 +640,7 @@ function SurgeryStockPanel({
             </div>
 
             {consumos.length > 0 && (
-                <div className="mb-2 flex flex-col gap-1">
+                <div className="mb-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
                     {consumos.map((c) => {
                         const mov = c.stock_movimento;
                         const isEditing = !!editing[c.id];
@@ -772,6 +772,7 @@ export default function BriefingShow({
     const { auth } = usePage<{ auth: Auth }>().props;
     const isAdmin = auth.user?.role === 'admin';
     const [collapsedSurgeries, setCollapsedSurgeries] = useState<Record<number, boolean>>({});
+    const [activeTab, setActiveTab] = useState<'briefing' | 'cirurgias' | 'debriefing'>('briefing');
 
     function toggleSurgery(id: number) {
         setCollapsedSurgeries((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -817,289 +818,261 @@ export default function BriefingShow({
                     </a>
                 </div>
 
-                {/* Grid */}
-                <div className="grid gap-10 lg:grid-cols-3">
-                    {/* ── Briefing ── */}
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="flex items-center gap-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600/90 text-xs font-semibold text-white shadow-sm">
-                                    1
-                                </span>
-                                Briefing
-                            </h2>
-                            <Link
-                                href={`/briefings/${briefing.id}/edit`}
-                                className="rounded-xl border border-gray-300/70 bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 hover:shadow-sm dark:border-gray-600 dark:hover:bg-gray-800"
+                {/* Tabs */}
+                <div>
+                    {/* Tab bar */}
+                    <div className="mb-6 flex gap-1 rounded-xl border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-800">
+                        {([
+                            { id: 'briefing',   label: 'Briefing',    num: 1, missing: false },
+                            { id: 'cirurgias',  label: `Cirurgias (${briefing.surgeries.length})`, num: 2, missing: briefing.surgeries.length === 0 },
+                            { id: 'debriefing', label: 'Debriefing',  num: 3, missing: !briefing.debriefing },
+                        ] as const).map((tab) => (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all ${
+                                    activeTab === tab.id
+                                        ? tab.missing
+                                            ? 'bg-white text-red-600 shadow-sm dark:bg-gray-900 dark:text-red-400'
+                                            : 'bg-white text-blue-700 shadow-sm dark:bg-gray-900 dark:text-blue-400'
+                                        : tab.missing
+                                            ? 'text-red-400 hover:text-red-600 dark:text-red-500 dark:hover:text-red-300'
+                                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                }`}
                             >
-                                Editar
-                            </Link>
-                        </div>
-
-                        <div className="rounded-2xl border border-gray-200/70 bg-white/80 p-5 shadow-sm backdrop-blur-sm transition hover:shadow-md dark:border-gray-700/60 dark:bg-gray-900/80">
-                            <Row label="Dotação segura">
-                                <Badge value={briefing.equipa_segura} />
-                            </Row>
-                            <Row label="Alteração de equipa">
-                                <Badge value={briefing.alteracao_equipa} />
-                            </Row>
-                            {briefing.descricao_alteracao_equipa && (
-                                <Row label="Desc. alteração equipa">
-                                    {briefing.descricao_alteracao_equipa}
-                                </Row>
-                            )}
-                            <Row label="Problemas na sala">
-                                <Badge value={briefing.problemas_sala} />
-                            </Row>
-                            {briefing.descricao_problemas && (
-                                <Row label="Desc. problemas">
-                                    {briefing.descricao_problemas}
-                                </Row>
-                            )}
-                            <Row label="Equipamento OK">
-                                <Badge value={briefing.equipamento_ok} />
-                            </Row>
-                            {briefing.descricao_equipamento && (
-                                <Row label="Desc. equipamento">
-                                    {briefing.descricao_equipamento}
-                                </Row>
-                            )}
-                            <Row label="Mesa emparelhada">
-                                <Badge value={briefing.mesa_emparelhada} />
-                            </Row>
-                            <Row label="Ordem mantida">
-                                <Badge value={briefing.ordem_mantida} />
-                            </Row>
-                        </div>
+                                <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
+                                    activeTab === tab.id
+                                        ? tab.missing ? 'bg-red-500 text-white' : 'bg-blue-600 text-white'
+                                        : tab.missing ? 'bg-red-200 text-red-600 dark:bg-red-900/50 dark:text-red-400' : 'bg-gray-300 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
+                                }`}>
+                                    {tab.num}
+                                </span>
+                                {tab.label}
+                            </button>
+                        ))}
                     </div>
 
-                    {/* ── Cirurgias ── */}
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="flex items-center gap-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600/90 text-xs font-semibold text-white shadow-sm">
-                                    2
-                                </span>
-                                Cirurgias
-                                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                                    {briefing.surgeries.length}
-                                </span>
-                            </h2>
-
-                            <Link
-                                href={`/briefings/${briefing.id}/surgeries/create`}
-                                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md active:scale-[0.98]"
-                            >
-                                + Adicionar
-                            </Link>
-                        </div>
-
-                        {briefing.surgeries.length === 0 ? (
-                            <div className="rounded-2xl border border-dashed border-gray-300/70 bg-gray-50/50 p-6 text-center text-sm text-gray-500 dark:bg-gray-800/30">
-                                Nenhuma cirurgia adicionada ainda.
-                            </div>
-                        ) : (
-                            <div className="flex flex-col gap-3">
-                                {briefing.surgeries.map((s) => (
-                                    <div
-                                        key={s.id}
-                                        className="group rounded-2xl border border-gray-200 bg-white p-4 transition hover:shadow-md dark:border-gray-700 dark:bg-gray-900"
-                                    >
-                                        {/* Cabeçalho clicável (colapsar/expandir) */}
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleSurgery(s.id)}
-                                            className="flex w-full items-center justify-between text-left"
-                                        >
-                                            <div>
-                                                <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white">
-                                                    {s.procedimento}
-                                                </div>
-                                                <p className="mt-0.5 text-xs text-gray-500">
-                                                    Proc. {s.processo} &middot;{' '}
-                                                    {s.destino}
-                                                </p>
-                                            </div>
-                                            <span className="ml-2 shrink-0 text-xs text-gray-400">
-                                                {collapsedSurgeries[s.id] ? '▶' : '▼'}
-                                            </span>
-                                        </button>
-
-                                        {!collapsedSurgeries[s.id] && (
-                                        <div>
-                                        {/* Ações (Editar / Eliminar) */}
-                                        <div className="mt-2 flex items-center gap-3">
-                                            <Link
-                                                href={`/surgeries/${s.id}/edit`}
-                                                className="text-xs text-blue-600 hover:underline"
-                                            >
-                                                Editar
-                                            </Link>
-                                            {isAdmin && (
-                                                <button
-                                                    onClick={() => confirmDeleteSurgery(s.id)}
-                                                    className="text-xs text-red-500 hover:underline"
-                                                >
-                                                    Eliminar
-                                                </button>
-                                            )}
-                                        </div>
-                                        {/* Indicadores clínicos */}
-                                        {[
-                                            {
-                                                flag: s.antecedentes_relevantes,
-                                                label: 'Antecedentes',
-                                                desc: s.descricao_antecedentes,
-                                            },
-                                            {
-                                                flag: s.comorbidades,
-                                                label: 'Comorbidades',
-                                                desc: s.descricao_comorbidades,
-                                            },
-                                            {
-                                                flag: s.variacoes_tecnicas,
-                                                label: 'Var. técnicas',
-                                                desc: s.descricao_variacoes,
-                                            },
-                                            {
-                                                flag: s.passos_criticos,
-                                                label: 'Passos críticos',
-                                                desc: s.descricao_passos,
-                                            },
-                                        ].filter((f) => f.flag).length > 0 && (
-                                            <div className="mt-2 flex flex-col gap-1">
-                                                {[
-                                                    {
-                                                        flag: s.antecedentes_relevantes,
-                                                        label: 'Antecedentes',
-                                                        desc: s.descricao_antecedentes,
-                                                    },
-                                                    {
-                                                        flag: s.comorbidades,
-                                                        label: 'Comorbidades',
-                                                        desc: s.descricao_comorbidades,
-                                                    },
-                                                    {
-                                                        flag: s.variacoes_tecnicas,
-                                                        label: 'Var. técnicas',
-                                                        desc: s.descricao_variacoes,
-                                                    },
-                                                    {
-                                                        flag: s.passos_criticos,
-                                                        label: 'Passos críticos',
-                                                        desc: s.descricao_passos,
-                                                    },
-                                                ]
-                                                    .filter((f) => f.flag)
-                                                    .map((f) => (
-                                                        <span
-                                                            key={f.label}
-                                                            className="inline-flex items-start gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
-                                                        >
-                                                            <span className="shrink-0">
-                                                                ⚠
-                                                            </span>
-                                                            <span>
-                                                                <strong>
-                                                                    {f.label}
-                                                                </strong>
-                                                                {f.desc
-                                                                    ? ': ' +
-                                                                      f.desc
-                                                                    : ''}
-                                                            </span>
-                                                        </span>
-                                                    ))}
-                                            </div>
-                                        )}
-                                        <SurgeryTemposPanel surgery={s} />
-                                        <SurgeryStockPanel
-                                            surgery={s}
-                                            stockItems={stockItems}
-                                        />
-                                        </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* ── Debriefing ── */}
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="flex items-center gap-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600/90 text-xs font-semibold text-white shadow-sm">
-                                    3
-                                </span>
-                                Debriefing
-                            </h2>
-
-                            <Link
-                                href={`/briefings/${briefing.id}/debriefing/edit`}
-                                className="rounded-xl border border-gray-300/70 bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 hover:shadow-sm dark:border-gray-600 dark:hover:bg-gray-800"
-                            >
-                                Editar
-                            </Link>
-                        </div>
-
-                        {briefing.debriefing ? (
-                            <div className="rounded-2xl border border-gray-200/70 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-900/80">
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-200 dark:bg-green-900/20 dark:text-green-300 dark:ring-green-800">
-                                    ✓ Registado
-                                </span>
-
-                                <Row label="Complicações">
-                                    <Badge
-                                        value={briefing.debriefing.complicacoes}
-                                    />
-                                </Row>
-                                <Row label="Falha sistema">
-                                    <Badge
-                                        value={
-                                            briefing.debriefing.falha_sistema
-                                        }
-                                    />
-                                </Row>
-                                <Row label="Iniciou a horas">
-                                    <Badge
-                                        value={
-                                            briefing.debriefing.inicio_a_horas
-                                        }
-                                    />
-                                </Row>
-                                <Row label="Finalizou a horas">
-                                    <Badge
-                                        value={briefing.debriefing.fim_a_horas}
-                                    />
-                                </Row>
-                                <Row label="Cirurgia correu bem">
-                                    {briefing.debriefing.correu_bem ||
-                                        'Nenhum comentário.'}
-                                </Row>
-                                <Row label="Situações a melhorar">
-                                    {briefing.debriefing.melhorar ||
-                                        'Nenhum comentário.'}
-                                </Row>
-                                <Row label="Falha comunicação">
-                                    {briefing.debriefing.falha_comunicacao ||
-                                        'Nenhum comentário.'}
-                                </Row>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-gray-300/70 bg-gray-50/50 p-8 text-center text-gray-500 dark:bg-gray-800/30">
-                                <p className="text-sm">
-                                    O debriefing ainda não foi registado.
-                                </p>
+                    {/* ── Tab: Briefing ── */}
+                    {activeTab === 'briefing' && (
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="flex items-center gap-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600/90 text-xs font-semibold text-white shadow-sm">
+                                        1
+                                    </span>
+                                    Briefing
+                                </h2>
                                 <Link
-                                    href={`/briefings/${briefing.id}/debriefing/create`}
-                                    className="rounded-xl bg-red-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 hover:shadow-md"
+                                    href={`/briefings/${briefing.id}/edit`}
+                                    className="rounded-xl border border-gray-300/70 bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 hover:shadow-sm dark:border-gray-600 dark:hover:bg-gray-800"
                                 >
-                                    Registar Debriefing
+                                    Editar
                                 </Link>
                             </div>
-                        )}
-                    </div>
+                            <div className="rounded-2xl border border-gray-200/70 bg-white/80 p-5 shadow-sm backdrop-blur-sm transition hover:shadow-md dark:border-gray-700/60 dark:bg-gray-900/80">
+                                <Row label="Dotação segura">
+                                    <Badge value={briefing.equipa_segura} />
+                                </Row>
+                                <Row label="Alteração de equipa">
+                                    <Badge value={briefing.alteracao_equipa} />
+                                </Row>
+                                {briefing.descricao_alteracao_equipa && (
+                                    <Row label="Desc. alteração equipa">
+                                        {briefing.descricao_alteracao_equipa}
+                                    </Row>
+                                )}
+                                <Row label="Problemas na sala">
+                                    <Badge value={briefing.problemas_sala} />
+                                </Row>
+                                {briefing.descricao_problemas && (
+                                    <Row label="Desc. problemas">
+                                        {briefing.descricao_problemas}
+                                    </Row>
+                                )}
+                                <Row label="Equipamento OK">
+                                    <Badge value={briefing.equipamento_ok} />
+                                </Row>
+                                {briefing.descricao_equipamento && (
+                                    <Row label="Desc. equipamento">
+                                        {briefing.descricao_equipamento}
+                                    </Row>
+                                )}
+                                <Row label="Mesa emparelhada">
+                                    <Badge value={briefing.mesa_emparelhada} />
+                                </Row>
+                                <Row label="Ordem mantida">
+                                    <Badge value={briefing.ordem_mantida} />
+                                </Row>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Tab: Cirurgias ── */}
+                    {activeTab === 'cirurgias' && (
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="flex items-center gap-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600/90 text-xs font-semibold text-white shadow-sm">
+                                        2
+                                    </span>
+                                    Cirurgias
+                                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                                        {briefing.surgeries.length}
+                                    </span>
+                                </h2>
+                                <Link
+                                    href={`/briefings/${briefing.id}/surgeries/create`}
+                                    className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md active:scale-[0.98]"
+                                >
+                                    + Adicionar
+                                </Link>
+                            </div>
+                            {briefing.surgeries.length === 0 ? (
+                                <div className="rounded-2xl border border-dashed border-gray-300/70 bg-gray-50/50 p-6 text-center text-sm text-gray-500 dark:bg-gray-800/30">
+                                    Nenhuma cirurgia adicionada ainda.
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    {briefing.surgeries.map((s) => (
+                                        <div
+                                            key={s.id}
+                                            className="group rounded-2xl border border-gray-200 bg-white p-4 transition hover:shadow-md dark:border-gray-700 dark:bg-gray-900"
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleSurgery(s.id)}
+                                                className="flex w-full items-center justify-between text-left"
+                                            >
+                                                <div>
+                                                    <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white">
+                                                        {s.procedimento}
+                                                    </div>
+                                                    <p className="mt-0.5 text-xs text-gray-500">
+                                                        Proc. {s.processo} &middot;{' '}
+                                                        {s.destino}
+                                                    </p>
+                                                </div>
+                                                <span className="ml-2 shrink-0 text-xs text-gray-400">
+                                                    {collapsedSurgeries[s.id] ? '▶' : '▼'}
+                                                </span>
+                                            </button>
+                                            {!collapsedSurgeries[s.id] && (
+                                                <div>
+                                                    <div className="mt-2 flex items-center gap-3">
+                                                        <Link
+                                                            href={`/surgeries/${s.id}/edit`}
+                                                            className="text-xs text-blue-600 hover:underline"
+                                                        >
+                                                            Editar
+                                                        </Link>
+                                                        {isAdmin && (
+                                                            <button
+                                                                onClick={() => confirmDeleteSurgery(s.id)}
+                                                                className="text-xs text-red-500 hover:underline"
+                                                            >
+                                                                Eliminar
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    {[
+                                                        { flag: s.antecedentes_relevantes, label: 'Antecedentes', desc: s.descricao_antecedentes },
+                                                        { flag: s.comorbidades, label: 'Comorbidades', desc: s.descricao_comorbidades },
+                                                        { flag: s.variacoes_tecnicas, label: 'Var. técnicas', desc: s.descricao_variacoes },
+                                                        { flag: s.passos_criticos, label: 'Passos críticos', desc: s.descricao_passos },
+                                                    ].filter((f) => f.flag).length > 0 && (
+                                                        <div className="mt-2 flex flex-col gap-1">
+                                                            {[
+                                                                { flag: s.antecedentes_relevantes, label: 'Antecedentes', desc: s.descricao_antecedentes },
+                                                                { flag: s.comorbidades, label: 'Comorbidades', desc: s.descricao_comorbidades },
+                                                                { flag: s.variacoes_tecnicas, label: 'Var. técnicas', desc: s.descricao_variacoes },
+                                                                { flag: s.passos_criticos, label: 'Passos críticos', desc: s.descricao_passos },
+                                                            ]
+                                                                .filter((f) => f.flag)
+                                                                .map((f) => (
+                                                                    <span
+                                                                        key={f.label}
+                                                                        className="inline-flex items-start gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                                                                    >
+                                                                        <span className="shrink-0">⚠</span>
+                                                                        <span>
+                                                                            <strong>{f.label}</strong>
+                                                                            {f.desc ? ': ' + f.desc : ''}
+                                                                        </span>
+                                                                    </span>
+                                                                ))}
+                                                        </div>
+                                                    )}
+                                                    <SurgeryTemposPanel surgery={s} />
+                                                    <SurgeryStockPanel surgery={s} stockItems={stockItems} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── Tab: Debriefing ── */}
+                    {activeTab === 'debriefing' && (
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="flex items-center gap-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600/90 text-xs font-semibold text-white shadow-sm">
+                                        3
+                                    </span>
+                                    Debriefing
+                                </h2>
+                                <Link
+                                    href={`/briefings/${briefing.id}/debriefing/edit`}
+                                    className="rounded-xl border border-gray-300/70 bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 hover:shadow-sm dark:border-gray-600 dark:hover:bg-gray-800"
+                                >
+                                    Editar
+                                </Link>
+                            </div>
+                            {briefing.debriefing ? (
+                                <div className="rounded-2xl border border-gray-200/70 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-900/80">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-200 dark:bg-green-900/20 dark:text-green-300 dark:ring-green-800">
+                                        ✓ Registado
+                                    </span>
+                                    <Row label="Complicações">
+                                        <Badge value={briefing.debriefing.complicacoes} />
+                                    </Row>
+                                    <Row label="Falha sistema">
+                                        <Badge value={briefing.debriefing.falha_sistema} />
+                                    </Row>
+                                    <Row label="Iniciou a horas">
+                                        <Badge value={briefing.debriefing.inicio_a_horas} />
+                                    </Row>
+                                    <Row label="Finalizou a horas">
+                                        <Badge value={briefing.debriefing.fim_a_horas} />
+                                    </Row>
+                                    <Row label="Cirurgia correu bem">
+                                        {briefing.debriefing.correu_bem || 'Nenhum comentário.'}
+                                    </Row>
+                                    <Row label="Situações a melhorar">
+                                        {briefing.debriefing.melhorar || 'Nenhum comentário.'}
+                                    </Row>
+                                    <Row label="Falha comunicação">
+                                        {briefing.debriefing.falha_comunicacao || 'Nenhum comentário.'}
+                                    </Row>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-gray-300/70 bg-gray-50/50 p-8 text-center text-gray-500 dark:bg-gray-800/30">
+                                    <p className="text-sm">
+                                        O debriefing ainda não foi registado.
+                                    </p>
+                                    <Link
+                                        href={`/briefings/${briefing.id}/debriefing/create`}
+                                        className="rounded-xl bg-red-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 hover:shadow-md"
+                                    >
+                                        Registar Debriefing
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </AppLayout>
