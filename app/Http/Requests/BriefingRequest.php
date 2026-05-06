@@ -14,7 +14,7 @@ class BriefingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'data'                        => ['required', 'date'],
+            'data'                        => ['required', 'date','before_or_equal:today'],
             'hora'                        => ['required', 'date_format:H:i'],
             'especialidade'               => ['required', 'string', 'max:255'],
             'sala'                        => ['required', 'string', 'max:2'],
@@ -60,5 +60,25 @@ class BriefingRequest extends FormRequest
         if (!empty($processed)) {
             $this->merge($processed);
         }
+    }
+
+    public function messages(): array
+    {
+        return [
+            'data.required'         => 'A data é obrigatória.',
+            'data.before_or_equal'  => 'A data não pode ser superior à data atual.',
+            'data.date'             => 'A data deve ser um formato de data válido.',
+            'hora.required'         => 'A hora é obrigatória.',
+            'hora.date_format'     => 'A hora deve estar no formato HH:MM.',
+            'especialidade.required' => 'A especialidade é obrigatória.',
+            'especialidade.string'   => 'A especialidade deve ser uma string.',
+            'especialidade.max'      => 'A especialidade não pode exceder 255 caracteres.',
+            'sala.required'         => 'A sala é obrigatória.',
+            'sala.string'           => 'A sala deve ser uma string.',
+            'sala.max'              => 'A sala não pode exceder 2 caracteres.',
+
+            // Mensagens para os campos booleanos
+            '*.boolean'             => 'O campo :attribute deve ser verdadeiro ou falso.',
+        ];
     }
 }
