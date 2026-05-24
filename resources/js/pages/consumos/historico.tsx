@@ -35,7 +35,6 @@ interface Consumo {
     id: number;
     quantidade: number;
     observacoes?: string;
-    created_at: string;
     surgery: Surgery;
     stock_movimento?: StockMovimento;
 }
@@ -63,11 +62,6 @@ interface Props {
 function formatDate(dateStr: string) {
     const [year, month, day] = dateStr.substring(0, 10).split('-');
     return `${day}/${month}/${year}`;
-}
-
-function formatDateTime(dateStr: string) {
-    const d = new Date(dateStr);
-    return d.toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 const categoriaLabel: Record<string, string> = {
@@ -245,7 +239,7 @@ export default function HistoricoConsumos({ consumos, filters }: Props) {
                                     return (
                                         <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                             <td className="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-300">
-                                                {formatDateTime(c.created_at)}
+                                                {c.surgery.briefing ? formatDate(c.surgery.briefing.data) : '—'}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <Link
@@ -258,7 +252,7 @@ export default function HistoricoConsumos({ consumos, filters }: Props) {
                                             </td>
                                             <td className="whitespace-nowrap px-4 py-3 text-gray-600 dark:text-gray-300">
                                                 {c.surgery.briefing
-                                                    ? `Sala ${c.surgery.briefing.sala} · ${formatDate(c.surgery.briefing.data)}`
+                                                    ? `Sala ${c.surgery.briefing.sala}`
                                                     : '—'}
                                             </td>
                                             <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">

@@ -32,7 +32,6 @@ interface Consumo {
     id: number;
     quantidade: number;
     observacoes?: string;
-    created_at: string;
     surgery: Surgery;
     stock_movimento?: StockMovimento;
 }
@@ -50,11 +49,6 @@ const categoriaLabel: Record<string, string> = {
 function formatDate(d: string) {
     const [y, m, day] = d.substring(0, 10).split('-');
     return `${day}/${m}/${y}`;
-}
-
-function formatDateTime(d: string) {
-    const dt = new Date(d);
-    return dt.toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 export default function ConsumosPrint({ consumos }: Props) {
@@ -131,7 +125,9 @@ export default function ConsumosPrint({ consumos }: Props) {
                                 const cat  = tipo?.categoria ?? '';
                                 return (
                                     <tr key={c.id} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
-                                        <td style={{ ...td, whiteSpace: 'nowrap', color: '#6b7280' }}>{formatDateTime(c.created_at)}</td>
+                                        <td style={{ ...td, whiteSpace: 'nowrap', color: '#6b7280' }}>
+                                            {c.surgery.briefing ? formatDate(c.surgery.briefing.data) : '—'}
+                                        </td>
                                         <td style={td}>
                                             <div style={{ fontWeight: 500 }}>{c.surgery.processo}</div>
                                             <div style={{ color: '#6b7280', fontSize: 9 }}>{c.surgery.procedimento}</div>

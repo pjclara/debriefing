@@ -111,14 +111,25 @@ class ConsumoController extends Controller
         }
 
         if ($dataInicio) {
-            $query->whereDate('created_at', '>=', $dataInicio);
+            $query->whereHas('surgery.briefing', function ($q) use ($dataInicio) {
+                $q->whereDate('data', '>=', $dataInicio);
+            });
         }
 
         if ($dataFim) {
-            $query->whereDate('created_at', '<=', $dataFim);
+            $query->whereHas('surgery.briefing', function ($q) use ($dataFim) {
+                $q->whereDate('data', '<=', $dataFim);
+            });
         }
 
-        $consumos = $query->orderByDesc('created_at')->paginate(50)->withQueryString();
+        $consumos = $query
+            ->join('surgeries', 'consumos.surgery_id', '=', 'surgeries.id')
+            ->join('briefings', 'surgeries.briefing_id', '=', 'briefings.id')
+            ->select('consumos.*')
+            ->orderByDesc('briefings.data')
+            ->orderByDesc('consumos.id')
+            ->paginate(15)
+            ->withQueryString();
 
         return Inertia::render('consumos/historico', [
             'consumos' => $consumos,
@@ -163,14 +174,24 @@ class ConsumoController extends Controller
         }
 
         if ($dataInicio) {
-            $query->whereDate('created_at', '>=', $dataInicio);
+            $query->whereHas('surgery.briefing', function ($q) use ($dataInicio) {
+                $q->whereDate('data', '>=', $dataInicio);
+            });
         }
 
         if ($dataFim) {
-            $query->whereDate('created_at', '<=', $dataFim);
+            $query->whereHas('surgery.briefing', function ($q) use ($dataFim) {
+                $q->whereDate('data', '<=', $dataFim);
+            });
         }
 
-        $consumos = $query->orderByDesc('created_at')->get();
+        $consumos = $query
+            ->join('surgeries', 'consumos.surgery_id', '=', 'surgeries.id')
+            ->join('briefings', 'surgeries.briefing_id', '=', 'briefings.id')
+            ->select('consumos.*')
+            ->orderByDesc('briefings.data')
+            ->orderByDesc('consumos.id')
+            ->get();
 
         return Inertia::render('consumos/print', [
             'consumos' => $consumos,
