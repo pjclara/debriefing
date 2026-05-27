@@ -644,6 +644,10 @@ function SurgeryStockPanel({
                     {consumos.map((c) => {
                         const mov = c.stock_movimento;
                         const isEditing = !!editing[c.id];
+                        const stockItem =
+                            mov?.consumivel_tipo?.categoria === 'robotico_vidas'
+                                ? stockItems.find((i) => i.stock_movimento_id === c.stock_movimento_id)
+                                : stockItems.find((i) => i.consumivel_tipo_id === mov?.consumivel_tipo?.id);
                         return (
                             <div
                                 key={c.id}
@@ -662,11 +666,11 @@ function SurgeryStockPanel({
                                                     Qtd: {c.quantidade}
                                                 </span>
                                                 {mov?.consumivel_tipo?.categoria === 'robotico_vidas'
-                                                    ? mov?.vidas_atual != null && (
-                                                          <span>Vidas: {mov.vidas_atual}/{mov.vidas_inicial}</span>
+                                                    ? stockItem != null && (
+                                                          <span>Vidas: {stockItem.quantidade_disponivel}/{stockItem.quantidade_inicial}</span>
                                                       )
-                                                    : mov?.unidades_atual != null && (
-                                                          <span>Unid.: {mov.unidades_atual}/{mov.unidades_inicial}</span>
+                                                    : stockItem != null && (
+                                                          <span>Unid.: {stockItem.quantidade_disponivel}</span>
                                                       )}
                                                 {mov?.consumivel_tipo?.categoria === 'robotico_vidas' && mov?.codigo && (
                                                     <span>Codigo: {mov.codigo}</span>
