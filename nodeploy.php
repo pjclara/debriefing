@@ -16,7 +16,7 @@ DB::transaction(function () {
         if ($mov->vidas_inicial !== null) {
             $consumidos = DB::table('consumos')
                 ->where('stock_movimento_id', $mov->id)
-                ->count();
+                ->sum('quantidade');
             $vidasCalculado = max(0, $mov->vidas_inicial - $consumidos);
             if ($mov->vidas_atual !== $vidasCalculado) {
                 DB::table('stock_movimentos')
