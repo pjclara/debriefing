@@ -57,12 +57,18 @@ interface TopGasto {
     total_usos: number;
 }
 
+interface CirurgiasPorDepartamento {
+    departamento: string;
+    total: number;
+}
+
 interface Props {
     stats: Stats;
     stock: StockStats;
     recentBriefings: RecentBriefing[];
     proximosBriefings: RecentBriefing[];
     topGastos: TopGasto[];
+    cirurgiasPorDepartamento: CirurgiasPorDepartamento[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -126,6 +132,7 @@ export default function Dashboard({
     recentBriefings,
     proximosBriefings,
     topGastos,
+    cirurgiasPorDepartamento,
 }: Props) {
     const mesLabel = new Date().toLocaleDateString('pt-PT', {
         month: 'long',
@@ -261,8 +268,6 @@ export default function Dashboard({
                                     </p>
                                 </div>
                             </div>
-                            
-
                         </div>
                     </section>
 
@@ -344,54 +349,65 @@ export default function Dashboard({
                         </div>
                     </section>
 
-                    {/* ── Próximas sessões ── */}
+                    {/* ── Cirurgias por departamento ── */}
                     <section>
-                        <div className="mb-3 flex items-center justify-between">
-                            <h2 className="text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                                Próximas sessões
-                            </h2>
-                            <Link
-                                href="/briefings/create"
-                                className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-blue-700"
-                            >
-                                + Nova sessão
-                            </Link>
+    <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+            Cirurgias por departamento
+        </h2>
+    </div>
+
+    {cirurgiasPorDepartamento.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-gray-300/70 bg-gray-50/50 p-6 text-center text-sm text-gray-500 dark:bg-gray-800/30">
+            Sem dados disponíveis.
+        </div>
+    ) : (
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+            {(() => {
+                const max = cirurgiasPorDepartamento[0].total;
+
+                return cirurgiasPorDepartamento.map((item, i) => (
+                    <div
+                        key={item.departamento}
+                        className={`flex items-center gap-4 px-5 py-3 ${
+                            i < cirurgiasPorDepartamento.length - 1
+                                ? 'border-b border-gray-100 dark:border-gray-800'
+                                : ''
+                        }`}
+                    >
+                        <span className="w-5 shrink-0 text-center text-xs font-bold text-gray-400">
+                            {i + 1}
+                        </span>
+
+                        <div className="min-w-0 flex-1">
+                            <div className="mb-1 flex items-center justify-between gap-2">
+                                <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                                    {item.departamento}
+                                </p>
+
+                                <span className="text-sm font-bold text-gray-900 dark:text-white">
+                                    {item.total}
+                                </span>
+                            </div>
+
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                                <div
+                                    className="h-full rounded-full bg-blue-500 opacity-70"
+                                    style={{
+                                        width: `${Math.round((item.total / max) * 100)}%`,
+                                    }}
+                                />
+                            </div>
                         </div>
-                        <div className="flex flex-col gap-2">
-                            {proximosBriefings.length === 0 ? (
-                                <div className="rounded-xl border border-dashed border-gray-300/70 bg-gray-50/50 p-6 text-center text-sm text-gray-500 dark:bg-gray-800/30">
-                                    Sem sessões agendadas.
-                                </div>
-                            ) : (
-                                proximosBriefings.map((b) => (
-                                    <Link
-                                        key={b.id}
-                                        href={`/briefings/${b.id}`}
-                                        className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-sm transition hover:shadow-sm dark:border-blue-900/40 dark:bg-blue-950/20"
-                                    >
-                                        <div>
-                                            <p className="font-medium text-gray-900 dark:text-white">
-                                                {formatDate(b.data)}{' '}
-                                                <span className="text-gray-400">
-                                                    {b.hora}
-                                                </span>
-                                            </p>
-                                            <p className="mt-0.5 text-xs text-gray-500">
-                                                {b.especialidade} · Sala{' '}
-                                                {b.sala} · {b.surgeries_count}{' '}
-                                                cirurgia
-                                                {b.surgeries_count !== 1
-                                                    ? 's'
-                                                    : ''}
-                                            </p>
-                                        </div>
-                                        <ChevronRight className="h-4 w-4 text-gray-300" />
-                                    </Link>
-                                ))
-                            )}
-                        </div>
-                    </section>
+                    </div>
+                ));
+            })()}
+        </div>
+    )}
+</section>
+
                 </div>
+
 
                 {/* ── Top gastos por tipo ── */}
                 {topGastos.length > 0 && (

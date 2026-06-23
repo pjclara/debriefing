@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Briefing;
-use App\Models\Consumo;
 use App\Models\Debriefing;
 use App\Models\StockMovimento;
 use App\Models\Surgery;
@@ -20,37 +19,37 @@ class DashboardController extends Controller
         $mes  = Carbon::now();
 
         // ── KPIs ─────────────────────────────────────────────────────────────
-        $briefingsTotal = Briefing::count();
+        $briefingsTotal = Briefing::query()->count('*');
 
-        $briefingsSemana = Briefing::whereBetween('data', [$hoje->copy()->startOfWeek(), $hoje->copy()->endOfWeek()])->count();
+        $briefingsSemana = Briefing::query()->whereBetween('data', [$hoje->copy()->startOfWeek(), $hoje->copy()->endOfWeek()], 'and')->count('*');
 
-        $briefingsMes = Briefing::whereYear('data', $mes->year)
-            ->whereMonth('data', $mes->month)
-            ->count();
+        $briefingsMes = Briefing::query()->whereYear('data', '=', $mes->year, 'and')
+            ->whereMonth('data', '=', $mes->month, 'and')
+            ->count('*');
 
-        $cirurgiasTotal = Surgery::count();
+        $cirurgiasTotal = Surgery::query()->count('*');
 
-        $cirurgiasSemana = Surgery::whereHas('briefing', function ($q) use ($hoje) {
-            $q->whereBetween('data', [$hoje->copy()->startOfWeek(), $hoje->copy()->endOfWeek()]);
-        })->count();
-        
-        $cirurgiasMes = Surgery::whereHas('briefing', function ($q) use ($mes) {
-            $q->whereYear('data', $mes->year)->whereMonth('data', $mes->month);
-        })->count();
+        $cirurgiasSemana = Surgery::query()->whereHas('briefing', function ($q) use ($hoje) {
+            $q->whereBetween('data', [$hoje->copy()->startOfWeek(), $hoje->copy()->endOfWeek()], 'and');
+        })->count('*');
 
-        $debriefsEmFalta = Briefing::whereDoesntHave('debriefing')
-            ->where('data', '<=', $hoje)
-            ->count();
+        $cirurgiasMes = Surgery::query()->whereHas('briefing', function ($q) use ($mes) {
+            $q->whereYear('data', '=', $mes->year, 'and')->whereMonth('data', '=', $mes->month, 'and');
+        })->count('*');
 
-        $complicacoesMes = Debriefing::where('complicacoes', true)
+        $debriefsEmFalta = Briefing::query()->whereDoesntHave('debriefing')
+            ->where('data', '<=', $hoje, 'and')
+            ->count('*');
+
+        $complicacoesMes = Debriefing::query()->where('complicacoes', '=', true, 'and')
             ->whereHas('briefing', function ($q) use ($mes) {
-                $q->whereYear('data', $mes->year)->whereMonth('data', $mes->month);
-            })->count();
+                $q->whereYear('data', '=', $mes->year, 'and')->whereMonth('data', '=', $mes->month, 'and');
+            })->count('*');
 
-        $eventosAdversosMes = Debriefing::where('evento_adverso', true)
+        $eventosAdversosMes = Debriefing::query()->where('evento_adverso', '=', true, 'and')
             ->whereHas('briefing', function ($q) use ($mes) {
-                $q->whereYear('data', $mes->year)->whereMonth('data', $mes->month);
-            })->count();
+                $q->whereYear('data', '=', $mes->year, 'and')->whereMonth('data', '=', $mes->month, 'and');
+            })->count('*');
 
         // ── Briefings recentes (últimos 6) ────────────────────────────────────
         $recentBriefings = Briefing::withCount('surgeries')
@@ -64,23 +63,23 @@ class DashboardController extends Controller
         // ── Stock movimentos ───────────────────────────────────────────────────
         $semana = Carbon::now()->startOfWeek();
 
-        $stockTotal = StockMovimento::count();
+        $stockTotal = StockMovimento::query()->count('*');
 
-        $stockMes = StockMovimento::whereYear('created_at', $mes->year)
-            ->whereMonth('created_at', $mes->month)
-            ->count();
+        $stockMes = StockMovimento::query()->whereYear('created_at', '=', $mes->year, 'and')
+            ->whereMonth('created_at', '=', $mes->month, 'and')
+            ->count('*');
 
-        $stockSemana = StockMovimento::where('created_at', '>=', $semana)->count();
+        $stockSemana = StockMovimento::query()->where('created_at', '>=', $semana, 'and')->count('*');
 
-        $stockEntradaMes = StockMovimento::whereIn('tipo_mov', StockMovimento::TIPOS_ENTRADA)
-            ->whereYear('created_at', $mes->year)
-            ->whereMonth('created_at', $mes->month)
-            ->count();
+        $stockEntradaMes = StockMovimento::query()->whereIn('tipo_mov', StockMovimento::TIPOS_ENTRADA, 'and', false)
+            ->whereYear('created_at', '=', $mes->year, 'and')
+            ->whereMonth('created_at', '=', $mes->month, 'and')
+            ->count('*');
 
-        $stockSaidaMes = StockMovimento::whereIn('tipo_mov', StockMovimento::TIPOS_SAIDA)
-            ->whereYear('created_at', $mes->year)
-            ->whereMonth('created_at', $mes->month)
-            ->count();
+        $stockSaidaMes = StockMovimento::query()->whereIn('tipo_mov', StockMovimento::TIPOS_SAIDA, 'and', false)
+            ->whereYear('created_at', '=', $mes->year, 'and')
+            ->whereMonth('created_at', '=', $mes->month, 'and')
+            ->count('*');
 
         // ── Top gastos por tipo de consumível ────────────────────────────────
         $topGastos = DB::table('consumos')
@@ -106,6 +105,19 @@ class DashboardController extends Controller
             ->limit(4)
             ->get(['id', 'data', 'hora', 'especialidade', 'sala']);
 
+        // ── cirurgias por departamentos ─────────────────────────────────────────────
+
+        $cirurgiasPorDepartamento = Surgery::query()
+            ->join('briefings', 'briefings.id', '=', 'surgeries.briefing_id', 'inner', false)
+            ->select(
+                'briefings.especialidade as departamento',
+                DB::raw('COUNT(surgeries.id) as total')
+            )
+            ->groupBy('briefings.especialidade')
+            ->orderByDesc('total')
+            ->get();
+
+
         return Inertia::render('dashboard', [
             'stats' => [
                 'briefingsTotal'      => $briefingsTotal,
@@ -128,6 +140,7 @@ class DashboardController extends Controller
             'recentBriefings'   => $recentBriefings,
             'proximosBriefings' => $proximosBriefings,
             'topGastos'         => $topGastos,
+            'cirurgiasPorDepartamento' => $cirurgiasPorDepartamento,
         ]);
     }
 }

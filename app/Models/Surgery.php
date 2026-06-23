@@ -100,4 +100,6 @@ class Surgery extends Model
     {
         return $this->hasMany(Consumo::class);
     }
+
+    
 }
