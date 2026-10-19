@@ -1740,7 +1740,7 @@ export default function SurgeryForm({
                                         )
                                     }
                                 />
-                                <Field label="Ótica" error={errors.otica}>
+                                <Field label="Lente robótica" error={errors.otica}>
                                     <select
                                         name="otica"
                                         value={data.otica}
@@ -1751,6 +1751,12 @@ export default function SurgeryForm({
                                         <option value="30">30°</option>
                                     </select>
                                 </Field>
+
+                                <p className="md:col-span-2 -mb-2 text-xs text-gray-500 dark:text-gray-400">
+                                    Preencha pelo menos 3 dos 4 braços. Em procedimentos que
+                                    utilizem apenas 3 braços (ex.: hernioplastias da parede
+                                    abdominal), pode deixar um deles vazio.
+                                </p>
 
                                  <Field
                                     label="B1 - Pinças"
@@ -1872,8 +1878,8 @@ export default function SurgeryForm({
                                         >
                                             <option value="">Selecione…</option>
                                             <option value="precise">Precise</option>
-                                            <option value="flugurate">
-                                                Flugurate
+                                            <option value="fulgurate">
+                                                Fulgurate
                                             </option>
                                             <option value="spray">Spray</option>
                                             <option value="low">Low</option>
@@ -2221,7 +2227,7 @@ export default function SurgeryForm({
                                         
                                         <p>
                                             <span className="font-medium">
-                                                Ótica:
+                                                Lente robótica:
                                             </span>{' '}
                                             {data.otica}°
                                         </p>

@@ -252,7 +252,7 @@ export default function BriefingPrint({ briefing, consumivelTipos }: { briefing:
                                         <Row label="Reserva activa" value={<Yn value={s.reserva_ativa} />} />
                                         {s.reserva_unidades != null && <Row label="Reserva (unidades)" value={s.reserva_unidades} />}
                                         {s.trocares != null && <Row label="Trócares" value={s.trocares} />}
-                                        {s.otica && <Row label="Ótica" value={`${s.otica}°`} />}
+                                        {s.otica && <Row label="Lente robótica" value={`${s.otica}°`} />}
                                         {s.prep_inicio && <Row label="Prep. Início" value={formatDateTime(s.prep_inicio)} />}
                                         {s.prep_fim && <Row label="Prep. Fim" value={formatDateTime(s.prep_fim)} />}
                                         {s.docking != null && <Row label="Docking (min)" value={s.docking} />}

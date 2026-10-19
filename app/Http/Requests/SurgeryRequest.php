@@ -64,22 +64,38 @@ class SurgeryRequest extends FormRequest
             'docking_lado'           => ['nullable', 'in:Direito,Esquerdo,Caudal'],
             'co2_parametros'         => ['required', 'numeric', 'min:0'],
             'monopolar_coag_watts'   => ['required', 'integer', 'min:0'],
-            'monopolar_coag_tipo'    => ['required', 'in:precise,flugurate,spray,low'],
+            'monopolar_coag_tipo'    => ['required', 'in:precise,fulgurate,spray,low'],
             'monopolar_cut_watts'    => ['required', 'integer', 'min:0'],
             'monopolar_cut_tipo'     => ['required', 'in:pure,blend'],
             'bipolar_coag_watts'     => ['required', 'integer', 'min:0'],
             'bipolar_coag_tipo'      => ['required', 'in:low_with_autostop,low,standard,macro'],
-            'b1'                     => ['required', 'array'],
+            'b1'                     => ['nullable', 'array'],
             'b1.*'                   => ['integer'],
-            'b2'                     => ['required', 'array'],
+            'b2'                     => ['nullable', 'array'],
             'b2.*'                   => ['integer'],
-            'b3'                     => ['required', 'array'],
+            'b3'                     => ['nullable', 'array'],
             'b3.*'                   => ['integer'],
-            'b4'                     => ['required', 'array'],
+            'b4'                     => ['nullable', 'array'],
             'b4.*'                   => ['integer'],
             'equipamento_extra'      => ['required', 'array'],
             'equipamento_extra.*'    => ['integer'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $armsFilled = collect(['b1', 'b2', 'b3', 'b4'])
+                ->filter(fn ($arm) => ! empty($this->input($arm)))
+                ->count();
+
+            if ($armsFilled < 3) {
+                $validator->errors()->add(
+                    'b1',
+                    'Preencha pelo menos 3 dos 4 braços (B1-B4). Em procedimentos que utilizem apenas 3 braços, pode deixar um deles vazio.'
+                );
+            }
+        });
     }
 
     protected function prepareForValidation(): void
@@ -193,8 +209,8 @@ class SurgeryRequest extends FormRequest
             'trocares_nao_roboticos.integer'           => 'O número de trócares não robóticos deve ser um inteiro.',
             'trocares_nao_roboticos_tamanhos.*.n.required'      => 'Indique o número do trócar não robótico.',
             'trocares_nao_roboticos_tamanhos.*.tamanho.required' => 'Indique o tamanho do trócar não robótico.',
-            'otica.required'                           => 'O campo de ótica é obrigatório.',
-            'otica.in'                                 => 'A ótica deve ser 0° ou 30°.',
+            'otica.required'                           => 'O campo de lente robótica é obrigatório.',
+            'otica.in'                                 => 'A lente robótica deve ser 0° ou 30°.',
             'monopolar_coag_watts.required'            => 'Indique a potência monopolar coag.',
             'monopolar_coag_watts.integer'             => 'A potência monopolar coag deve ser um inteiro.',
             'monopolar_coag_watts.min'                 => 'A potência monopolar coag não pode ser negativa.',
