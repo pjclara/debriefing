@@ -5,6 +5,7 @@ use App\Http\Controllers\ConsumivelTipoController;
 use App\Http\Controllers\ConsumoController;
 use App\Http\Controllers\DebriefingController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\LibraryDocumentController;
 use App\Http\Controllers\ProcedureController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\StockController;
@@ -73,8 +74,22 @@ Route::middleware(['auth'])->group(function () {
     Route::put('briefings/{briefing}/debriefing', [DebriefingController::class, 'update'])
         ->name('briefings.debriefing.update');
 
+    // ── Biblioteca de Apoio aos Procedimentos Cirúrgicos ────────────────────
+    Route::get('library', [LibraryDocumentController::class, 'index'])
+        ->name('library.index');
+    Route::get('library/{library}/download', [LibraryDocumentController::class, 'download'])
+        ->name('library.download');
+
     // ── Rotas exclusivas de admin ───────────────────────────────────────────
     Route::middleware('admin')->group(function () {
+        // Biblioteca — gestão de documentos
+        Route::post('library', [LibraryDocumentController::class, 'store'])
+            ->name('library.store');
+        Route::put('library/{library}', [LibraryDocumentController::class, 'update'])
+            ->name('library.update');
+        Route::delete('library/{library}', [LibraryDocumentController::class, 'destroy'])
+            ->name('library.destroy');
+
         // Eliminar briefing e cirurgia
         Route::delete('briefings/{briefing}', [BriefingController::class, 'destroy'])
             ->name('briefings.destroy');

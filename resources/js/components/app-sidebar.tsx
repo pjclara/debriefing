@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ClipboardList, History, LayoutGrid, Users, Building2, Wrench, Syringe, Boxes, TrendingDown, PackageOpen, LayoutList } from 'lucide-react';
+import { ClipboardList, History, LayoutGrid, Users, Building2, Wrench, Syringe, Boxes, TrendingDown, PackageOpen, LayoutList, BookOpen } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -60,6 +60,16 @@ const allNavGroups: NavGroup[] = [
                 title: 'Material por Cirurgia',
                 href: '/consumos/material-por-cirurgia',
                 icon: PackageOpen,
+            },
+        ],
+    },
+    {
+        label: 'Biblioteca',
+        items: [
+            {
+                title: 'Biblioteca de Apoio',
+                href: '/library',
+                icon: BookOpen,
             },
         ],
     },
