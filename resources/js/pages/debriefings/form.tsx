@@ -2,7 +2,8 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { FormRow, YesNo, inputCls, textareaCls } from '@/components/form-ui';
+import { FormRow, YesNo, inputCls, textareaCls, DraftSavedIndicator } from '@/components/form-ui';
+import { useDraftForm } from '@/hooks/use-draft-form';
 import { AlertTriangle, Wrench, Clock, MessageSquare, AlertOctagon } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 import { DictationTextarea } from '@/components/DictationButton';
@@ -129,6 +130,12 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
         descricao_evento: debriefing?.descricao_evento ?? '',
     });
 
+    const { lastSavedAt, clearDraft } = useDraftForm(
+        `debriefing:${briefing.id}`,
+        data,
+        setData,
+    );
+
     function validateForm(d: Debriefing): Record<string, string> {
         const errs: Record<string, string> = {};
         if (d.complicacoes === null || d.complicacoes === undefined)
@@ -166,10 +173,11 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
             if (firstErrTab) setActiveTab(firstErrTab);
             return;
         }
+        const opts = { onSuccess: () => clearDraft() };
         if (isEdit) {
-            put(`/briefings/${briefing.id}/debriefing`);
+            put(`/briefings/${briefing.id}/debriefing`, opts);
         } else {
-            post(`/briefings/${briefing.id}/debriefing`);
+            post(`/briefings/${briefing.id}/debriefing`, opts);
         }
     }
 
@@ -196,9 +204,12 @@ export default function DebriefingForm({ briefing, debriefing }: Props) {
                     {briefing.data.substring(0, 10)} &mdash; {briefing.hora} &middot; {briefing.especialidade} &middot; Sala {briefing.sala}
                 </div>
 
-                <h1 className="mb-6 text-2xl font-bold">
+                <h1 className="mb-1 text-2xl font-bold">
                     {isEdit ? 'Editar Debriefing' : 'Registar Debriefing'}
                 </h1>
+                <div className="mb-6">
+                    <DraftSavedIndicator lastSavedAt={lastSavedAt} />
+                </div>
 
                 {showErrors && (() => {
                     const errs = validateForm(data);

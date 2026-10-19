@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, SaveIcon, XCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 // ─── Input / Textarea / Select class strings ─────────────────────────────────
@@ -66,6 +66,20 @@ export function FormRow({
             {children}
             {error && <p className="mt-0.5 text-xs text-red-500">{error}</p>}
         </div>
+    );
+}
+
+// ─── DraftSavedIndicator ──────────────────────────────────────────────────────
+
+export function DraftSavedIndicator({ lastSavedAt }: { lastSavedAt: Date | null }) {
+    if (!lastSavedAt) return null;
+
+    return (
+        <p className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+            <SaveIcon size={12} />
+            Rascunho guardado automaticamente às{' '}
+            {lastSavedAt.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
+        </p>
     );
 }
 

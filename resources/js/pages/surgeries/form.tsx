@@ -8,7 +8,9 @@ import {
     inputCls,
     selectCls,
     textareaCls,
+    DraftSavedIndicator,
 } from '@/components/form-ui';
+import { useDraftForm } from '@/hooks/use-draft-form';
 import {
     User,
     FileText,
@@ -722,6 +724,12 @@ export default function SurgeryForm({
             : [],
     });
 
+    const { lastSavedAt, clearDraft } = useDraftForm(
+        `surgery:${surgery?.id ?? `new:${briefing.id}`}`,
+        data,
+        setData,
+    );
+
     const stepErrorFields: Record<number, string[]> = {
         0: ['processo', 'procedimento', 'destino'],
         1: [
@@ -773,6 +781,7 @@ export default function SurgeryForm({
         // Só submete se estiver no último passo (Revisão)
         if (currentStep !== steps.length - 1) return;
         const opts = {
+            onSuccess: () => clearDraft(),
             onError: (errs: Record<string, string>) => {
                 const errKeys = Object.keys(errs);
                 const stepsWithErrors: { idx: number; label: string }[] = [];
@@ -971,9 +980,12 @@ export default function SurgeryForm({
                     {briefing.sala}
                 </div>
 
-                <h1 className="mb-6 text-2xl font-bold">
+                <h1 className="mb-1 text-2xl font-bold">
                     {isEdit ? 'Editar Cirurgia' : 'Nova Cirurgia'}
                 </h1>
+                <div className="mb-6">
+                    <DraftSavedIndicator lastSavedAt={lastSavedAt} />
+                </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                     {/* ── PROGRESS BAR ── */}

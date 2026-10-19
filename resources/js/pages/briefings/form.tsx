@@ -8,7 +8,9 @@ import {
     YesNo,
     inputCls,
     textareaCls,
+    DraftSavedIndicator,
 } from '@/components/form-ui';
+import { useDraftForm } from '@/hooks/use-draft-form';
 import {
     Calendar,
     Users,
@@ -94,6 +96,12 @@ export default function BriefingForm({ briefing, departments }: Props) {
             descricao_ordem: briefing?.descricao_ordem ?? '',
         });
 
+    const { lastSavedAt, clearDraft } = useDraftForm(
+        `briefing:${briefing?.id ?? 'new'}`,
+        data,
+        setData,
+    );
+
     function handleChange(
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) {
@@ -172,6 +180,7 @@ export default function BriefingForm({ briefing, departments }: Props) {
         if (currentStep !== steps.length - 1) return;
         if (isEdit && !briefing?.id) return;
         const opts = {
+            onSuccess: () => clearDraft(),
             onError: (errs: Record<string, string>) => {
                 const errKeys = Object.keys(errs);
                 const stepsWithErrors: { idx: number; label: string }[] = [];
@@ -282,6 +291,9 @@ export default function BriefingForm({ briefing, departments }: Props) {
                         Passo {currentStep + 1} de {steps.length}:{' '}
                         {steps[currentStep].label}
                     </p>
+                    <div className="mt-2">
+                        <DraftSavedIndicator lastSavedAt={lastSavedAt} />
+                    </div>
                 </div>
 
                 {/* Steps Progress */}
