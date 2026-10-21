@@ -22,6 +22,9 @@ class StockMovimento extends Model
         'data_saida',
         'motivo',
         'observacoes',
+        'vidas_reconciliado_em',
+        'vidas_atual_na_reconciliacao',
+        'consumos_na_reconciliacao',
     ];
 
     protected $casts = [
@@ -31,6 +34,9 @@ class StockMovimento extends Model
         'vidas_atual'     => 'integer',
         'unidades_inicial' => 'integer',
         'unidades_atual'   => 'integer',
+        'vidas_reconciliado_em'        => 'datetime',
+        'vidas_atual_na_reconciliacao' => 'integer',
+        'consumos_na_reconciliacao'    => 'integer',
     ];
 
     public static array $tiposMovLabel = [

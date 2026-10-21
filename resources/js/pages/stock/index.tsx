@@ -1,8 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { Boxes, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Boxes, Search, X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useState, useMemo } from 'react';
-import type { BreadcrumbItem } from '@/types';
+import type { Auth, BreadcrumbItem } from '@/types';
 
 interface StockItem {
     stock_key: string;
@@ -17,9 +17,22 @@ interface StockItem {
     tipo: 'vidas' | 'unidade';
 }
 
+interface InconsistenciaItem {
+    id: number;
+    consumivel_nome: string;
+    codigo: string | null;
+    referencia: string | null;
+    vidas_inicial: number | null;
+    vidas_atual: number | null;
+    vidas_esperadas: number;
+    consumos_registados: number;
+    reconciliado_em: string | null;
+}
+
 interface Props {
     vidasItems: StockItem[];
     unidadeItems: StockItem[];
+    inconsistencias: InconsistenciaItem[];
     flash?: { success?: string };
 }
 
@@ -125,7 +138,9 @@ function Pagination({
 
 type Categoria = 'all' | 'vidas' | 'unidade';
 
-export default function StockIndex({ vidasItems, unidadeItems, flash }: Props) {
+export default function StockIndex({ vidasItems, unidadeItems, inconsistencias, flash }: Props) {
+    const { auth } = usePage<{ auth: Auth }>().props;
+    const isAdmin = auth.user?.role === 'admin';
     const [search, setSearch] = useState('');
     const [categoria, setCategoria] = useState<Categoria>('vidas');
     const [pageVidas, setPageVidas] = useState(1);
@@ -157,6 +172,16 @@ export default function StockIndex({ vidasItems, unidadeItems, flash }: Props) {
         );
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [unidadeItems, search, categoria]);
+
+    function reconciliarVidas(item: InconsistenciaItem) {
+        if (
+            confirm(
+                `Confirma que o valor atual de "${item.consumivel_nome}" (${item.vidas_atual} vidas) está correto, apesar de não corresponder aos consumos registados? Deixa de ser assinalado a partir de agora.`,
+            )
+        ) {
+            router.post(`/stock_movimentos/${item.id}/reconciliar-vidas`, {}, { preserveScroll: true });
+        }
+    }
 
     function handleSearch(v: string) {
         setSearch(v);
@@ -246,6 +271,69 @@ export default function StockIndex({ vidasItems, unidadeItems, flash }: Props) {
                         ))}
                     </div>
                 </div>
+
+                {/* Instrumentos cujo nº de vidas atual não bate certo com o nº de
+                    vidas iniciais menos os consumos realmente registados. É este
+                    desvio que faz um instrumento desaparecer da lista de seleção
+                    de consumos antes de tempo (ou ficar com vidas a mais), por
+                    isso é sinalizado aqui de imediato em vez de só ser detetado
+                    meses depois por um relatório externo. */}
+                {inconsistencias.length > 0 && (
+                    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-900/20">
+                        <div className="mb-2 flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 flex-shrink-0 text-red-500" />
+                            <h2 className="text-sm font-semibold text-red-700 dark:text-red-300">
+                                {inconsistencias.length} instrumento{inconsistencias.length !== 1 ? 's' : ''} com vidas desalinhadas — verificar
+                            </h2>
+                        </div>
+                        <p className="mb-3 text-xs text-red-600/80 dark:text-red-300/80">
+                            O número de vidas guardado não corresponde a vidas iniciais
+                            menos os consumos registados nesta aplicação. Confirme o valor
+                            real junto da Intuitive e corrija "Vidas Iniciais" no movimento
+                            de stock correspondente — o valor atual é recalculado
+                            automaticamente a partir dos consumos registados.
+                        </p>
+                        <ul className="flex flex-col gap-1.5">
+                            {inconsistencias.map((item) => (
+                                <li
+                                    key={item.id}
+                                    className="flex items-center justify-between gap-4 rounded-lg bg-white px-3 py-2 text-sm dark:bg-gray-900"
+                                >
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-medium text-gray-900 dark:text-white">{item.consumivel_nome}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {item.codigo && <span className="mr-2 font-mono">{item.codigo}</span>}
+                                            {item.referencia && <span>Ref: {item.referencia}</span>}
+                                        </p>
+                                        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                            Guardado: {item.vidas_atual ?? 0} vidas &middot; Esperado pelos
+                                            consumos registados: {item.vidas_esperadas} (de {item.vidas_inicial} iniciais,
+                                            {' '}{item.consumos_registados} consumo{item.consumos_registados !== 1 ? 's' : ''} registado{item.consumos_registados !== 1 ? 's' : ''})
+                                        </p>
+                                    </div>
+                                    {isAdmin && (
+                                        <div className="flex shrink-0 items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => reconciliarVidas(item)}
+                                                title="Confirmar que o valor atual está correto e deixar de o assinalar"
+                                                className="rounded-lg border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                                            >
+                                                Reconciliar
+                                            </button>
+                                            <Link
+                                                href={`/stock_movimentos/${item.id}/edit`}
+                                                className="rounded-lg border border-red-300 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/40"
+                                            >
+                                                Corrigir
+                                            </Link>
+                                        </div>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
 
                 {/* Vazio */}
                 {total === 0 && (

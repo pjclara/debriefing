@@ -99,6 +99,8 @@ Route::middleware(['auth'])->group(function () {
         // Movimentos de stock
         Route::get('stock_movimentos/print', [StockMovimentoController::class, 'print'])
             ->name('stock_movimentos.print');
+        Route::post('stock_movimentos/{stock_movimento}/reconciliar-vidas', [StockMovimentoController::class, 'reconciliarVidas'])
+            ->name('stock_movimentos.reconciliar-vidas');
         Route::resource('stock_movimentos', StockMovimentoController::class)->except(['show']);
 
         // Tipos de consumível

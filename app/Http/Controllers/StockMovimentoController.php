@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StockMovimentoRequest;
 use App\Models\ConsumivelTipo;
+use App\Models\Consumo;
 use App\Models\StockMovimento;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -77,7 +78,31 @@ class StockMovimentoController extends Controller
 
     public function update(StockMovimentoRequest $request, StockMovimento $stock_movimento): RedirectResponse
     {
-        $stock_movimento->update($request->validated());
+        $data = $request->validated();
+
+        // Se o valor "inicial" for corrigido manualmente (ex.: erro de
+        // introdução de dados), o valor "atual" tem de ser recalculado a
+        // partir dos consumos realmente registados — nunca fica apenas
+        // como estava antes, para não voltar a desalinhar-se da realidade.
+        $consumido = null;
+
+        if (array_key_exists('vidas_inicial', $data)
+            && $data['vidas_inicial'] !== null
+            && (int) $data['vidas_inicial'] !== (int) $stock_movimento->vidas_inicial
+        ) {
+            $consumido ??= (int) Consumo::where('stock_movimento_id', $stock_movimento->id)->sum('quantidade');
+            $data['vidas_atual'] = max(0, (int) $data['vidas_inicial'] - $consumido);
+        }
+
+        if (array_key_exists('unidades_inicial', $data)
+            && $data['unidades_inicial'] !== null
+            && (int) $data['unidades_inicial'] !== (int) $stock_movimento->unidades_inicial
+        ) {
+            $consumido ??= (int) Consumo::where('stock_movimento_id', $stock_movimento->id)->sum('quantidade');
+            $data['unidades_atual'] = max(0, (int) $data['unidades_inicial'] - $consumido);
+        }
+
+        $stock_movimento->update($data);
 
         return redirect()->back()->with('success', 'Movimento de stock atualizado com sucesso!');
     }
@@ -87,6 +112,27 @@ class StockMovimentoController extends Controller
         $stock_movimento->delete();
 
         return redirect('/stock_movimentos')->with('success', 'Movimento de stock eliminado com sucesso!');
+    }
+
+    /**
+     * Confirma manualmente que o desvio atual entre "vidas_atual" e o valor
+     * calculado a partir dos consumos registados é conhecido e correto
+     * (ex.: uso real não logado enquanto o instrumento esteve invisível na
+     * lista de seleção). Fixa um ponto de partida (vidas_atual + total de
+     * consumos neste momento) a partir do qual novos desvios voltam a ser
+     * detetados normalmente.
+     */
+    public function reconciliarVidas(StockMovimento $stock_movimento): RedirectResponse
+    {
+        $consumido = (int) Consumo::where('stock_movimento_id', $stock_movimento->id)->sum('quantidade');
+
+        $stock_movimento->update([
+            'vidas_reconciliado_em'        => now(),
+            'vidas_atual_na_reconciliacao' => (int) $stock_movimento->vidas_atual,
+            'consumos_na_reconciliacao'    => $consumido,
+        ]);
+
+        return redirect()->back()->with('success', 'Vidas reconciliadas manualmente com sucesso.');
     }
 
     public function print(Request $request): Response
