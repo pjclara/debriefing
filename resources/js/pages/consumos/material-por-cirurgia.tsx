@@ -11,16 +11,23 @@ interface Material {
     num_cirurgias: number;
     total_quantidade: number;
     media_quantidade: number;
+    custo_total: string | null;
 }
 
 interface ProcedimentoGroup {
     procedimento: string;
     num_cirurgias: number;
+    custo_total: number;
     materiais: Material[];
 }
 
 interface Props {
     porProcedimento: ProcedimentoGroup[];
+}
+
+function formatEuros(value: number | string | null) {
+    if (value === null || Number(value) === 0) return '—';
+    return Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 }
 
 const catLabel: Record<string, string> = {
@@ -132,6 +139,11 @@ export default function MaterialPorCirurgia({ porProcedimento }: Props) {
                                             <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                                                 {group.materiais.length} material{group.materiais.length !== 1 ? 'is' : ''}
                                             </span>
+                                            {group.custo_total > 0 && (
+                                                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                                    {formatEuros(group.custo_total)}
+                                                </span>
+                                            )}
                                         </div>
                                         {open ? (
                                             <ChevronUp className="h-4 w-4 shrink-0 text-gray-400" />
@@ -161,6 +173,7 @@ export default function MaterialPorCirurgia({ porProcedimento }: Props) {
                                                             <span className="block text-[10px] normal-case tracking-normal">por cirurgia</span>
                                                         </th>
                                                         <th className="px-4 py-2.5 text-center font-medium">Total</th>
+                                                        <th className="px-4 py-2.5 text-right font-medium">Custo</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -207,6 +220,9 @@ export default function MaterialPorCirurgia({ porProcedimento }: Props) {
                                                                 </td>
                                                                 <td className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">
                                                                     {m.total_quantidade}
+                                                                </td>
+                                                                <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
+                                                                    {formatEuros(m.custo_total)}
                                                                 </td>
                                                             </tr>
                                                         );

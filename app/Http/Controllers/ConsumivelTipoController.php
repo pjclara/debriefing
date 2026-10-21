@@ -32,6 +32,7 @@ class ConsumivelTipoController extends Controller
         $validated = $request->validate([
             'nome' => ['required', 'string', 'max:255', 'unique:consumivel_tipos,nome'],
             'categoria' => ['required', 'in:robotico_vidas,robotico_descartavel,extra'],
+            'preco_unitario' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         ConsumivelTipo::create($validated);
@@ -52,6 +53,7 @@ class ConsumivelTipoController extends Controller
         $validated = $request->validate([
             'nome' => ['required', 'string', 'max:255', 'unique:consumivel_tipos,nome,' . $consumivel_tipo->id],
             'categoria' => ['required', 'in:robotico_vidas,robotico_descartavel,extra'],
+            'preco_unitario' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $consumivel_tipo->update($validated);

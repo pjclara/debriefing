@@ -17,11 +17,13 @@ class ConsumivelTipo extends Model
     protected $fillable = [
         'nome',
         'categoria',
+        'preco_unitario',
         'ativo',
     ];
 
     protected $casts = [
         'ativo' => 'boolean',
+        'preco_unitario' => 'decimal:2',
     ];
 
     /**

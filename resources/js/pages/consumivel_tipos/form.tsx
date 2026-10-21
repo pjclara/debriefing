@@ -8,6 +8,7 @@ interface ConsumivelTipo {
     id?: number;
     nome?: string;
     categoria?: string;
+    preco_unitario?: string | number | null;
     ativo?: boolean;
 }
 
@@ -22,7 +23,10 @@ export default function ConsumivelTipoForm({ tipo, categorias }: Props) {
     const { data, setData, post, put, processing, errors } = useForm({
         nome: tipo?.nome ?? '',
         categoria: tipo?.categoria ?? 'robotico_vidas',
+        preco_unitario: tipo?.preco_unitario?.toString() ?? '',
     });
+
+    const isVidas = data.categoria === 'robotico_vidas';
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Catálogo', href: '#' },
@@ -73,6 +77,26 @@ export default function ConsumivelTipoForm({ tipo, categorias }: Props) {
                                     </option>
                                 ))}
                             </select>
+                        </FormRow>
+
+                        <FormRow
+                            label="Preço unitário (€)"
+                            error={errors.preco_unitario}
+                            hint={
+                                isVidas
+                                    ? 'Preço do instrumento completo (o custo por utilização é calculado a dividir pelas vidas iniciais)'
+                                    : 'Preço por unidade consumida'
+                            }
+                        >
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={data.preco_unitario}
+                                onChange={(e) => setData('preco_unitario', e.target.value)}
+                                className={inputCls}
+                                placeholder="Ex: 2474.17"
+                            />
                         </FormRow>
                     </SectionCard>
 

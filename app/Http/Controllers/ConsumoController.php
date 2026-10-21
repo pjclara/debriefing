@@ -16,6 +16,22 @@ use Illuminate\Http\RedirectResponse;
 
 class ConsumoController extends Controller
 {
+    /**
+     * Expressão SQL do custo de uma linha de consumo: para instrumentos
+     * robóticos com vidas, o preço (do instrumento completo) é amortizado
+     * pelas vidas iniciais desse movimento de stock; para os restantes,
+     * o preço é directamente por unidade consumida.
+     */
+    private const CUSTO_SQL = "
+        CASE
+            WHEN consumivel_tipos.categoria = 'robotico_vidas' AND stock_movimentos.vidas_inicial > 0
+                THEN consumos.quantidade * (consumivel_tipos.preco_unitario / stock_movimentos.vidas_inicial)
+            WHEN consumivel_tipos.categoria != 'robotico_vidas'
+                THEN consumos.quantidade * consumivel_tipos.preco_unitario
+            ELSE 0
+        END
+    ";
+
     public function index(Surgery $surgery): Response
     {
         $surgery->load(['briefing', 'consumos.stockMovimento.consumivelTipo']);
@@ -47,6 +63,7 @@ class ConsumoController extends Controller
                 DB::raw('COUNT(DISTINCT consumos.surgery_id) as num_cirurgias'),
                 DB::raw('SUM(consumos.quantidade) as total_quantidade'),
                 DB::raw('ROUND(AVG(consumos.quantidade), 1) as media_quantidade'),
+                DB::raw('ROUND(SUM(' . self::CUSTO_SQL . '), 2) as custo_total'),
             )
             ->groupBy(
                 'surgeries.procedimento',
@@ -70,6 +87,7 @@ class ConsumoController extends Controller
             return [
                 'procedimento'   => $procedimento,
                 'num_cirurgias'  => $totalCirurgias[$procedimento] ?? 0,
+                'custo_total'    => round($items->sum('custo_total'), 2),
                 'materiais'      => $items->values(),
             ];
         })->values();
@@ -122,9 +140,16 @@ class ConsumoController extends Controller
             });
         }
 
+        $query->join('surgeries', 'consumos.surgery_id', '=', 'surgeries.id')
+            ->join('briefings', 'surgeries.briefing_id', '=', 'briefings.id');
+
+        $totalCusto = (float) ((clone $query)
+            ->join('stock_movimentos', 'consumos.stock_movimento_id', '=', 'stock_movimentos.id')
+            ->join('consumivel_tipos', 'stock_movimentos.consumivel_tipo_id', '=', 'consumivel_tipos.id')
+            ->selectRaw('SUM(' . self::CUSTO_SQL . ') as total')
+            ->value('total') ?? 0);
+
         $consumos = $query
-            ->join('surgeries', 'consumos.surgery_id', '=', 'surgeries.id')
-            ->join('briefings', 'surgeries.briefing_id', '=', 'briefings.id')
             ->select('consumos.*')
             ->orderByDesc('briefings.data')
             ->orderByDesc('consumos.id')
@@ -132,7 +157,8 @@ class ConsumoController extends Controller
             ->withQueryString();
 
         return Inertia::render('consumos/historico', [
-            'consumos' => $consumos,
+            'consumos'   => $consumos,
+            'totalCusto' => round($totalCusto, 2),
             'filters'  => [
                 'search'      => $search ?? '',
                 'categoria'   => $categoria ?? '',

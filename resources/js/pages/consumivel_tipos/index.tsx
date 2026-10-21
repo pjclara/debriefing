@@ -7,7 +7,13 @@ interface ConsumivelTipo {
     id: number;
     nome: string;
     categoria: string;
+    preco_unitario: string | null;
     ativo: boolean;
+}
+
+function formatEuros(value: string | null) {
+    if (value === null) return null;
+    return Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 }
 
 interface Props {
@@ -64,9 +70,16 @@ export default function ConsumivelTiposIndex({ tipos, categorias }: Props) {
                                                 <Package size={20} className="text-gray-500" />
                                                 <div>
                                                     <p className="font-medium text-gray-900">{tipo.nome}</p>
-                                                    <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${categoriaColors[tipo.categoria]}`}>
-                                                        {grupo.label}
-                                                    </span>
+                                                    <div className="mt-1 flex items-center gap-2">
+                                                        <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${categoriaColors[tipo.categoria]}`}>
+                                                            {grupo.label}
+                                                        </span>
+                                                        {formatEuros(tipo.preco_unitario) && (
+                                                            <span className="text-xs font-medium text-gray-500">
+                                                                {formatEuros(tipo.preco_unitario)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">

@@ -48,6 +48,19 @@ class EstatisticasController extends Controller
             ->get();
 
         // ── Top consumíveis gastos ───────────────────────────────────────────
+        // Custo: para instrumentos com vidas, o preço do instrumento
+        // completo é amortizado pelas vidas iniciais do movimento de stock;
+        // para os restantes, o preço é diretamente por unidade consumida.
+        $custoSql = "
+            CASE
+                WHEN consumivel_tipos.categoria = 'robotico_vidas' AND stock_movimentos.vidas_inicial > 0
+                    THEN consumos.quantidade * (consumivel_tipos.preco_unitario / stock_movimentos.vidas_inicial)
+                WHEN consumivel_tipos.categoria != 'robotico_vidas'
+                    THEN consumos.quantidade * consumivel_tipos.preco_unitario
+                ELSE 0
+            END
+        ";
+
         $topGastos = DB::table('consumos')
             ->join('stock_movimentos', 'consumos.stock_movimento_id', '=', 'stock_movimentos.id')
             ->join('consumivel_tipos', 'stock_movimentos.consumivel_tipo_id', '=', 'consumivel_tipos.id')
@@ -57,11 +70,18 @@ class EstatisticasController extends Controller
                 'consumivel_tipos.categoria',
                 DB::raw('SUM(consumos.quantidade) as total_quantidade'),
                 DB::raw('COUNT(consumos.id) as total_usos'),
+                DB::raw('ROUND(SUM(' . $custoSql . '), 2) as custo_total'),
             )
             ->groupBy('consumivel_tipos.id', 'consumivel_tipos.nome', 'consumivel_tipos.categoria')
             ->orderByDesc('total_quantidade')
             ->limit(10)
             ->get();
+
+        $custoTotalGeral = (float) (DB::table('consumos')
+            ->join('stock_movimentos', 'consumos.stock_movimento_id', '=', 'stock_movimentos.id')
+            ->join('consumivel_tipos', 'stock_movimentos.consumivel_tipo_id', '=', 'consumivel_tipos.id')
+            ->selectRaw('SUM(' . $custoSql . ') as total')
+            ->value('total') ?? 0);
 
         // ── Taxa de complicações / eventos adversos por mês (últimos 6) ──────
         $taxaMensal = Briefing::query()
@@ -106,19 +126,35 @@ class EstatisticasController extends Controller
             ->groupBy('procedimento')
             ->orderByDesc('total')
             ->limit(8)
-            ->get()
+            ->get();
+
+        // Custo médio de material por cirurgia, para os mesmos procedimentos
+        $custoPorProcedimento = DB::table('consumos')
+            ->join('surgeries', 'consumos.surgery_id', '=', 'surgeries.id')
+            ->join('stock_movimentos', 'consumos.stock_movimento_id', '=', 'stock_movimentos.id')
+            ->join('consumivel_tipos', 'stock_movimentos.consumivel_tipo_id', '=', 'consumivel_tipos.id')
+            ->whereIn('surgeries.procedimento', $temposPorProcedimento->pluck('procedimento'))
+            ->select('surgeries.procedimento', DB::raw('SUM(' . $custoSql . ') as custo_total'))
+            ->groupBy('surgeries.procedimento')
+            ->pluck('custo_total', 'surgeries.procedimento');
+
+        $temposPorProcedimento = $temposPorProcedimento
             ->map(fn ($row) => [
                 'procedimento'  => $row->procedimento,
                 'total'         => (int) $row->total,
                 'prep_media'    => $row->prep_media !== null ? round($row->prep_media) : null,
                 'docking_media' => $row->docking_media !== null ? round($row->docking_media) : null,
                 'consola_media' => $row->consola_media !== null ? round($row->consola_media) : null,
+                'preco_medio'   => isset($custoPorProcedimento[$row->procedimento]) && $row->total > 0
+                    ? round($custoPorProcedimento[$row->procedimento] / $row->total, 2)
+                    : null,
             ]);
 
         return Inertia::render('estatisticas/index', [
             'stats'                    => $stats,
             'cirurgiasPorDepartamento' => $cirurgiasPorDepartamento,
             'topGastos'                => $topGastos,
+            'custoTotalGeral'          => round($custoTotalGeral, 2),
             'taxaMensal'               => $taxaMensal,
             'temposGlobais'            => [
                 'prep_media'    => $temposGlobais->prep_media !== null ? round($temposGlobais->prep_media) : null,

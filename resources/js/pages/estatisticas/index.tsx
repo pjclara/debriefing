@@ -8,6 +8,7 @@ import {
     Clock,
     Cpu,
     MonitorPlay,
+    Euro,
 } from 'lucide-react';
 
 interface Stats {
@@ -31,6 +32,7 @@ interface TopGasto {
     categoria: 'robotico_vidas' | 'robotico_descartavel' | 'extra';
     total_quantidade: number;
     total_usos: number;
+    custo_total: string | null;
 }
 
 interface TaxaMensal {
@@ -52,15 +54,22 @@ interface TempoPorProcedimento {
     prep_media: number | null;
     docking_media: number | null;
     consola_media: number | null;
+    preco_medio: number | null;
 }
 
 interface Props {
     stats: Stats;
     cirurgiasPorDepartamento: CirurgiasPorDepartamento[];
     topGastos: TopGasto[];
+    custoTotalGeral: number;
     taxaMensal: TaxaMensal[];
     temposGlobais: TemposGlobais;
     temposPorProcedimento: TempoPorProcedimento[];
+}
+
+function formatEuros(value: number | string | null) {
+    if (value === null) return '—';
+    return Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -136,6 +145,7 @@ export default function Estatisticas({
     stats,
     cirurgiasPorDepartamento,
     topGastos,
+    custoTotalGeral,
     taxaMensal,
     temposGlobais,
     temposPorProcedimento,
@@ -297,6 +307,7 @@ export default function Estatisticas({
                                         <th className="px-5 py-2.5 text-right font-medium">Preparação</th>
                                         <th className="px-5 py-2.5 text-right font-medium">Docking</th>
                                         <th className="px-5 py-2.5 text-right font-medium">Consola</th>
+                                        <th className="px-5 py-2.5 text-right font-medium">Preço médio</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -312,6 +323,7 @@ export default function Estatisticas({
                                             <td className="px-5 py-2.5 text-right text-gray-600 dark:text-gray-300">{formatMinutos(row.prep_media)}</td>
                                             <td className="px-5 py-2.5 text-right text-gray-600 dark:text-gray-300">{formatMinutos(row.docking_media)}</td>
                                             <td className="px-5 py-2.5 text-right text-gray-600 dark:text-gray-300">{formatMinutos(row.consola_media)}</td>
+                                            <td className="px-5 py-2.5 text-right font-medium text-gray-900 dark:text-white">{formatEuros(row.preco_medio)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -323,9 +335,17 @@ export default function Estatisticas({
                 {/* ── Top consumíveis gastos ── */}
                 {topGastos.length > 0 && (
                     <section className="mt-8">
-                        <h2 className="mb-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                            Top consumíveis gastos
-                        </h2>
+                        <div className="mb-3 flex items-center justify-between">
+                            <h2 className="text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                                Top consumíveis gastos
+                            </h2>
+                            {custoTotalGeral > 0 && (
+                                <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+                                    <Euro size={14} className="text-gray-400" />
+                                    {formatEuros(custoTotalGeral)} total
+                                </span>
+                            )}
+                        </div>
                         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
                             {(() => {
                                 const max = topGastos[0]?.total_quantidade ?? 1;
@@ -356,6 +376,11 @@ export default function Estatisticas({
                                                     <span className="text-xs text-gray-400">
                                                         ({g.total_usos} uso{g.total_usos !== 1 ? 's' : ''})
                                                     </span>
+                                                    {g.custo_total !== null && (
+                                                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                                            {formatEuros(g.custo_total)}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">

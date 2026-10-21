@@ -8,12 +8,14 @@ interface ConsumivelTipo {
     id: number;
     nome: string;
     categoria: 'robotico_vidas' | 'robotico_descartavel' | 'extra';
+    preco_unitario: string | null;
 }
 
 interface StockMovimento {
     id: number;
     referencia?: string;
     codigo?: string;
+    vidas_inicial?: number | null;
     consumivel_tipo?: ConsumivelTipo;
 }
 
@@ -56,7 +58,32 @@ interface Filters {
 
 interface Props {
     consumos: PaginatedConsumos;
+    totalCusto: number;
     filters: Filters;
+}
+
+function formatEuros(value: number | null) {
+    if (value === null) return '—';
+    return Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+}
+
+/**
+ * Custo de uma linha de consumo: para instrumentos com vidas, o preço do
+ * instrumento completo é amortizado pelas vidas iniciais desse movimento
+ * de stock; para os restantes, o preço é diretamente por unidade.
+ */
+function calcularCusto(c: Consumo): number | null {
+    const tipo = c.stock_movimento?.consumivel_tipo;
+    if (!tipo?.preco_unitario) return null;
+    const preco = Number(tipo.preco_unitario);
+
+    if (tipo.categoria === 'robotico_vidas') {
+        const vidasInicial = c.stock_movimento?.vidas_inicial;
+        if (!vidasInicial) return null;
+        return c.quantidade * (preco / vidasInicial);
+    }
+
+    return c.quantidade * preco;
 }
 
 function formatDate(dateStr: string) {
@@ -76,7 +103,7 @@ const categoriaCls: Record<string, string> = {
     extra:                'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
 };
 
-export default function HistoricoConsumos({ consumos, filters }: Props) {
+export default function HistoricoConsumos({ consumos, totalCusto, filters }: Props) {
     const [search, setSearch]         = useState(filters.search);
     const [categoria, setCategoria]   = useState(filters.categoria);
     const [dataInicio, setDataInicio] = useState(filters.data_inicio);
@@ -127,6 +154,7 @@ export default function HistoricoConsumos({ consumos, filters }: Props) {
                             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Histórico de Consumos</h1>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
                                 {consumos.total} registo{consumos.total !== 1 ? 's' : ''} no total
+                                {totalCusto > 0 && <> &middot; <span className="font-semibold text-gray-700 dark:text-gray-300">{formatEuros(totalCusto)}</span></>}
                             </p>
                         </div>
                     </div>
@@ -229,6 +257,7 @@ export default function HistoricoConsumos({ consumos, filters }: Props) {
                                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Referência</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Código</th>
                                     <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Qtd.</th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Custo</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Observações</th>
                                 </tr>
                             </thead>
@@ -273,6 +302,9 @@ export default function HistoricoConsumos({ consumos, filters }: Props) {
                                             </td>
                                             <td className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">
                                                 {c.quantidade}
+                                            </td>
+                                            <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">
+                                                {formatEuros(calcularCusto(c))}
                                             </td>
                                             <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
                                                 {c.observacoes || '—'}
