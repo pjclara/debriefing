@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
+            'visitante.restrict' => \App\Http\Middleware\RestrictVisitante::class,
         ]);
 
         $middleware->web(append: [

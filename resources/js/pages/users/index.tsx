@@ -89,9 +89,11 @@ export default function UsersIndex({ users, flash }: Props) {
                                         <span className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
                                             u.role === 'admin'
                                                 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                                                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                                                : u.role === 'visitante'
+                                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                                                  : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                                         }`}>
-                                            {u.role === 'admin' ? 'Admin' : 'User'}
+                                            {u.role === 'admin' ? 'Admin' : u.role === 'visitante' ? 'Visitante' : 'User'}
                                         </span>
                                         {u.email_verified_at ? (
                                             <span title="Email verificado" className="ml-auto shrink-0 text-green-500">

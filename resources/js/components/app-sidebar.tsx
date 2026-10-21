@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ClipboardList, History, LayoutGrid, Users, Building2, Wrench, Syringe, Boxes, TrendingDown, PackageOpen, LayoutList, BookOpen } from 'lucide-react';
+import { ClipboardList, History, LayoutGrid, Users, Building2, Wrench, Syringe, Boxes, TrendingDown, PackageOpen, LayoutList, BookOpen, BarChart3 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -23,6 +23,11 @@ const allNavGroups: NavGroup[] = [
                 title: 'Dashboard',
                 href: dashboard(),
                 icon: LayoutGrid,
+            },
+            {
+                title: 'Estatísticas',
+                href: '/estatisticas',
+                icon: BarChart3,
             },
             {
                 title: 'Briefings Cirúrgicos',
@@ -104,13 +109,21 @@ const allNavGroups: NavGroup[] = [
     },
 ];
 
+// Único conteúdo acessível a um utilizador com o papel "visitante":
+// estatísticas agregadas, sem dados identificativos de doentes.
+const VISITANTE_TITULOS_PERMITIDOS = ['Estatísticas'];
+
 export function AppSidebar() {
     const { auth } = usePage<{ auth: Auth }>().props;
     const isAdmin = auth.user?.role === 'admin';
-    
+    const isVisitante = auth.user?.role === 'visitante';
+
     const filteredGroups = allNavGroups.map(group => ({
         ...group,
-        items: group.items.filter(item => !item.adminOnly || isAdmin),
+        items: group.items.filter(item => {
+            if (isVisitante) return VISITANTE_TITULOS_PERMITIDOS.includes(item.title);
+            return !item.adminOnly || isAdmin;
+        }),
     })).filter(group => group.items.length > 0);
 
     return (

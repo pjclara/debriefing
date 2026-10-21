@@ -5,6 +5,7 @@ use App\Http\Controllers\ConsumivelTipoController;
 use App\Http\Controllers\ConsumoController;
 use App\Http\Controllers\DebriefingController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\EstatisticasController;
 use App\Http\Controllers\LibraryDocumentController;
 use App\Http\Controllers\ProcedureController;
 use App\Http\Controllers\ServiceController;
@@ -22,8 +23,11 @@ Route::inertia('/', 'welcome', [
 
 Route::inertia('/guide', 'guide')->name('guide');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'visitante.restrict'])->group(function () {
     Route::get('dashboard', App\Http\Controllers\DashboardController::class)->name('dashboard');
+
+    // ── Estatísticas agregadas (sem dados identificativos de doentes) ──────
+    Route::get('estatisticas', EstatisticasController::class)->name('estatisticas');
 
     // ── Dark Mode ───────────────────────────────────────────────────────────
     Route::post('api/user/dark-mode', [DarkModeController::class, 'update'])

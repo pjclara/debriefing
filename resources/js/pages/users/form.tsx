@@ -83,6 +83,7 @@ export default function UserForm({ user }: Props) {
                             >
                                 <option value="user">Utilizador</option>
                                 <option value="admin">Administrador</option>
+                                <option value="visitante">Visitante (só estatísticas)</option>
                             </select>
                         </FormRow>
 
