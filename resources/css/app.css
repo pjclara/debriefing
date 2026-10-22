@@ -141,3 +141,24 @@
         @apply bg-background text-foreground;
     }
 }
+
+@media print {
+    /* Imprimir sempre com o esquema claro, mesmo que o dark mode esteja ativo */
+    .dark {
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.145 0 0);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.145 0 0);
+        --border: oklch(0.922 0 0);
+    }
+
+    body {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    section,
+    table {
+        break-inside: avoid;
+    }
+}
