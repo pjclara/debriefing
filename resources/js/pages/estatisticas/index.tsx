@@ -110,7 +110,7 @@ function KpiCard({
 }) {
     return (
         <div
-            className={`flex items-center gap-4 rounded-2xl border bg-white p-5 shadow-sm transition dark:bg-gray-900 ${
+            className={`flex items-center gap-4 rounded-2xl border bg-white p-5 shadow-sm transition break-inside-avoid-page dark:bg-gray-900 ${
                 warn && value > 0
                     ? 'border-red-200 dark:border-red-800'
                     : 'border-gray-200 dark:border-gray-700'
@@ -130,7 +130,7 @@ function KpiCard({
 
 function TempoCard({ label, value, icon: Icon, color }: { label: string; value: number | null; icon: React.ElementType; color: string }) {
     return (
-        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm break-inside-avoid-page dark:border-gray-700 dark:bg-gray-900">
             <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${color}`}>
                 <Icon className="h-4 w-4 text-white" />
             </span>
@@ -202,7 +202,7 @@ export default function Estatisticas({
                 </div>
 
                 {/* ── Tempos médios de cirurgia ── */}
-                <section className="mb-8">
+                <section className="mb-8 break-inside-avoid-page">
                     <h2 className="mb-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
                         Tempos médios de cirurgia
                     </h2>
@@ -215,7 +215,7 @@ export default function Estatisticas({
 
                 <div className="grid gap-8 lg:grid-cols-2">
                     {/* ── Cirurgias por departamento ── */}
-                    <section>
+                    <section className="break-inside-avoid-page">
                         <h2 className="mb-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
                             Cirurgias por departamento
                         </h2>
@@ -230,7 +230,7 @@ export default function Estatisticas({
                                     return cirurgiasPorDepartamento.map((item, i) => (
                                         <div
                                             key={item.departamento}
-                                            className={`flex items-center gap-4 px-5 py-3 ${
+                                            className={`flex items-center gap-4 px-5 py-3 break-inside-avoid-page ${
                                                 i < cirurgiasPorDepartamento.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''
                                             }`}
                                         >
@@ -255,7 +255,7 @@ export default function Estatisticas({
                     </section>
 
                     {/* ── Taxa de complicações / eventos adversos (6 meses) ── */}
-                    <section>
+                    <section className="break-inside-avoid-page">
                         <h2 className="mb-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
                             Complicações e eventos adversos (últimos 6 meses)
                         </h2>
@@ -278,7 +278,7 @@ export default function Estatisticas({
                                         {taxaMensal.map((row, i) => (
                                             <tr
                                                 key={row.mes}
-                                                className={i < taxaMensal.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}
+                                                className={`break-inside-avoid-page ${i < taxaMensal.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
                                             >
                                                 <td className="px-5 py-2.5 font-medium text-gray-900 capitalize dark:text-white">
                                                     {formatMesLabel(row.mes)}
@@ -305,7 +305,7 @@ export default function Estatisticas({
 
                 {/* ── Tempos médios por procedimento ── */}
                 {temposPorProcedimento.length > 0 && (
-                    <section className="mt-8">
+                    <section className="mt-8 break-inside-avoid-page">
                         <h2 className="mb-3 text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
                             Tempos médios por procedimento (top 8 por volume)
                         </h2>
@@ -325,7 +325,7 @@ export default function Estatisticas({
                                     {temposPorProcedimento.map((row, i) => (
                                         <tr
                                             key={row.procedimento}
-                                            className={i < temposPorProcedimento.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}
+                                            className={`break-inside-avoid-page ${i < temposPorProcedimento.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
                                         >
                                             <td className="max-w-xs truncate px-5 py-2.5 font-medium text-gray-900 dark:text-white">
                                                 {row.procedimento}
@@ -345,7 +345,7 @@ export default function Estatisticas({
 
                 {/* ── Top consumíveis gastos ── */}
                 {topGastos.length > 0 && (
-                    <section className="mt-8">
+                    <section className="mt-8 break-inside-avoid-page">
                         <div className="mb-3 flex items-center justify-between">
                             <h2 className="text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
                                 Top consumíveis gastos
@@ -373,7 +373,7 @@ export default function Estatisticas({
                                 return topGastos.map((g, i) => (
                                     <div
                                         key={g.id}
-                                        className={`flex items-center gap-4 px-5 py-3 ${i < topGastos.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
+                                        className={`flex items-center gap-4 px-5 py-3 break-inside-avoid-page ${i < topGastos.length - 1 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}
                                     >
                                         <span className="w-5 shrink-0 text-center text-xs font-bold text-gray-400">{i + 1}</span>
                                         <div className="min-w-0 flex-1">

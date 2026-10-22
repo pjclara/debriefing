@@ -143,6 +143,10 @@
 }
 
 @media print {
+    @page {
+        margin: 14mm 12mm;
+    }
+
     /* Imprimir sempre com o esquema claro, mesmo que o dark mode esteja ativo */
     .dark {
         --background: oklch(1 0 0);
@@ -152,13 +156,31 @@
         --border: oklch(0.922 0 0);
     }
 
+    html,
     body {
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
+        background: #fff !important;
+    }
+
+    /* Sombras não imprimem bem e ficam "sujas" no PDF */
+    * {
+        box-shadow: none !important;
     }
 
     section,
-    table {
+    table,
+    tr,
+    thead {
         break-inside: avoid;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    h1,
+    h2 {
+        break-after: avoid;
     }
 }
